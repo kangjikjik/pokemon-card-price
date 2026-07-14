@@ -15,7 +15,7 @@
 ### 1. 저장소 받기
 
 ```bash
-git clone https://github.com/YOUR_USER/pokemon-card-price.git
+git clone https://github.com/kangjikjik/pokemon-card-price.git
 cd pokemon-card-price
 ```
 
@@ -62,6 +62,22 @@ Wrangler 로그인·Cloudflare 계정 필요.
 ## Git으로 작업 이어가기
 
 Git은 **자동 동기화가 아닙니다.** 파일을 바꾼 뒤 직접 올리고(pull/push), 다른 PC에서는 받아야(pull) 합니다.
+
+### 최초 1회 — GitHub에 올리기 (이 PC)
+
+로컬 커밋은 이미 되어 있습니다. GitHub 로그인 후 한 번만 실행하세요:
+
+```bash
+gh auth login
+gh repo create pokemon-card-price --private --source=. --remote=origin --push
+```
+
+`gh`가 없으면 [GitHub에서 빈 private 저장소](https://github.com/new)를 `pokemon-card-price` 이름으로 만든 뒤:
+
+```bash
+git remote add origin https://github.com/kangjikjik/pokemon-card-price.git   # 이미 있으면 생략
+git push -u origin master
+```
 
 | 상황 | 할 일 |
 |------|--------|
