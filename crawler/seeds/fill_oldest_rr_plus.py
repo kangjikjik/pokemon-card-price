@@ -35,7 +35,7 @@ LIMIT = 20 if "--all" not in sys.argv else 9999
 APPLY = "--apply" in sys.argv
 
 RR_PLUS = {
-    "RR", "SR", "AR", "SAR", "UR", "ACE", "BWR", "MUR", "MA", "FUR",
+    "SR", "AR", "SAR", "UR", "ACE", "BWR", "MUR", "MA", "FUR",
     "SSR", "HR", "CSR", "CHR", "RRR", "A", "K", "S", "PR", "TR", "H", "SL", "P",
 }
 

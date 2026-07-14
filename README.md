@@ -95,6 +95,9 @@ git push -u origin master
 ```bash
 cd crawler/seeds
 python audit_catalog_quality.py --json   # 카탈로그 품질 감사
+python audit_kr_msrp.py --json           # KR 발매가 79세트 검증
+python audit_manual_rr_sets.py           # SM5+ 수동 RR+ 보완 검증
+python setup_community_db.py             # 커뮤니티 DB 테이블 확인
 python fill_jp_msrp_verified.py --apply  # JP MSRP → set-msrp.ts
 ```
 

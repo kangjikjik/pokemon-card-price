@@ -37,6 +37,7 @@ SAVE_JSON = "--json" in sys.argv
 HANGUL = re.compile(r"[\uAC00-\uD7A3]")
 JAPANESE = re.compile(r"[\u3040-\u30FF\u4E00-\u9FFF]")
 MSRP_JSON = Path(__file__).with_name("_audit_out") / "jp_msrp_sources.json"
+KR_MSRP_JSON = Path(__file__).with_name("_audit_out") / "kr_msrp_audit.json"
 
 
 def load_msrp_missing() -> set[str]:
@@ -44,6 +45,23 @@ def load_msrp_missing() -> set[str]:
         return set()
     rows = json.loads(MSRP_JSON.read_text(encoding="utf-8"))
     return {r["code"] for r in rows if not r.get("packJP")}
+
+
+def load_kr_msrp_summary() -> dict:
+    if not KR_MSRP_JSON.is_file():
+        return {"verified": 0, "total": 0, "issues": []}
+    data = json.loads(KR_MSRP_JSON.read_text(encoding="utf-8"))
+    summary = data.get("summary") or {}
+    issues = [
+        r["code"]
+        for r in data.get("rows") or []
+        if r.get("status") not in ("OK",)
+    ]
+    return {
+        "verified": summary.get("ok", 0),
+        "total": summary.get("sets", 0),
+        "issues": issues,
+    }
 
 
 def has_japanese(t: str) -> bool:
@@ -153,8 +171,14 @@ def main() -> None:
             "wrong_rarity_rank": len(wrong_rank),
             "sets_with_rr_issues": len(rr_issues),
             "msrp_missing_jp": sorted(load_msrp_missing()),
+            "msrp_kr_verified": load_kr_msrp_summary().get("verified", 0),
+            "msrp_kr_issues": load_kr_msrp_summary().get("issues", []),
             "manual_supplement_sets": list(MANUAL_SUPPLEMENTS.keys()),
         },
+        "empty_name_kr_samples": [
+            {"code": c["_code"], "num": c.get("card_number"), "rar": c.get("rarity"), "name_jp": c.get("name_jp")}
+            for c in empty_kr[:30]
+        ],
         "no_image_rr_samples": [
             {"code": c["_code"], "num": c.get("card_number"), "rar": c.get("rarity"), "name": c.get("name_kr")}
             for c in no_img_rr[:30]

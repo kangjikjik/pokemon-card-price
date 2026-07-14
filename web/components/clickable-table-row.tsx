@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import type { ReactNode, KeyboardEvent } from 'react';
+import { saveScrollPosition } from '@/lib/scroll-restore';
 
 type Props = {
   href: string;
@@ -12,7 +13,10 @@ type Props = {
 export function ClickableTableRow({ href, className = '', children }: Props) {
   const router = useRouter();
 
-  const navigate = () => router.push(href);
+  const navigate = () => {
+    saveScrollPosition();
+    router.push(href);
+  };
 
   const onKeyDown = (e: KeyboardEvent<HTMLTableRowElement>) => {
     if (e.key === 'Enter' || e.key === ' ') {

@@ -113,3 +113,5 @@ CREATE INDEX IF NOT EXISTS idx_prices_jp_fetched ON prices_jp(fetched_at DESC);
 CREATE INDEX IF NOT EXISTS idx_prices_box_set_id ON prices_box(set_id);
 CREATE INDEX IF NOT EXISTS idx_cards_set_id ON cards(set_id);
 CREATE INDEX IF NOT EXISTS idx_cards_rarity ON cards(rarity);
+
+-- 커뮤니티 게시판 (자유 / 질문 / 추가 요청) — 상세: add_community.sql

@@ -42,6 +42,7 @@ const generateHistory = (base: number) => {
 };
 
 import { getSetMsrp } from './set-msrp';
+import { roundDisplayPrice } from './price-round';
 
 export const MOCK_CARDS: Card[] = [
   {
@@ -208,7 +209,8 @@ export const MOCK_SETS: SetData[] = [
 ];
 
 export const formatKRW = (price: number) => {
-  return new Intl.NumberFormat('ko-KR').format(price) + '원';
+  const rounded = roundDisplayPrice(price);
+  return new Intl.NumberFormat('ko-KR').format(rounded) + '원';
 };
 
 export const formatJPY = (price: number) => {

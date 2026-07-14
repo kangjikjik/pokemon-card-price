@@ -3,6 +3,8 @@
  * 번개장터/유유테이에서 수집된 다수의 가격 데이터를 분석합니다.
  */
 
+import { roundDisplayPrice } from './price-round';
+
 interface PriceRecord {
   price_krw: number;
   fetched_at?: string;
@@ -57,7 +59,7 @@ export function calcRepresentativePrice(prices: PriceRecord[]): {
   const history = Object.entries(byDate)
     .sort(([a], [b]) => a.localeCompare(b))
     .slice(-7)
-    .map(([date, vals]) => ({ date, price: median(vals) }));
+    .map(([date, vals]) => ({ date, price: roundDisplayPrice(median(vals)) }));
 
   // 트렌드: 최근 절반 vs 이전 절반 비교
   let trend = 0;
@@ -70,5 +72,5 @@ export function calcRepresentativePrice(prices: PriceRecord[]): {
     }
   }
 
-  return { price, trend, history };
+  return { price: roundDisplayPrice(price), trend, history };
 }

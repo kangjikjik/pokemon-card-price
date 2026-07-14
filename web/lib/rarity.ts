@@ -2,6 +2,8 @@
 
 export const EXCLUDED_RARITIES = new Set([
   "U", "C", "SA", "N", "CM", "UM", "PROMO", "R",
+  /** 더블레어 — 시세 추적 제외 (고대팩 등 추후 선별 추가) */
+  "RR",
   /** collectory: 마스터볼 미러 카드번호 접미사 M — 공식 단독 등급명 아님 */
   "M",
 ]);
@@ -70,10 +72,10 @@ export const RARITY_RANK: Record<string, number> = {
   HR: 23,
   SAR: 22,
   CSR: 21,
-  AR: 20,
   /** 프리즘스타 — SR보다 위 */
-  PR: 19,
-  SR: 18,
+  PR: 20,
+  SR: 19,
+  AR: 18,
   CHR: 17,
   RRR: 16,
   A: 15,
@@ -90,7 +92,7 @@ export const RARITY_RANK: Record<string, number> = {
   P: 0,
 };
 
-const CURRENT_RARITIES = ["RR", "SR", "AR", "SAR", "UR", "ACE", "BWR", "MUR", "MA", "FUR"] as const;
+const CURRENT_RARITIES = ["SR", "AR", "SAR", "UR", "ACE", "BWR", "MUR", "MA", "FUR"] as const;
 const LEGACY_RARITIES = ["SSR", "HR", "CSR", "CHR", "RRR", "A", "K", "S", "PR", "TR", "H", "SL", "P"] as const;
 
 function sortByRarityDesc(codes: readonly string[]): string[] {

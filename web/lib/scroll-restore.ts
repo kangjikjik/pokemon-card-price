@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 const SCROLL_KEY = "cards-scroll-y";
 const FILTER_KEY = "cards-filters";
 const SETS_SCROLL_KEY = "sets-scroll-y";
+const SET_DETAIL_PREFIX = "scroll-restore:";
 
 type CardsSort = "rarity" | "price" | "popular";
 
@@ -141,4 +142,28 @@ export function useCardsListScrollRestore(loading: boolean, listReady: boolean) 
 
     return () => window.clearTimeout(t);
   }, [loading, listReady]);
+}
+
+/** 확장팩 상세 — 카드 클릭 직전 스크롤 저장 */
+export function scrollRestoreKey(pathname: string): string {
+  return `${SET_DETAIL_PREFIX}${pathname}`;
+}
+
+export function saveScrollPosition(pathname?: string): void {
+  if (typeof window === "undefined") return;
+  const path = pathname ?? window.location.pathname;
+  sessionStorage.setItem(scrollRestoreKey(path), String(window.scrollY));
+}
+
+export function readScrollPosition(pathname: string): number | null {
+  if (typeof window === "undefined") return null;
+  const raw = sessionStorage.getItem(scrollRestoreKey(pathname));
+  if (raw == null) return null;
+  const y = parseInt(raw, 10);
+  return Number.isFinite(y) ? y : null;
+}
+
+export function clearScrollPosition(pathname: string): void {
+  if (typeof window === "undefined") return;
+  sessionStorage.removeItem(scrollRestoreKey(pathname));
 }

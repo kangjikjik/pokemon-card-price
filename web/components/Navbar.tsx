@@ -3,17 +3,25 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Search, Sun, Moon, X } from 'lucide-react';
+import { Menu, Search, Sun, Moon, X } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { SearchBox } from './search-box';
 
-const NavLink = ({ to, children }: { to: string; children: React.ReactNode }) => {
+const NAV_ITEMS = [
+  { to: '/', label: '홈' },
+  { to: '/cards', label: '모든 카드' },
+  { to: '/sets', label: '확장팩 시세' },
+  { to: '/community', label: '커뮤니티' },
+] as const;
+
+const NavLink = ({ to, children, onClick }: { to: string; children: React.ReactNode; onClick?: () => void }) => {
   const pathname = usePathname();
   const isActive = pathname === to || (to !== '/' && pathname.startsWith(to));
 
   return (
     <Link
       href={to}
+      onClick={onClick}
       className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
         isActive
           ? 'bg-amber-500 text-white dark:text-slate-900 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
@@ -28,6 +36,7 @@ const NavLink = ({ to, children }: { to: string; children: React.ReactNode }) =>
 export function Navbar() {
   const { theme, toggle } = useTheme();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#0B132B]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
@@ -44,9 +53,11 @@ export function Navbar() {
         </Link>
 
         <nav className="hidden md:flex items-center gap-2 justify-self-center">
-          <NavLink to="/">홈</NavLink>
-          <NavLink to="/cards">모든 카드</NavLink>
-          <NavLink to="/sets">확장팩 시세</NavLink>
+          {NAV_ITEMS.map(item => (
+            <NavLink key={item.to} to={item.to}>
+              {item.label}
+            </NavLink>
+          ))}
         </nav>
 
         <div className="flex items-center gap-2 justify-self-end">
@@ -77,6 +88,14 @@ export function Navbar() {
             </button>
           )}
           <button
+            type="button"
+            onClick={() => setMenuOpen(v => !v)}
+            className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors md:hidden"
+            aria-label="메뉴"
+          >
+            {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+          <button
             onClick={toggle}
             className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors bg-slate-100 dark:bg-slate-800 rounded-full shrink-0"
             title="테마 전환"
@@ -85,6 +104,16 @@ export function Navbar() {
           </button>
         </div>
       </div>
+
+      {menuOpen && (
+        <nav className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0B132B]/95 px-4 py-3 flex flex-col gap-1">
+          {NAV_ITEMS.map(item => (
+            <NavLink key={item.to} to={item.to} onClick={() => setMenuOpen(false)}>
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+      )}
     </header>
   );
 }
