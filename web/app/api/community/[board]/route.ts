@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
 import { getSupabaseServer } from '@/lib/supabase';
+import { verifyCommunityAdminToken, getCommunityAdminDisplayName } from '@/lib/community-admin';
 import { isBoardSlug, POST_SELECT_FIELDS, type BoardSlug, type CommunityPost } from '@/lib/community';
 
 type Params = { params: Promise<{ board: string }> };
@@ -74,6 +75,10 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: '존재하지 않는 게시판입니다.' }, { status: 404 });
   }
 
+  if (board === 'notice' && !verifyCommunityAdminToken(req)) {
+    return NextResponse.json({ error: '공지 작성 권한이 없습니다.' }, { status: 403 });
+  }
+
   let body: unknown;
   try {
     body = await req.json();
@@ -86,6 +91,8 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: parsed }, { status: 400 });
   }
 
+  const authorName = board === 'notice' ? getCommunityAdminDisplayName() : parsed.author_name;
+
   const editToken = randomUUID();
 
   try {
@@ -96,7 +103,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         board,
         title: parsed.title,
         content: parsed.content,
-        author_name: parsed.author_name,
+        author_name: authorName,
         edit_token: editToken,
         like_count: 0,
       })

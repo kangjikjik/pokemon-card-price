@@ -11,6 +11,7 @@ import {
   normalizeRarity,
   RARITY_FILTER_GROUPS,
 } from "@/lib/rarity";
+import { matchesSearchQuery } from "@/lib/search";
 import {
   saveCardsListState,
   readSavedCardsState,
@@ -88,10 +89,10 @@ function CardsPageContent() {
     if (searchQuery) {
       cards = cards.filter(
         c =>
-          c.name.toLowerCase().includes(searchQuery) ||
-          c.enName.toLowerCase().includes(searchQuery) ||
-          c.set.toLowerCase().includes(searchQuery) ||
-          c.setCode.toLowerCase().includes(searchQuery),
+          matchesSearchQuery(c.name, searchQuery) ||
+          matchesSearchQuery(c.enName, searchQuery) ||
+          matchesSearchQuery(c.set, searchQuery) ||
+          matchesSearchQuery(c.setCode, searchQuery),
       );
     }
 

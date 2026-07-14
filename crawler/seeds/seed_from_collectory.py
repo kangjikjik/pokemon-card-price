@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from dotenv import load_dotenv
 from supabase import create_client
 
-from lib.rarity_rank import rank_for_rarity, normalize_rarity
+from lib.rarity_rank import rank_for_rarity, normalize_rarity, is_displayable_rarity
 from collectory_map import COLLECTORY_API, COLLECTORY_SETS
 from box_images import pick_box_image
 
@@ -259,6 +259,9 @@ def main():
                 continue
             if (set_code, card_number) in RARITY_OVERRIDES:
                 rarity = RARITY_OVERRIDES[(set_code, card_number)]
+            if not is_displayable_rarity(rarity):
+                skipped += 1
+                continue
             if card_number.endswith("M") or "CM" in (card.get("card_number") or ""):
                 skipped += 1
                 continue

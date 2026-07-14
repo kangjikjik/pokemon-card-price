@@ -22,7 +22,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 from collectory_map import COLLECTORY_API  # noqa: E402
 from kr_sets import KR_SETS  # noqa: E402
-from lib.rarity_rank import rank_for_rarity  # noqa: E402
+from lib.rarity_rank import rank_for_rarity, is_displayable_rarity  # noqa: E402
 from seed_from_collectory import (  # noqa: E402
     RARITY_OVERRIDES,
     SEED_SKIP,
@@ -35,8 +35,10 @@ LIMIT = 20 if "--all" not in sys.argv else 9999
 APPLY = "--apply" in sys.argv
 
 RR_PLUS = {
-    "SR", "AR", "SAR", "UR", "ACE", "BWR", "MUR", "MA", "FUR",
-    "SSR", "HR", "CSR", "CHR", "RRR", "A", "K", "S", "PR", "TR", "H", "SL", "P",
+    r for r, rank in {
+        "SR": 19, "AR": 18, "SAR": 22, "UR": 25, "ACE": 26, "BWR": 27, "MUR": 28,
+        "MA": 29, "FUR": 30, "SSR": 24, "HR": 23, "CSR": 21, "PR": 20,
+    }.items()
 }
 
 EX_NAME_RE = re.compile(r"(?:\bEX\b|ＥＸ|(?<![A-Za-z])ex(?![A-Za-z]))")

@@ -23,8 +23,13 @@ export function normalizeRarity(rarity: string): string {
   return RARITY_ALIASES[r] ?? r;
 }
 
+/** 목록·검색 노출 최소 등급 — AR(18) 이상 (S·CHR·RRR 등 제외) */
+export const MIN_DISPLAY_RARITY_RANK = 18;
+
 export function isDisplayableRarity(rarity: string): boolean {
-  return !EXCLUDED_RARITIES.has(normalizeRarity(rarity));
+  const norm = normalizeRarity(rarity);
+  if (EXCLUDED_RARITIES.has(norm)) return false;
+  return rankForRarity(norm) >= MIN_DISPLAY_RARITY_RANK;
 }
 
 /** 등급 한글명 */
@@ -129,7 +134,7 @@ export const ALL_FILTER_RARITIES: readonly string[] = RARITY_FILTER_GROUPS.flatM
 
 /** 카드 목록에 실제 노출되는 등급 */
 export const DISPLAY_RARITIES = ALL_FILTER_RARITIES.filter(
-  code => !EXCLUDED_RARITIES.has(code),
+  code => isDisplayableRarity(code),
 ) as readonly string[];
 
 export const RARITY_SORT_ORDER = [...ALL_FILTER_RARITIES].reverse();

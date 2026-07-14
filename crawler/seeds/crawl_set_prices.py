@@ -21,6 +21,7 @@ from supabase import create_client
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.stdout.reconfigure(encoding="utf-8")
 
+from lib.rarity_rank import is_displayable_rarity  # noqa: E402
 from lib.price_search import (  # noqa: E402
     build_search_queries,
     calculate_average,
@@ -52,9 +53,6 @@ HEADERS = {
 }
 
 APPLY = "--apply" in sys.argv
-SKIP_RR = {"RR"}
-
-
 def get_arg(flag: str, default: str = "") -> str:
     if flag in sys.argv:
         idx = sys.argv.index(flag)
@@ -207,10 +205,10 @@ def main() -> None:
         .data
         or []
     )
-    cards = [c for c in cards if c.get("rarity") not in SKIP_RR]
+    cards = [c for c in cards if is_displayable_rarity(c.get("rarity"))]
 
     print(f"=== {set_name}({set_code}) 미등급 한글판 시세 ===")
-    print(f"대상: {len(cards)}장 (RR 제외)")
+    print(f"대상: {len(cards)}장 (AR 이상)")
     if not APPLY:
         print("드라이런 — 반영: python crawl_set_prices.py --set", set_code, "--apply")
         cards = cards[:5]

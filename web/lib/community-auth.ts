@@ -1,5 +1,6 @@
 const POST_TOKENS_KEY = 'community_post_tokens';
 const VOTER_KEY = 'community_voter_key';
+const ADMIN_TOKEN_KEY = 'community_admin_token';
 
 type TokenMap = Record<string, string>;
 
@@ -56,4 +57,17 @@ export function markPostLiked(postId: number) {
   const liked = getLikedPostIds();
   liked.add(postId);
   localStorage.setItem(LIKED_POSTS_KEY, JSON.stringify([...liked]));
+}
+
+export function getCommunityAdminToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(ADMIN_TOKEN_KEY);
+}
+
+export function saveCommunityAdminToken(token: string) {
+  localStorage.setItem(ADMIN_TOKEN_KEY, token.trim());
+}
+
+export function clearCommunityAdminToken() {
+  localStorage.removeItem(ADMIN_TOKEN_KEY);
 }

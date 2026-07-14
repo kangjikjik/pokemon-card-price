@@ -1,6 +1,6 @@
-import { HelpCircle, Lightbulb, MessageSquare, Sparkles, type LucideIcon } from 'lucide-react';
+import { HelpCircle, Lightbulb, Megaphone, MessageSquare, Sparkles, type LucideIcon } from 'lucide-react';
 
-export const BOARD_SLUGS = ['free', 'question', 'request', 'tips'] as const;
+export const BOARD_SLUGS = ['notice', 'free', 'question', 'request', 'tips'] as const;
 export type BoardSlug = (typeof BOARD_SLUGS)[number];
 
 export type CommunityPost = {
@@ -24,6 +24,13 @@ export type BoardMeta = {
 };
 
 export const BOARDS: Record<BoardSlug, BoardMeta> = {
+  notice: {
+    slug: 'notice',
+    label: '공지',
+    description: '서비스 공지와 업데이트 소식을 확인하세요.',
+    icon: Megaphone,
+    accent: 'from-rose-500 to-red-600',
+  },
   free: {
     slug: 'free',
     label: '자유게시판',

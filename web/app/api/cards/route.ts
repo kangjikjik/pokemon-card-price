@@ -5,6 +5,7 @@ import { calcRepresentativePrice } from '@/lib/price-calc';
 import { FEATURED_SET_CODES } from '@/lib/constants';
 import { getSetShortName } from '@/lib/set-names';
 import { compareCardsByRarity, isDisplayableRarity, normalizeRarity } from '@/lib/rarity';
+import { matchesSearchQuery, searchIlikePattern } from '@/lib/search';
 
 const SET_COLORS: Record<string, string> = {
   SV2a: 'from-green-500 to-emerald-700',
@@ -87,7 +88,10 @@ export async function GET(request: NextRequest) {
         .select(selectFields)
         .in('set_id', featuredSetIds);
 
-      if (q) query = query.or(`name_kr.ilike.%${q}%,name_jp.ilike.%${q}%,name_en.ilike.%${q}%`);
+      if (q) {
+        const pattern = searchIlikePattern(q);
+        query = query.or(`name_kr.ilike.${pattern},name_jp.ilike.${pattern},name_en.ilike.${pattern}`);
+      }
       if (rarity) query = query.eq('rarity', rarity);
       query = query.order('rarity_rank', { ascending: false }).order('card_number', { ascending: true });
 
@@ -114,7 +118,7 @@ export async function GET(request: NextRequest) {
   } catch {
     const featuredCodes = FEATURED_SET_CODES as readonly string[];
     let result = MOCK_CARDS.filter(c => featuredCodes.includes(c.setCode) && isDisplayableRarity(c.rarity));
-    if (q) result = result.filter(c => c.name.includes(q) || c.enName.toLowerCase().includes(q.toLowerCase()));
+    if (q) result = result.filter(c => matchesSearchQuery(c.name, q) || matchesSearchQuery(c.enName, q));
     if (rarity) result = result.filter(c => c.rarity === rarity);
     if (sort === 'price_asc') result.sort((a, b) => a.priceKR - b.priceKR);
     else if (sort === 'price_desc') result.sort((a, b) => b.priceKR - a.priceKR);

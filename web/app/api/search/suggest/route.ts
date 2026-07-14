@@ -5,6 +5,7 @@ import { FEATURED_SET_CODES } from '@/lib/constants';
 import { mapRawSet } from '@/lib/set-map';
 import { getSetShortName } from '@/lib/set-names';
 import { isDisplayableRarity, normalizeRarity } from '@/lib/rarity';
+import { compactSearchText, matchesSearchQuery, searchIlikePattern } from '@/lib/search';
 
 export async function GET(request: NextRequest) {
   const q = (request.nextUrl.searchParams.get('q') || '').trim();
@@ -14,7 +15,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ cards: [], sets: [] });
   }
 
-  const pattern = `%${q}%`;
+  const pattern = searchIlikePattern(q);
 
   try {
     const supabase = getSupabaseServer();
@@ -26,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     const sets = (featuredSets || [])
       .map(s => mapRawSet(s))
-      .filter(s => s.name.includes(q) || s.code.toLowerCase().includes(q.toLowerCase()))
+      .filter(s => matchesSearchQuery(s.name, q) || compactSearchText(s.code).includes(compactSearchText(q)))
       .slice(0, 3)
       .map(s => ({ id: s.id, name: s.name, code: s.code }));
 
@@ -61,13 +62,13 @@ export async function GET(request: NextRequest) {
   } catch {
     const featuredCodes = FEATURED_SET_CODES as readonly string[];
     const sets = MOCK_SETS
-      .filter(s => featuredCodes.includes(s.code) && s.name.includes(q))
+      .filter(s => featuredCodes.includes(s.code) && matchesSearchQuery(s.name, q))
       .slice(0, 3)
       .map(s => ({ id: s.id, name: s.name, code: s.code }));
 
     const cards = MOCK_CARDS
       .filter(c => featuredCodes.includes(c.setCode) && isDisplayableRarity(c.rarity))
-      .filter(c => c.name.includes(q) || c.enName.toLowerCase().includes(q.toLowerCase()) || c.set.includes(q))
+      .filter(c => matchesSearchQuery(c.name, q) || matchesSearchQuery(c.enName, q) || matchesSearchQuery(c.set, q))
       .slice(0, limit)
       .map(c => ({ id: c.id, name: c.name, rarity: c.rarity, set: c.set }));
 

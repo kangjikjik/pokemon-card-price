@@ -48,3 +48,15 @@ def normalize_rarity(rarity: str | None) -> str:
 
 def rank_for_rarity(rarity: str | None) -> int:
     return RARITY_RANK.get(normalize_rarity(rarity), 0)
+
+
+# web/lib/rarity.ts MIN_DISPLAY_RARITY_RANK 와 동기화
+MIN_DISPLAY_RARITY_RANK = 18
+_SKIP_DISPLAY = {"U", "C", "SA", "N", "CM", "UM", "PROMO", "R", "M", "RR"}
+
+
+def is_displayable_rarity(rarity: str | None) -> bool:
+    norm = normalize_rarity(rarity)
+    if norm in _SKIP_DISPLAY:
+        return False
+    return rank_for_rarity(norm) >= MIN_DISPLAY_RARITY_RANK
