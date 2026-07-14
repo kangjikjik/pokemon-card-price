@@ -1,0 +1,96 @@
+﻿total 73
+raw rarity Counter({'C': 34, 'U': 22, 'R': 13, 'SR': 4})
+
+SKIP parse=None  raw=C        num=001/069 name=?댁긽?댁뵪
+SKIP parse=None  raw=C        num=002/069 name=?댁긽?댄?
+SKIP parse=None  raw=R        num=003/069 name=?댁긽?닿퐙
+SKIP parse=None  raw=U        num=004/069 name=臾댁뒪?덈땲
+SKIP parse=None  raw=C        num=005/069 name=?깆젙怨?
+SKIP parse=None  raw=C        num=006/069 name=履쇰쭏由?
+SKIP parse=None  raw=U        num=007/069 name=?댁?由щ뜑
+SKIP parse=None  raw=C        num=008/069 name=遺?ㅽ꽣
+SKIP parse=None  raw=R        num=009/069 name=?ㅽ뀒??EX
+SKIP parse=None  raw=C        num=010/069 name=?꾩감紐?
+SKIP parse=None  raw=C        num=011/069 name=?곸튂肄?
+SKIP parse=None  raw=R        num=012/069 name=踰덉튂肄?
+SKIP parse=None  raw=U        num=013/069 name=?ㅽ떚怨?
+SKIP parse=None  raw=C        num=014/069 name=?쒗솕瑜대컮
+SKIP parse=None  raw=R        num=015/069 name=遺덉뭅紐⑥뒪
+SKIP parse=None  raw=C        num=016/069 name=?쇰룉
+SKIP parse=None  raw=U        num=017/069 name=?쇰룄?
+SKIP parse=None  raw=C        num=018/069 name=?ㅻ???
+SKIP parse=None  raw=C        num=019/069 name=?쎈룄由?
+SKIP parse=None  raw=C        num=020/069 name=?쏀깭??
+SKIP parse=None  raw=R        num=021/069 name=?좏럹瑜댄듃
+SKIP parse=None  raw=C        num=022/069 name=瑗ъ?蹂대━
+SKIP parse=None  raw=U        num=023/069 name=?ㅼ셿??
+SKIP parse=None  raw=C        num=024/069 name=伊ы뵾?щ뜑
+SKIP parse=None  raw=R        num=025/069 name=?쇱씠肄?EX
+SKIP parse=None  raw=C        num=026/069 name=?뚮윭??
+SKIP parse=None  raw=C        num=027/069 name=留덉씠??
+SKIP parse=None  raw=C        num=028/069 name=?뚯ぜ??
+SKIP parse=None  raw=U        num=029/069 name=?꾪댋??
+SKIP parse=None  raw=C        num=030/069 name=?由ъ뼱
+SKIP parse=None  raw=C        num=031/069 name=?由щ┫
+SKIP parse=None  raw=R        num=032/069 name=?由щ뜑??
+SKIP parse=None  raw=U        num=033/069 name=?먮툕??
+SKIP parse=None  raw=U        num=034/069 name=?쇰룄??
+SKIP parse=None  raw=C        num=035/069 name=?먮Ⅴ諛뺤쪖
+SKIP parse=None  raw=C        num=036/069 name=留섎컯伊?
+SKIP parse=None  raw=C        num=037/069 name=?곗뒪留덉뒪
+SKIP parse=None  raw=U        num=038/069 name=?곗뒪?덉뭏
+SKIP parse=None  raw=U        num=039/069 name=?꾪뀒??
+SKIP parse=None  raw=C        num=040/069 name=?먮뜑瑜?
+SKIP parse=None  raw=U        num=041/069 name=紐곕뱶瑜?
+SKIP parse=None  raw=U        num=042/069 name=釉붾옒??
+SKIP parse=None  raw=U        num=043/069 name=源쒓퉴誘?
+SKIP parse=None  raw=R        num=044/069 name=?ㅽ겕?쇱씠 EX
+SKIP parse=None  raw=C        num=045/069 name=源쒕늿??
+SKIP parse=None  raw=C        num=046/069 name=?낅퉬瑜?
+SKIP parse=None  raw=R        num=047/069 name=?낅퉬?꾨Ⅴ
+SKIP parse=None  raw=C        num=048/069 name=議곕줈??
+SKIP parse=None  raw=R        num=049/069 name=議곕줈?꾪겕
+SKIP parse=None  raw=C        num=050/069 name=踰뚯감??
+SKIP parse=None  raw=C        num=051/069 name=踰꾨옖吏??
+SKIP parse=None  raw=U        num=052/069 name=?덈컮瑜닿퀬
+SKIP parse=None  raw=C        num=053/069 name=湲곗뼱瑜?
+SKIP parse=None  raw=C        num=054/069 name=湲곌린?대Ⅴ
+SKIP parse=None  raw=R        num=055/069 name=湲곌린湲곗뼱瑜?
+SKIP parse=None  raw=C        num=056/069 name=??궎
+SKIP parse=None  raw=R        num=057/069 name=?댄뵾?덉뒪
+SKIP parse=None  raw=C        num=058/069 name=?대툕??
+SKIP parse=None  raw=C        num=059/069 name=?뷀뀒由?
+SKIP parse=None  raw=C        num=060/069 name=?섎뜲由ъ뼱
+SKIP parse=None  raw=U        num=061/069 name=諛붾옖??
+SKIP parse=None  raw=R        num=062/069 name=?좊꽕濡쒖뒪 EX
+SKIP parse=None  raw=U        num=063/069 name=媛쒖“?대㉧
+SKIP parse=None  raw=U        num=064/069 name=?ㅽ겕?⑥튂
+SKIP parse=None  raw=U        num=065/069 name=鍮꾨??섑샇諛??꾪뀒??
+SKIP parse=None  raw=U        num=066/069 name=?낆쓽諛쒗넲
+SKIP parse=None  raw=U        num=067/069 name=?댁긽?쒖궗??
+SKIP parse=None  raw=U        num=068/069 name=諛곕뱶???吏??쒕툕
+SKIP parse=None  raw=U        num=069/069 name=?쒖뿽??
+KEEP parse=SR    raw=SR       num=070/069 name=?ㅽ뀒??EX
+KEEP parse=SR    raw=SR       num=071/069 name=?쇱씠肄?EX
+KEEP parse=SR    raw=SR       num=072/069 name=?ㅽ겕?쇱씠 EX
+KEEP parse=SR    raw=SR       num=073/069 name=?좊꽕濡쒖뒪 EX
+
+keys: ['card_id', 'card_number', 'card_type', 'cdn_image_url', 'image_url', 'name', 'name_ko', 'price_krw', 'rarity', 'region']
+{
+  "card_id": "f0937969-50e9-4ac0-b732-23cdaedde6be",
+  "name": "?댁긽?댁뵪",
+  "name_ko": "?댁긽?댁뵪",
+  "card_number": "001/069",
+  "rarity": "C",
+  "card_type": "POKEMON",
+  "image_url": "https://cards.image.pokemonkorea.co.kr/data/wmimages/BW/BGR/bw4_001.jpg?w=512",
+  "cdn_image_url": "https://cdn.collectory.cc/cards/kr/BS2012003/001_069C.webp",
+  "region": "kr",
+  "price_krw": 0
+}
+
+DB cards 4
+  SR   071/069 ?쇱씠肄?EX
+  SR   073/069 ?좊꽕濡쒖뒪 EX
+  SR   070/069 ?ㅽ뀒??EX
+  SR   072/069 ?ㅽ겕?쇱씠 EX

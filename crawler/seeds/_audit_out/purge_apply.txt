@@ -1,0 +1,56 @@
+﻿CUTOFF=2018-01-17 (誘몃쭔 ??젣)
+??젣 21媛?/ ?좎? 79媛?
+
+[??젣]
+  2017-12-13 SM7a     GX 諛고?遺?ㅽ듃 REMASTER
+  2017-12-13 SM4a     GX 諛고?遺?ㅽ듃
+  2017-11-09 SM2+     鍮쏅굹???꾩꽕
+  2017-05-26 SM1+     ?덈줈???쒕젴
+  2017-02-09 SM1M     臾?而щ젆??
+  2017-02-09 SM1C     ??而щ젆??
+  2016-09-29 CP6      20th Anniversary
+  2016-07-26 XY11     ??ㅻⅤ???ъ궗
+  2016-03-01 XY8a     珥덈뒫?μ쓽 ?쒖솗
+  2016-01-01 XY9      泥쒓났??遺꾨끂
+  2015-07-01 XY7      諛대뵒?몃쭅
+  2015-04-01 XY6      ?먮찓?꾨뱶 釉뚮젅?댄겕
+  2015-02-01 XY5a     媛?댁븘 蹂쇱??대끂
+  2015-02-01 XY5b     ??대떖?ㅽ넱
+  2014-11-01 XY4      ?ы?寃뚯씠??
+  2014-08-01 XY3      ?쇱씠吏뺥뵾?ㅽ듃
+  2014-05-01 XY2      ??쇰뱶 釉붾젅?댁쫰
+  2013-11-01 EBB1     EX 諛고? 遺?ㅽ듃
+  2013-09-01 XY5      硫붽컝濡쒖틦??
+  2013-03-01 XY3a     ?뚮씪?ㅻ쭏寃뚯씪
+  2012-05-01 BW4      ?ㅽ겕?ъ떆
+
+[?좎? ?앸?遺?
+  2018-06-01 SM6      ?쒕옒怨ㅼ뒪??
+  2018-04-06 SM5+     湲덈떒??鍮?
+  2018-03-08 SM5      ?명듃?쇳룷??
+  2018-01-17 SM4+     ?명듃?쇰Ц
+  2018-01-17 SM4      ?명듃?쇱뜫
+  SM7a: cards=24 deleted set_id=148
+  SM4a: cards=29 deleted set_id=156
+  SM2+: cards=20 deleted set_id=157
+  SM1+: cards=24 deleted set_id=158
+  SM1M: cards=16 deleted set_id=159
+  SM1C: cards=17 deleted set_id=160
+  CP6: cards=29 deleted set_id=161
+  XY11: cards=21 deleted set_id=162
+  XY8a: cards=21 deleted set_id=163
+  XY9: cards=19 deleted set_id=164
+  XY7: cards=25 deleted set_id=165
+  XY6: cards=20 deleted set_id=166
+  XY5a: cards=16 deleted set_id=167
+  XY5b: cards=14 deleted set_id=168
+  XY4: cards=13 deleted set_id=169
+  XY3: cards=13 deleted set_id=170
+  XY2: cards=15 deleted set_id=171
+  EBB1: cards=1 deleted set_id=172
+  XY5: cards=11 deleted set_id=173
+  XY3a: cards=10 deleted set_id=174
+  BW4: cards=11 deleted set_id=175
+kr_sets.py -> 79
+
+?꾨즺: 移대뱶 369??+ ?명듃 21媛???젣, ?좎? 79媛?

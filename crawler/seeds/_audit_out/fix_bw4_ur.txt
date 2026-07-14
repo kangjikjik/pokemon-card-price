@@ -1,0 +1,7 @@
+﻿fix id=6664 074/069 媛?붿븞 ??媛?붿븞 | https://images.pokemontcg.io/bw5/74_hires.png ??/card-images/BW4/074-069-UR.jpg
+saved C:\Users\rkdgu\Documents\pokemon-card-price\web\public\card-images\BW4\074-069-UR.jpg (372, 520)
+fix id=6665 075/069 ?꾩??ㅼ뒪 ???꾩??ㅼ뒪 | https://images.pokemontcg.io/bw5/75_hires.png ??/card-images/BW4/075-069-UR.jpg
+saved C:\Users\rkdgu\Documents\pokemon-card-price\web\public\card-images\BW4\075-069-UR.jpg (364, 516)
+fix id=6666 076/069 ?ъ폆紐?罹먯쿂 ???ъ폆紐?罹먯쿂 | https://images.pokemontcg.io/bw5/76_hires.png ??/card-images/BW4/076-069-UR.jpg
+saved C:\Users\rkdgu\Documents\pokemon-card-price\web\public\card-images\BW4\076-069-UR.jpg (375, 519)
+done

@@ -1,0 +1,16 @@
+﻿/products/s/ 403 199 https://www.pokemon-card.com/products/s/
+/products/ 200 34232 https://www.pokemon-card.com/products/
+/archive/products/s1.html 404 21022 https://www.pokemon-card.com/archive/products/s1.html
+/products/s/sword.html 404 21019 https://www.pokemon-card.com/products/s/sword.html
+/products/2019/s1.html 404 21019 https://www.pokemon-card.com/products/2019/s1.html
+/products/2019/12/s1.html 404 21022 https://www.pokemon-card.com/products/2019/12/s1.html
+/products/2020/s1.html 404 21019 https://www.pokemon-card.com/products/2020/s1.html
+https://www.pokemon-card.com/products/s/S1.html 404
+https://www.pokemon-card.com/info/2019/11/1911s1.html 404
+https://www.pokemon-card.com/info/2019/12/1912s1.html 404
+
+=== wiki ===
+404 https://archives.bulbagarden.net/wiki/Sword_(TCG)
+404 https://archives.bulbagarden.net/wiki/File:Sword_Booster_JP.png
+404 https://archives.bulbagarden.net/wiki/File:Shield_Booster_JP.png
+404 https://archives.bulbagarden.net/wiki/File:Sword_%26_Shield_Sword_pack.png

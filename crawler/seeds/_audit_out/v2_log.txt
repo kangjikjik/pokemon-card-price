@@ -1,0 +1,138 @@
+﻿
+=== BW4 ===
+  src (310, 281)
+  saved BW4.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== CP6 ===
+  src (310, 280)
+  saved CP6.png 323x323 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== EBB1 ===
+  src (310, 281)
+  saved EBB1.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== S1H ===
+  src (185, 370)
+  saved S1H.png 406x406 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== S1W ===
+  src (185, 370)
+  saved S1W.png 406x406 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== S1a ===
+  S1a cand  10.4 (851, 315) korea.co.kr/2016/06/2016-06-20_00-44-39-61799-1466351079.jpg
+  S1a cand  55.9 (310, 280) korea.co.kr/2020/03/2020-03-10_10-13-14-18944-1583802794.png
+  S1a cand -60.0 (900, 7973) korea.co.kr/2020/03/2020-03-19_17-07-18-20123-1584605238.png
+  S1a cand -60.0 (900, 4200) korea.co.kr/2020/03/2020-03-19_17-16-22-65387-1584605782.png
+  S1a cand   6.7 (600, 185) korea.co.kr/2020/03/2020-03-19_17-08-38-42625-1584605318.png
+  S1a cand  20.0 (1200, 1966) korea.co.kr/2020/03/2020-03-16_17-35-24-65113-1584347724.png
+  src (310, 280)
+  saved S1a.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== S2 ===
+  src (310, 280)
+  saved S2.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== SM1+ ===
+  src (310, 280)
+  saved SM1plus.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== SM2+ ===
+  src (646, 584)
+  saved SM2plus.png 588x588 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== SM4a ===
+  src (646, 584)
+  saved SM4a.png 587x587 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== SM6 ===
+  src (310, 280)
+  saved SM6.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== SM6a ===
+  src (646, 584)
+  saved SM6a.png 616x616 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== SM6b ===
+  src (310, 280)
+  saved SM6b.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== SM7 ===
+  src (310, 280)
+  saved SM7.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== SM7a ===
+  src (646, 584)
+  saved SM7a.png 587x587 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== SM8 ===
+  src (310, 280)
+  saved SM8.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== XY11 ===
+  src (155, 281)
+  saved XY11.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== XY2 ===
+  src (310, 281)
+  saved XY2.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== XY3 ===
+  src (310, 281)
+  saved XY3.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== XY3a ===
+  src (310, 281)
+  saved XY3a.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== XY4 ===
+  src (310, 281)
+  saved XY4.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== XY5 ===
+  src (310, 281)
+  saved XY5.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== XY5a ===
+  src (155, 281)
+  saved XY5a.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== XY5b ===
+  src (155, 281)
+  saved XY5b.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== XY6 ===
+  src (310, 281)
+  saved XY6.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== XY7 ===
+  src (310, 281)
+  saved XY7.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== XY8a ===
+  src (310, 281)
+  saved XY8a.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+
+=== XY9 ===
+  src (310, 281)
+  saved XY9.png 320x320 corners=[(15, 23, 42), (15, 23, 42), (15, 23, 42), (15, 23, 42)] ok=True
+kr_sets.py -> 100
+python : Traceback (most recent call last):
+위치 C:\Users\rkdgu\AppData\Local\Temp\ps-script-9d4dbd27-0ff5-431e-8f78-573f40561969.ps1:102 문자:63
++ ... pokemon-card-price\crawler\seeds; python fix_packs_v2.py 2>&1 | Out-F ...
++                                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\rkdgu\Documents\pokemon-card-price\crawler\seeds\fix_packs_v2.py", line 168, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\rkdgu\Documents\pokemon-card-price\crawler\seeds\fix_packs_v2.py", line 158, in main
+    write_set_images({s.code: s.box_image_kr for s in updated if s.box_image_kr})
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\rkdgu\Documents\pokemon-card-price\crawler\seeds\revert_featured_55.py", line 141, in write_set_images
+    entries = "\n".join(f"  {ts_key(s.code)}: '{s.box_image_kr}'," for s in sets if s.box_image_kr)
+  File "C:\Users\rkdgu\Documents\pokemon-card-price\crawler\seeds\revert_featured_55.py", line 141, in <genexpr>
+    entries = "\n".join(f"  {ts_key(s.code)}: '{s.box_image_kr}'," for s in sets if s.box_image_kr)
+                                                                                    ^^^^^^^^^^^^^^
+AttributeError: 'str' object has no attribute 'box_image_kr'

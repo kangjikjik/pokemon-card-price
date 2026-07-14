@@ -1,0 +1,22 @@
+﻿=== 移댄깉濡쒓렇 ?덉쭏 媛먯궗 ===
+  sets: 79
+  total_cards: 3654
+  rr_plus_cards: 3645
+  no_image_rr: 21
+  bad_name_kr_japanese: 0
+  empty_name_kr: 11
+  wrong_rarity_rank: 0
+  sets_with_rr_issues: 7
+  msrp_missing_jp: ['CEL', 'S7R', 'SM9a', 'S7D', 'SM9']
+  manual_supplement_sets: ['SM5+', 'BW4']
+
+臾몄젣 ?명듃 (RR+/?대?吏): 7
+  SM9      ['no_img=1']
+  S2       ['no_img=2']
+  S7D      ['no_img=2']
+  S7F      ['no_img=14']
+  S11      ['no_img=1']
+  S12      ['no_img=1']
+  MG6      ['miss=26']
+
+??? C:\Users\rkdgu\Documents\pokemon-card-price\crawler\seeds\_audit_out\catalog_quality_report.json

@@ -1,0 +1,11 @@
+BS2023014	Pokémon Card 151	https://cdn.collectory.cc/cards/sets/sv2a.webp
+BS2023006	Scarlet ex	https://cdn.collectory.cc/cards/sets/sv1s.webp
+BS2023007	Violet ex	https://cdn.collectory.cc/cards/sets/sv1v.webp
+BS2024001	Shiny Treasure ex	https://data1.pokemonkorea.co.kr/2024/01/2024-01-16_09-54-41-42969-1705366481.png
+BS2024017	Super Electric Breaker	https://data1.pokemonkorea.co.kr/2024/11/2024-11-08_18-12-04-80523-1731057124.png
+BS2025001	Battle Partners	https://data1.pokemonkorea.co.kr/2025/02/2025-02-19_14-48-06-72993-1739944086.png
+BS2025015	Mega Dream ex	https://cdn.collectory.cc/sets/ede55e39-375f-43ba-b325-5a8d3d46cd29.png
+BS2026004	Abyss Eye	https://cdn.collectory.cc/cards/kr/BS2026004/46_081RR.webp
+BS2023010	None	https://data1.pokemonkorea.co.kr/2023/04/2023-04-21_15-16-01-13152-1682057761.png
+BS2023011	None	https://data1.pokemonkorea.co.kr/2025/03/2025-03-28_15-16-28-22396-1743142588.png
+BS2023012	None	https://data1.pokemonkorea.co.kr/2023/06/2023-06-07_14-03-41-77039-1686114221.png

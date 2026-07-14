@@ -1,0 +1,41 @@
+﻿媛깆떊 ???3964??/ ?깃툒 19醫?
+  MA     rank=29  cards=10
+  MUR    rank=28  cards=7
+  BWR    rank=27  cards=2
+  ACE    rank=26  cards=32
+  UR     rank=25  cards=260
+  SSR    rank=24  cards=79
+  HR     rank=23  cards=271
+  SAR    rank=22  cards=302
+  CSR    rank=21  cards=45
+  AR     rank=20  cards=715
+  SR     rank=19  cards=993
+  CHR    rank=18  cards=58
+  RRR    rank=17  cards=124
+  A      rank=16  cards=9
+  K      rank=15  cards=19
+  S      rank=14  cards=274
+  PR     rank=13  cards=45
+  TR     rank=12  cards=20
+  RR     rank= 9  cards=699
+  SAR -> 22 (302)
+  RR -> 9 (699)
+  AR -> 20 (715)
+  SSR -> 24 (79)
+  S -> 14 (274)
+  SR -> 19 (993)
+  UR -> 25 (260)
+  TR -> 12 (20)
+  ACE -> 26 (32)
+  MUR -> 28 (7)
+  RRR -> 17 (124)
+  K -> 15 (19)
+  HR -> 23 (271)
+  PR -> 13 (45)
+  CHR -> 18 (58)
+  CSR -> 21 (45)
+  A -> 16 (9)
+  MA -> 29 (10)
+  BWR -> 27 (2)
+
+?꾨즺: 3964??rarity_rank ?숆린??

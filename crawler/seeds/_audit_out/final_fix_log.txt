@@ -1,0 +1,126 @@
+﻿
+=== BW4 ===
+  src (310, 281) mode=RGB
+  -> BW4.png (271, 271) white=0.000 checker=False ok=True
+
+=== CP6 ===
+  src (310, 280) mode=RGB
+  -> CP6.png (329, 329) white=0.000 checker=False ok=True
+
+=== EBB1 ===
+  src (310, 281) mode=RGB
+  -> EBB1.png (280, 280) white=0.000 checker=False ok=True
+
+=== S1H ===
+  src (185, 370) mode=P
+  -> S1H.png (414, 414) white=0.000 checker=False ok=True
+
+=== S1W ===
+  src (185, 370) mode=P
+  -> S1W.png (414, 414) white=0.000 checker=False ok=True
+
+=== S1a ===
+  src (900, 4200) mode=P
+  -> S1a.png (4704, 4704) white=0.000 checker=False ok=True
+
+=== S2 ===
+  src (310, 280) mode=RGBA
+  -> S2.png (284, 284) white=0.000 checker=False ok=True
+
+=== SM1+ ===
+  src (310, 280) mode=RGBA
+  -> SM1plus.png (300, 300) white=0.000 checker=False ok=True
+
+=== SM2+ ===
+  src (646, 584) mode=RGB
+  -> SM2plus.png (599, 599) white=0.000 checker=False ok=True
+
+=== SM4a ===
+  src (646, 584) mode=RGBA
+  -> SM4a.png (599, 599) white=0.000 checker=False ok=True
+
+=== SM6 ===
+  src (310, 280) mode=RGBA
+  -> SM6.png (300, 300) white=0.000 checker=False ok=True
+
+=== SM6a ===
+  src (646, 584) mode=RGB
+  -> SM6a.png (625, 625) white=0.000 checker=False ok=True
+
+=== SM6b ===
+  src (310, 280) mode=RGBA
+  -> SM6b.png (302, 302) white=0.000 checker=False ok=True
+
+=== SM7 ===
+  src (310, 280) mode=RGB
+  -> SM7.png (300, 300) white=0.000 checker=False ok=True
+
+=== SM7a ===
+  src (646, 584) mode=RGBA
+  -> SM7a.png (599, 599) white=0.000 checker=False ok=True
+
+=== SM8 ===
+  src (310, 280) mode=RGB
+  -> SM8.png (300, 300) white=0.000 checker=False ok=True
+
+=== XY11 ===
+  src (155, 281) mode=RGB
+  -> XY11.png (282, 282) white=0.000 checker=False ok=True
+
+=== XY2 ===
+  src (310, 281) mode=RGB
+  -> XY2.png (277, 277) white=0.000 checker=False ok=True
+
+=== XY3 ===
+  src (310, 281) mode=RGB
+  -> XY3.png (274, 274) white=0.000 checker=False ok=True
+
+=== XY3a ===
+  src (310, 281) mode=RGB
+  -> XY3a.png (271, 271) white=0.000 checker=False ok=True
+
+=== XY4 ===
+  src (310, 281) mode=RGB
+  -> XY4.png (273, 273) white=0.000 checker=False ok=True
+
+=== XY5 ===
+  src (310, 281) mode=RGB
+  -> XY5.png (270, 270) white=0.000 checker=False ok=True
+
+=== XY5a ===
+  src (155, 281) mode=RGB
+  -> XY5a.png (274, 274) white=0.000 checker=False ok=True
+
+=== XY5b ===
+  src (155, 281) mode=RGB
+  -> XY5b.png (273, 273) white=0.000 checker=False ok=True
+
+=== XY6 ===
+  src (310, 281) mode=RGB
+  -> XY6.png (274, 274) white=0.000 checker=False ok=True
+
+=== XY7 ===
+  src (310, 281) mode=RGB
+  -> XY7.png (273, 273) white=0.000 checker=False ok=True
+
+=== XY8a ===
+  src (310, 281) mode=RGB
+  -> XY8a.png (296, 296) white=0.000 checker=False ok=True
+
+=== XY9 ===
+  src (310, 281) mode=RGB
+  -> XY9.png (275, 275) white=0.000 checker=False ok=True
+python : Traceback (most recent call last):
+위치 C:\Users\rkdgu\AppData\Local\Temp\ps-script-7132f130-86bc-49fa-a3b3-78ee52770cf2.ps1:102 문자:63
++ ... emon-card-price\crawler\seeds; python fix_packs_final.py 2>&1 | Out-F ...
++                                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Traceback (most recent call last)::String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "C:\Users\rkdgu\Documents\pokemon-card-price\crawler\seeds\fix_packs_final.py", line 213, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\rkdgu\Documents\pokemon-card-price\crawler\seeds\fix_packs_final.py", line 198, in main
+    updated.append(KrSet(s.code, s.name_kr, s.released_at, fixes[s.code], s.box_image_jp))
+                                                                          ^^^^^^^^^^^^^^
+AttributeError: 'KrSet' object has no attribute 'box_image_jp'. Did you mean: 'box_image_kr'?

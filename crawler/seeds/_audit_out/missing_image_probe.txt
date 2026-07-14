@@ -1,0 +1,21 @@
+﻿S11    131/100  SSR  found=[] name=湲곕씪?곕굹 VSTAR
+S12    137/098  SSR  found=[] name=猷④린??VSTAR
+S2     110/096  HR   found=['https://cdn.collectory.cc/cards/jp/S2/110_096.webp'] name=?щ━釉?HR
+S2     111/096  HR   found=['https://cdn.collectory.cc/cards/jp/S2/111_096.webp'] name=?щ━釉?HR
+S7D    071/067  SR   found=['https://cdn.collectory.cc/cards/jp/s7d/071_067.webp'] name=猷④?猷⑥븫 V
+S7D    072/067  SR   found=['https://cdn.collectory.cc/cards/jp/s7d/072_067.webp'] name=?붿뒪?몃굹 V
+S7F    039/100  RR   found=[] name=裕?V
+S7F    110/100  SR   found=[] name=?붿뵿由ъ뒪 V
+S7F    112/100  SR   found=['https://cdn.collectory.cc/cards/jp/S8/112_100.webp'] name=?꾩꽌
+S7F    113/100  SR   found=['https://cdn.collectory.cc/cards/jp/S8/113_100.webp'] name=移대??덉쓽 諛섏쭩??
+S7F    114/100  SR   found=['https://cdn.collectory.cc/cards/jp/S8/114_100.webp'] name=?잕낵 ?댄듃? 肄?
+S7F    115/100  SR   found=['https://cdn.collectory.cc/cards/jp/S8/115_100.webp'] name=?곸쭊
+S7F    117/100  HR   found=['https://cdn.collectory.cc/cards/jp/S8/117_100.webp'] name=?꾩뒪硫?VMAX
+S7F    121/100  HR   found=['https://cdn.collectory.cc/cards/jp/S8/121_100.webp'] name=?꾩꽌
+S7F    123/100  HR   found=['https://cdn.collectory.cc/cards/jp/S8/123_100.webp'] name=?잕낵 ?댄듃? 肄?
+S7F    124/100  HR   found=['https://cdn.collectory.cc/cards/jp/S8/124_100.webp'] name=?곸쭊
+S7F    125/100  UR   found=['https://cdn.collectory.cc/cards/jp/S8/125_100.webp'] name=蹂댁넚??
+S7F    126/100  UR   found=[] name=?뚯썙?쒕툝由?
+S7F    127/100  UR   found=[] name=?몃젅?대떇 肄뷀듃
+S7F    128/100  UR   found=[] name=湲곕낯 ? ?먮꼫吏
+SM9    069/055  UR   found=['https://cdn.collectory.cc/cards/jp/SM9a/069_055UR.webp'] name=濡쒖폆?⑥쓽 留덉옄??

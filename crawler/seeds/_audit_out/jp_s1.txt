@@ -1,0 +1,41 @@
+﻿
+=== https://www.pokemon-card.com/products/s/s1.html status=404 len=21016 ===
+  (496, 296) https://www.pokemon-card.com/include/images/globalmenu/event_btn_enjoy.png
+  (496, 296) https://www.pokemon-card.com/include/images/globalmenu/event_btn_challenge.png
+  (496, 296) https://www.pokemon-card.com/include/images/globalmenu/event_btn_css.png
+  (48, 49) https://www.pokemon-card.com/include/images/globalmenu/mypage_menu.png
+  (1200, 630) https://www.pokemon-card.com/assets/images/og.png
+
+=== https://www.pokemon-card.com/products/s/s1a.html status=200 len=35437 ===
+  (496, 296) https://www.pokemon-card.com/include/images/globalmenu/event_btn_enjoy.png
+  (496, 296) https://www.pokemon-card.com/include/images/globalmenu/event_btn_challenge.png
+  (496, 296) https://www.pokemon-card.com/include/images/globalmenu/event_btn_css.png
+  (48, 49) https://www.pokemon-card.com/include/images/globalmenu/mypage_menu.png
+  (1680, 1040) https://www.pokemon-card.com/products/2020/images/TOP_ReleaseDay_S1a.jpg
+  (164, 40) https://www.pokemon-card.com/assets/images/linebutton.png
+  (1200, 863) https://www.pokemon-card.com/products/2020/images/01_S1a.jpg
+  (748, 1044) https://www.pokemon-card.com/products/2020/images/1405_U068_T_TurfStadium.jpg
+  (1200, 863) https://www.pokemon-card.com/products/2020/images/02_S1a.jpg
+  (748, 1044) https://www.pokemon-card.com/products/2020/images/1405_U064_T_MoeruScarf.jpg
+  (1200, 863) https://www.pokemon-card.com/products/2020/images/03_S1a.jpg
+  (748, 1044) https://www.pokemon-card.com/products/2020/images/1405_U063_T_TappuriBaketsu.jpg
+  (748, 1044) https://www.pokemon-card.com/assets/images/card_images/large/S1a/037843_P_SADAIJAV.jpg
+  (748, 1044) https://www.pokemon-card.com/assets/images/card_images/large/S1a/037827_P_KUWAGANON.jpg
+  (748, 1044) https://www.pokemon-card.com/assets/images/card_images/large/S1a/037840_P_GARARUNEGIGANAITO.jpg
+  (748, 1044) https://www.pokemon-card.com/assets/images/card_images/large/S1a/037867_E_TSUINENERUGI.jpg
+  (748, 1044) https://www.pokemon-card.com/assets/images/card_images/large/S1a/037864_T_YARO.jpg
+  (748, 1044) https://www.pokemon-card.com/assets/images/card_images/large/S1a/037866_T_TORENINGUKOTO.jpg
+  (748, 1044) https://www.pokemon-card.com/info/2019/12/images/1405_R037_864gSUNIGOON.jpg
+  (748, 1044) https://www.pokemon-card.com/info/2019/12/images/1405_R058_884DURALUDON.jpg
+  (748, 1044) https://www.pokemon-card.com/info/2019/12/images/1405_U065_T_Sonia.jpg
+  (748, 1044) https://www.pokemon-card.com/products/2020/images/1405_SR077_T_Sonia.jpg
+  (800, 800) https://www.pokemon-card.com/products/2020/images/S1a_BOX_01.jpg
+  (400, 400) https://www.pokemon-card.com/info/2020/01/images/S1a_BOX.jpg
+  (400, 400) https://www.pokemon-card.com/info/2020/01/images/Friendly.jpg
+  (1200, 630) https://www.pokemon-card.com/assets/images/og.png
+
+=== pattern tries ===
+pack_s1W.jpg 404 text/html; charset=UTF-8 23222
+pack_s1H.jpg 404 text/html; charset=UTF-8 23222
+S1_pack.jpg 404 text/html; charset=UTF-8 23223
+sm1_pack.jpg 404 text/html; charset=UTF-8 23222

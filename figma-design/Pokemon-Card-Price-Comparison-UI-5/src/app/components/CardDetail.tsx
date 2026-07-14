@@ -1,0 +1,144 @@
+import React, { useState } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { ChevronLeft } from 'lucide-react';
+import { MOCK_CARDS, formatKRW } from '../data';
+import { RarityBadge, TrendBadge, CardPlaceholder, FlagKR, FlagJP } from './ui';
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-3 rounded-lg shadow-xl">
+        <p className="text-slate-500 dark:text-slate-400 text-xs mb-1">{label}</p>
+        {payload.map((entry: any, index: number) => (
+          <p key={index} className="text-sm font-bold" style={{ color: entry.color }}>
+            {entry.name}: {formatKRW(entry.value)}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
+export const CardDetail = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const card = MOCK_CARDS.find(c => c.id === id) || MOCK_CARDS[0];
+  const [chartType, setChartType] = useState<'KR' | 'JP'>('KR');
+
+  const chartData = card.historyKR.map((kr, index) => ({
+    name: kr.date, // Changed from date to name to fix recharts key warning
+    KRW: kr.price,
+    JPY_converted: card.historyJP[index]?.price || 0,
+  }));
+
+  return (
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <button onClick={() => navigate(-1)} className="inline-flex items-center text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white mb-6 transition-colors">
+        <ChevronLeft className="w-4 h-4 mr-1" /> 이전 화면으로 돌아가기
+      </button>
+
+      <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
+        {/* Card Image Area */}
+        <div className="w-full md:w-1/3 shrink-0">
+          <div className="aspect-[63/88] rounded-2xl p-4 md:p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl relative">
+            <CardPlaceholder colorClass={card.imageColor} className="shadow-[0_0_30px_rgba(0,0,0,0.1)] dark:shadow-[0_0_30px_rgba(0,0,0,0.5)]" />
+          </div>
+        </div>
+
+        {/* Info Area */}
+        <div className="flex-1 space-y-8">
+          <div>
+            <div className="flex items-center gap-3 mb-3">
+              <RarityBadge rarity={card.rarity} />
+              <Link to={`/sets/${card.set}`} className="text-amber-600 dark:text-amber-500 hover:underline text-sm font-medium">
+                {card.set}
+              </Link>
+            </div>
+            <h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-2">{card.name}</h1>
+            <p className="text-xl text-slate-500 dark:text-slate-400">{card.enName}</p>
+          </div>
+
+          {/* Price Comparison Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-gradient-to-br from-blue-50 to-slate-50 dark:from-slate-900 dark:to-slate-950 border border-blue-200 dark:border-blue-900/30 rounded-xl p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none text-6xl">🇰🇷</div>
+              <div className="flex justify-between items-center mb-4 relative z-10">
+                <div className="flex items-center gap-2">
+                  <FlagKR />
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">한국판</span>
+                </div>
+                <TrendBadge value={card.trendKR} />
+              </div>
+              <div className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-1 relative z-10">{formatKRW(card.priceKR)}</div>
+              <p className="text-slate-500 text-sm relative z-10">최근 거래 기준</p>
+            </div>
+
+            <div className="bg-gradient-to-br from-red-50 to-slate-50 dark:from-slate-900 dark:to-slate-950 border border-red-200 dark:border-red-900/30 rounded-xl p-6 relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-4 opacity-10 pointer-events-none text-6xl">🇯🇵</div>
+              <div className="flex justify-between items-center mb-4 relative z-10">
+                <div className="flex items-center gap-2">
+                  <FlagJP />
+                  <span className="text-slate-700 dark:text-slate-300 font-medium">일본판</span>
+                </div>
+                <TrendBadge value={card.trendJP} />
+              </div>
+              <div className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-1 relative z-10">{formatKRW(card.priceJP)}</div>
+              <p className="text-slate-500 text-sm relative z-10">최근 거래 기준</p>
+            </div>
+          </div>
+
+          {/* Price History Chart */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">시세 추이 (7일)</h3>
+              <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-lg">
+                <button
+                  onClick={() => setChartType('KR')}
+                  className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${chartType === 'KR' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                >
+                  🇰🇷 한국판
+                </button>
+                <button
+                  onClick={() => setChartType('JP')}
+                  className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all ${chartType === 'JP' ? 'bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                >
+                  🇯🇵 일본판
+                </button>
+              </div>
+            </div>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.5} vertical={false} />
+                  <XAxis 
+                    dataKey="name" 
+                    stroke="#64748b" 
+                    fontSize={12} 
+                    tickLine={false} 
+                    axisLine={false} 
+                  />
+                  <YAxis 
+                    stroke="#64748b" 
+                    fontSize={12} 
+                    tickLine={false} 
+                    axisLine={false}
+                    tickFormatter={(val) => `₩${(val/10000).toFixed(0)}만`} 
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  {chartType === 'KR' && (
+                    <Line type="monotone" name="한국판" dataKey="KRW" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} animationDuration={300} />
+                  )}
+                  {chartType === 'JP' && (
+                    <Line type="monotone" name="일본판" dataKey="JPY_converted" stroke="#ef4444" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} animationDuration={300} />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

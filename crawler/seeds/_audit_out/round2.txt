@@ -1,0 +1,15 @@
+﻿=== S1 poster crops ===
+  S1W: (405, 405) -> S1W.png
+  S1H: (405, 405) -> S1H.png
+=== single packs ===
+  SM12a: (344, 344) -> SM12a.png
+  SM9: (344, 344) -> SM9.png
+  SM8b: (344, 344) -> SM8b.png
+=== duals / CP6 ===
+  SM4: (344, 344) -> SM4.png
+  SM4+: (344, 344) -> SM4plus.png
+  SM1C: (344, 344) -> SM1C.png
+  SM1M: (344, 344) -> SM1M.png
+  CP6: (344, 344) -> CP6.png
+kr_sets.py -> 100
+synced kr_sets + set-images

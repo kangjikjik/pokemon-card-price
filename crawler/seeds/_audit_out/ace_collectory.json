@@ -1,0 +1,275 @@
+[
+  {
+    "set_code": "SV4",
+    "num": "061/071",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "각성의 드럼"
+  },
+  {
+    "set_code": "SV4",
+    "num": "065/071",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "맥시멈 벨트"
+  },
+  {
+    "set_code": "SV4",
+    "num": "071/071",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "네오 어퍼 에너지"
+  },
+  {
+    "set_code": "SV4x",
+    "num": "061/071",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "리부트 포드"
+  },
+  {
+    "set_code": "SV4x",
+    "num": "062/071",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "프라임 캐처"
+  },
+  {
+    "set_code": "SV4x",
+    "num": "066/071",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "히어로 망토"
+  },
+  {
+    "set_code": "SV5K",
+    "num": "092/101",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "시크릿박스"
+  },
+  {
+    "set_code": "SV5K",
+    "num": "093/101",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "포켓몬 회수 사이클론"
+  },
+  {
+    "set_code": "SV5K",
+    "num": "101/101",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "레거시 에너지"
+  },
+  {
+    "set_code": "SV5M",
+    "num": "055/066",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "언페어 스탬프"
+  },
+  {
+    "set_code": "SV5M",
+    "num": "058/066",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "하이퍼 아로마"
+  },
+  {
+    "set_code": "SV5M",
+    "num": "060/066",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "서바이브 깁스"
+  },
+  {
+    "set_code": "SV5a",
+    "num": "054/064",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "데인저러스 레이저"
+  },
+  {
+    "set_code": "SV5a",
+    "num": "055/064",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "포켓바이탈A"
+  },
+  {
+    "set_code": "SV5a",
+    "num": "063/064",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "뉴트럴센터"
+  },
+  {
+    "set_code": "SV6",
+    "num": "092/102",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "디럭스봄"
+  },
+  {
+    "set_code": "SV6",
+    "num": "093/102",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "반짝이는 결정"
+  },
+  {
+    "set_code": "SV6",
+    "num": "101/102",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "위대한 거목"
+  },
+  {
+    "set_code": "SV6a",
+    "num": "054/064",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "메가톤 블로어"
+  },
+  {
+    "set_code": "SV6a",
+    "num": "056/064",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "에너지 전송 PRO"
+  },
+  {
+    "set_code": "SV6a",
+    "num": "064/064",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "리치 에너지"
+  },
+  {
+    "set_code": "SV7",
+    "num": "095/106",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "미라클인터컴"
+  },
+  {
+    "set_code": "SV7",
+    "num": "096/106",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "스크램블 스위치"
+  },
+  {
+    "set_code": "SV7",
+    "num": "101/106",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "희망의 애뮬렛"
+  },
+  {
+    "set_code": "SV8",
+    "num": "139/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "낚싯대MAX"
+  },
+  {
+    "set_code": "SV8",
+    "num": "142/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "밤의 들것"
+  },
+  {
+    "set_code": "SV8",
+    "num": "146/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "카운터 캐처"
+  },
+  {
+    "set_code": "SV8",
+    "num": "148/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "테크노레이더"
+  },
+  {
+    "set_code": "SV8",
+    "num": "149/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "트레져 가젯"
+  },
+  {
+    "set_code": "SV8",
+    "num": "150/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "포켓몬 회수 사이클론"
+  },
+  {
+    "set_code": "SV8",
+    "num": "151/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "프라임 캐처"
+  },
+  {
+    "set_code": "SV8",
+    "num": "152/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "기술머신 데볼루션"
+  },
+  {
+    "set_code": "SV8",
+    "num": "156/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "맥시멈 벨트"
+  },
+  {
+    "set_code": "SV8",
+    "num": "157/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "반짝이는 결정"
+  },
+  {
+    "set_code": "SV8",
+    "num": "159/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "부스트에너지 미래"
+  },
+  {
+    "set_code": "SV8",
+    "num": "180/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "뉴트럴센터"
+  },
+  {
+    "set_code": "SV8",
+    "num": "184/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "축제회장"
+  },
+  {
+    "set_code": "SV8",
+    "num": "185/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "레거시 에너지"
+  },
+  {
+    "set_code": "SV8",
+    "num": "187/187",
+    "rarity": "ACE",
+    "parsed": "ACE",
+    "name": "제트 에너지"
+  }
+]

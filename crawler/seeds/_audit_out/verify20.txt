@@ -1,0 +1,147 @@
+﻿寃利????(?ㅻ옒?쒖닚 20媛? apply=False):
+  2012-05-01 BW4 ?ㅽ겕?ъ떆
+  2013-03-01 XY3a ?뚮씪?ㅻ쭏寃뚯씪
+  2013-09-01 XY5 硫붽컝濡쒖틦??
+  2013-11-01 EBB1 EX 諛고? 遺?ㅽ듃
+  2014-05-01 XY2 ??쇰뱶 釉붾젅?댁쫰
+  2014-08-01 XY3 ?쇱씠吏뺥뵾?ㅽ듃
+  2014-11-01 XY4 ?ы?寃뚯씠??
+  2015-02-01 XY5a 媛?댁븘 蹂쇱??대끂
+  2015-02-01 XY5b ??대떖?ㅽ넱
+  2015-04-01 XY6 ?먮찓?꾨뱶 釉뚮젅?댄겕
+  2015-07-01 XY7 諛대뵒?몃쭅
+  2016-01-01 XY9 泥쒓났??遺꾨끂
+  2016-03-01 XY8a 珥덈뒫?μ쓽 ?쒖솗
+  2016-07-26 XY11 ??ㅻⅤ???ъ궗
+  2016-09-29 CP6 20th Anniversary
+  2017-02-09 SM1C ??而щ젆??
+  2017-02-09 SM1M 臾?而щ젆??
+  2017-05-26 SM1+ ?덈줈???쒕젴
+  2017-11-09 SM2+ 鍮쏅굹???꾩꽕
+  2017-12-13 SM4a GX 諛고?遺?ㅽ듃
+
+=== BW4 ?ㅽ겕?ъ떆 ===
+  expected RR+: 4 | DB RR+: 4
+  OK
+  DB dist: {'SR': 4}
+
+=== XY3a ?뚮씪?ㅻ쭏寃뚯씪 ===
+  expected RR+: 8 | DB RR+: 8
+  OK
+  DB dist: {'SR': 6, 'UR': 2}
+
+=== XY5 硫붽컝濡쒖틦??===
+  expected RR+: 9 | DB RR+: 9
+  OK
+  DB dist: {'SR': 6, 'UR': 3}
+
+=== EBB1 EX 諛고? 遺?ㅽ듃 ===
+  expected RR+: 1 | DB RR+: 1
+  OK
+  DB dist: {'UR': 1}
+
+=== XY2 ??쇰뱶 釉붾젅?댁쫰 ===
+  expected RR+: 15 | DB RR+: 15
+  OK
+  DB dist: {'SR': 7, 'RR': 6, 'UR': 2}
+
+=== XY3 ?쇱씠吏뺥뵾?ㅽ듃 ===
+  expected RR+: 13 | DB RR+: 13
+  OK
+  DB dist: {'RR': 6, 'SR': 7}
+
+=== XY4 ?ы?寃뚯씠??===
+  expected RR+: 13 | DB RR+: 13
+  OK
+  DB dist: {'RR': 6, 'SR': 7}
+
+=== XY5a 媛?댁븘 蹂쇱??대끂 ===
+  expected RR+: 16 | DB RR+: 16
+  OK
+  DB dist: {'RR': 6, 'SR': 8, 'UR': 2}
+
+=== XY5b ??대떖?ㅽ넱 ===
+  expected RR+: 14 | DB RR+: 14
+  OK
+  DB dist: {'RR': 6, 'SR': 8}
+
+=== XY6 ?먮찓?꾨뱶 釉뚮젅?댄겕 ===
+  expected RR+: 20 | DB RR+: 20
+  OK
+  DB dist: {'RR': 9, 'SR': 11}
+
+=== XY7 諛대뵒?몃쭅 ===
+  expected RR+: 25 | DB RR+: 25
+  OK
+  DB dist: {'RR': 11, 'SR': 11, 'UR': 3}
+
+=== XY9 泥쒓났??遺꾨끂 ===
+  expected RR+: 19 | DB RR+: 19
+  OK
+  DB dist: {'RR': 11, 'SR': 8}
+
+=== XY8a 珥덈뒫?μ쓽 ?쒖솗 ===
+  expected RR+: 21 | DB RR+: 21
+  OK
+  DB dist: {'RR': 12, 'SR': 9}
+
+=== XY11 ??ㅻⅤ???ъ궗 ===
+  expected RR+: 21 | DB RR+: 21
+  OK
+  DB dist: {'RR': 8, 'SR': 13}
+
+=== CP6 20th Anniversary ===
+  expected RR+: 29 | DB RR+: 29
+  OK
+  DB dist: {'RR': 16, 'SR': 13}
+
+=== SM1C ??而щ젆??===
+  expected RR+: 17 | DB RR+: 17
+  OK
+  DB dist: {'RR': 4, 'SR': 6, 'HR': 4, 'UR': 3}
+
+=== SM1M 臾?而щ젆??===
+  expected RR+: 16 | DB RR+: 16
+  OK
+  DB dist: {'RR': 4, 'SR': 5, 'HR': 4, 'UR': 3}
+
+=== SM1+ ?덈줈???쒕젴 ===
+  expected RR+: 24 | DB RR+: 24
+  OK
+  DB dist: {'RR': 9, 'SR': 8, 'HR': 4, 'UR': 3}
+
+=== SM2+ 鍮쏅굹???꾩꽕 ===
+  expected RR+: 20 | DB RR+: 20
+  OK
+  DB dist: {'RR': 4, 'HR': 6, 'K': 1, 'UR': 3, 'SR': 6}
+
+=== SM4a GX 諛고?遺?ㅽ듃 ===
+  expected RR+: 29 | DB RR+: 29
+  OK
+  DB dist: {'RR': 18, 'SR': 6, 'HR': 3, 'UR': 2}
+
+============================================================
+code     name             exp  db  wrong miss extra
+OK BW4      ?ㅽ겕?ъ떆               4   4     0    0     0
+OK XY3a     ?뚮씪?ㅻ쭏寃뚯씪             8   8     0    0     0
+OK XY5      硫붽컝濡쒖틦??             9   9     0    0     0
+OK EBB1     EX 諛고? 遺?ㅽ듃          1   1     0    0     0
+OK XY2      ??쇰뱶 釉붾젅?댁쫰          15  15     0    0     0
+OK XY3      ?쇱씠吏뺥뵾?ㅽ듃            13  13     0    0     0
+OK XY4      ?ы?寃뚯씠??            13  13     0    0     0
+OK XY5a     媛?댁븘 蹂쇱??대끂          16  16     0    0     0
+OK XY5b     ??대떖?ㅽ넱             14  14     0    0     0
+OK XY6      ?먮찓?꾨뱶 釉뚮젅?댄겕         20  20     0    0     0
+OK XY7      諛대뵒?몃쭅              25  25     0    0     0
+OK XY9      泥쒓났??遺꾨끂            19  19     0    0     0
+OK XY8a     珥덈뒫?μ쓽 ?쒖솗           21  21     0    0     0
+OK XY11     ??ㅻⅤ???ъ궗           21  21     0    0     0
+OK CP6      20th Anniversary  29  29     0    0     0
+OK SM1C     ??而щ젆??            17  17     0    0     0
+OK SM1M     臾?而щ젆??            16  16     0    0     0
+OK SM1+     ?덈줈???쒕젴            24  24     0    0     0
+OK SM2+     鍮쏅굹???꾩꽕            20  20     0    0     0
+OK SM4a     GX 諛고?遺?ㅽ듃          29  29     0    0     0
+
+?⑷퀎 wrong=0 missing=0 extra=0
+?쒕씪?대윴 ???섏젙?섎젮硫? python verify_oldest20_rr.py --apply

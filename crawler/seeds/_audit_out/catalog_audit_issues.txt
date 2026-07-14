@@ -1,0 +1,4 @@
+﻿total featured cards: 3654
+name_kr with Japanese: 0
+wrong rarity_rank: 0
+no image: 21

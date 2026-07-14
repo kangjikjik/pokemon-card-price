@@ -1,0 +1,90 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { Search, Sun, Moon, X } from 'lucide-react';
+import { useTheme } from './ThemeProvider';
+import { SearchBox } from './search-box';
+
+const NavLink = ({ to, children }: { to: string; children: React.ReactNode }) => {
+  const pathname = usePathname();
+  const isActive = pathname === to || (to !== '/' && pathname.startsWith(to));
+
+  return (
+    <Link
+      href={to}
+      className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
+        isActive
+          ? 'bg-amber-500 text-white dark:text-slate-900 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+          : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800'
+      }`}
+    >
+      {children}
+    </Link>
+  );
+};
+
+export function Navbar() {
+  const { theme, toggle } = useTheme();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#0B132B]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
+      <div className="max-w-6xl mx-auto px-4 h-16 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+        <Link href="/" className="flex items-center gap-2 group shrink-0 justify-self-start">
+          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-600 border-2 border-white dark:border-slate-900 flex items-center justify-center relative overflow-hidden shadow-[0_0_10px_rgba(239,68,68,0.5)] group-hover:rotate-180 transition-transform duration-500">
+            <div className="absolute top-1/2 left-0 w-full h-[2px] bg-white dark:bg-slate-900 -translate-y-1/2" />
+            <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-slate-900 dark:bg-white rounded-full border-[2px] border-white dark:border-slate-900 -translate-x-1/2 -translate-y-1/2 z-10" />
+            <div className="w-full h-1/2 bg-slate-900 dark:bg-white absolute bottom-0" />
+          </div>
+          <span className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight hidden sm:inline">
+            Poké<span className="text-amber-500">Price</span>
+          </span>
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-2 justify-self-center">
+          <NavLink to="/">홈</NavLink>
+          <NavLink to="/cards">모든 카드</NavLink>
+          <NavLink to="/sets">확장팩 시세</NavLink>
+        </nav>
+
+        <div className="flex items-center gap-2 justify-self-end">
+          {searchOpen ? (
+            <div className="flex items-center gap-2 w-48 sm:w-64 md:w-72">
+              <SearchBox
+                className="flex-1 min-w-0"
+                autoFocus
+                onClose={() => setSearchOpen(false)}
+              />
+              <button
+                type="button"
+                onClick={() => setSearchOpen(false)}
+                className="p-2 text-slate-500 hover:text-slate-900 dark:hover:text-white shrink-0"
+                aria-label="검색 닫기"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              aria-label="검색"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+          )}
+          <button
+            onClick={toggle}
+            className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors bg-slate-100 dark:bg-slate-800 rounded-full shrink-0"
+            title="테마 전환"
+          >
+            {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-500" />}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}

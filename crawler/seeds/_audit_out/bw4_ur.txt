@@ -1,0 +1,13 @@
+﻿74 200 ['/card/darkrush/74.jpg']
+  200 100421 https://www.serebii.net/card/darkrush/74.jpg
+75 200 ['/card/darkrush/75.jpg']
+  200 54615 https://www.serebii.net/card/darkrush/75.jpg
+76 200 ['/card/darkrush/76.jpg']
+  200 100359 https://www.serebii.net/card/darkrush/76.jpg
+
+=== jp tries ===
+https://www.pokemon-card.com/card-search/details.php/card/28564 200 8303
+https://pokemontcg.io 200 5323
+OK 186502 https://images.pokemontcg.io/bw5/74.png
+OK 190598 https://images.pokemontcg.io/bw5/75.png
+OK 183484 https://images.pokemontcg.io/bw5/76.png

@@ -1,0 +1,124 @@
+﻿node.exe : npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help
+ npmrc` for supported config options.
+위치 줄:1 문자:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (npm warn Unknow...config options.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+> web@0.1.0 deploy
+> opennextjs-cloudflare build && opennextjs-cloudflare deploy
+
+
+?뚢?????????????????????????????????OpenNext ??Cloudflare build ???붴???????????????????????????????
+WARN OpenNext is not fully compatible with Windows.
+WARN For optimal performance, it is recommended to use Windows Subsystem for Linux (WSL).
+WARN While OpenNext may function on Windows, it could encounter unpredictable failures during runtime.
+App directory: C:\Users\rkdgu\Documents\pokemon-card-price\web
+Next.js version : 16.2.10
+@opennextjs/cloudflare version: 1.20.1
+@opennextjs/aws version: 4.0.2
+workerd compatibility_date: 2026-07-08
+
+?뚢?????????????????????????????????????OpenNext ??Building Next.js app ???붴???????????????????????????????????
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for
+ supported config options.
+
+> web@0.1.0 build
+> next build --webpack
+
+??Next.js 16.2.10 (webpack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+??Compiled successfully in 2.9s
+  Running TypeScript ...
+  Finished TypeScript in 4.3s ...
+  Collecting page data using 7 workers ...
+  Generating static pages using 7 workers (0/8) ...
+  Generating static pages using 7 workers (2/8) 
+  Generating static pages using 7 workers (4/8) 
+  Generating static pages using 7 workers (6/8) 
+??Generating static pages using 7 workers (8/8) in 216ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+??? /
+????/_not-found
+??? /api/cards
+??? /api/cards/[id]
+??? /api/exchange-rate
+??? /api/search/suggest
+??? /api/sets
+??? /api/sets/[id]
+????/cards
+??? /cards/[id]
+??? /sets
+??? /sets/[id]
+
+
+?? (Static)   prerendered as static content
+?  (Dynamic)  server-rendered on demand
+
+
+?뚢??????????????????????????????????OpenNext ??Generating bundle ???붴????????????????????????????????
+Bundling middleware function...
+Bundling static assets...
+Bundling cache assets...
+Building server function: default...
+Applying code patches: 6.824s
+# copyPackageTemplateFiles
+[35m?숋툘 Bundling the OpenNext server...
+[0m
+[35mWorker saved in `.open-next\worker.js` ??
+[0m
+OpenNext build complete.
+
+?뚢??????????????????????????????????OpenNext ??Cloudflare deploy ???붴????????????????????????????????
+WARN OpenNext is not fully compatible with Windows.
+WARN For optimal performance, it is recommended to use Windows Subsystem for Linux (WSL).
+WARN While OpenNext may function on Windows, it could encounter unpredictable failures during runtime.
+Incremental cache does not need populating
+Tag cache does not need populating
+
+ ?낉툘 wrangler 4.107.1
+????????????????????
+?? Building list of assets...
+??Read 134 files from the assets directory C:\Users\rkdgu\Documents\pokemon-card-price\web\.open-next\assets
+?? Starting asset upload...
+?? Found 13 new or modified static assets to upload. Proceeding with upload...
++ /BUILD_ID
++ /set-boxes/SM1M.png
++ /set-boxes/SM4plus.png
++ /set-boxes/SM12a.png
++ /set-boxes/S1W.png
++ /_next/static/chunks/app/cards/page-c91d0764896924ea.js
++ /set-boxes/SM1C.png
++ /set-boxes/SM4.png
++ /set-boxes/SM9.png
++ /set-boxes/CP6.png
++ /_next/static/css/cb883be53fe70391.css
++ /set-boxes/SM8b.png
++ /set-boxes/S1H.png
+Uploaded 4 of 13 assets
+Uploaded 9 of 13 assets
+Uploaded 13 of 13 assets
+??Success! Uploaded 13 files (95 already uploaded) (2.50 sec)
+
+Total Upload: 5882.34 KiB / gzip: 1219.33 KiB
+Worker Startup Time: 30 ms
+Your Worker has access to the following bindings:
+Binding            Resource      
+env.ASSETS         Assets        
+
+Uploaded pokemon-card-price (10.11 sec)
+Deployed pokemon-card-price triggers (0.78 sec)
+  https://pokemon-card-price.stockpick.workers.dev
+Current Version ID: 724d1680-6bdd-4c7d-a725-5fda90e5a2fb
+npm warn Unknown env config "devdir". This will stop working in the next major version of npm. See `npm help npmrc` for
+ supported config options.
+(node:7172) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security v
+ulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)

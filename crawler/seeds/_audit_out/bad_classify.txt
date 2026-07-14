@@ -1,0 +1,29 @@
+﻿code   size       issues / name
+S1a     900x4200 BANNER_TALL:4.67               VMAX?쇱씠吏?<<<
+S1W     555x1110 BANNER_TALL:2.00               ?뚮뱶 <<<
+S1H     555x1110 BANNER_TALL:2.00               ?ㅻ뱶 <<<
+SM8     700x1880 BANNER_TALL:2.69               ?뚮씪?ㅻ쭏 ?ㅽ뙆??<<<
+SM7     700x2849 BANNER_TALL:4.07,WHITE_FILL:0.49 踰꾩뒪?몄엫?⑺듃 <<<
+SM6b    700x1400 BANNER_TALL:2.00               李쎄났??移대━?ㅻ쭏 <<<
+SM6     700x2145 BANNER_TALL:3.06               ?쒕옒怨ㅼ뒪??<<<
+SM7a    577x577  OK                             GX 諛고?遺?ㅽ듃 REMASTER <<<
+SM4a    577x577  OK                             GX 諛고?遺?ㅽ듃 <<<
+SM2+    646x584  OK                             鍮쏅굹???꾩꽕 <<<
+SM1+    868x1212 OK                             ?덈줈???쒕젴 <<<
+SM1M    465x840  OK                             臾?而щ젆??<<<
+SM1C    465x840  OK                             ??而щ젆??<<<
+CP6     310x280  OK                             20th Anniversary <<<
+XY11   1388x1388 OK                             ??ㅻⅤ???ъ궗 <<<
+XY8a    310x281  OK                             珥덈뒫?μ쓽 ?쒖솗 <<<
+XY9     310x281  OK                             泥쒓났??遺꾨끂 <<<
+XY7     310x281  OK                             諛대뵒?몃쭅 <<<
+XY6     310x281  OK                             ?먮찓?꾨뱶 釉뚮젅?댄겕 <<<
+XY5a    310x281  OK                             媛?댁븘 蹂쇱??대끂 <<<
+XY5b    310x281  OK                             ??대떖?ㅽ넱 <<<
+XY4     310x281  OK                             ?ы?寃뚯씠??<<<
+XY3     310x281  OK                             ?쇱씠吏뺥뵾?ㅽ듃 <<<
+XY2     310x281  OK                             ??쇰뱶 釉붾젅?댁쫰 <<<
+EBB1    310x281  OK                             EX 諛고? 遺?ㅽ듃 <<<
+XY5     310x281  OK                             硫붽컝濡쒖틦??<<<
+XY3a    310x281  OK                             ?뚮씪?ㅻ쭏寃뚯씪 <<<
+BW4     310x281  OK                             ?ㅽ겕?ъ떆 <<<

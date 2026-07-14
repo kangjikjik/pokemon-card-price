@@ -1,0 +1,20 @@
+{
+  "summary": {
+    "sets": 79,
+    "total_cards": 3652,
+    "rr_plus_cards": 3643,
+    "no_image_rr": 0,
+    "bad_name_kr_japanese": 0,
+    "empty_name_kr": 8,
+    "wrong_rarity_rank": 0,
+    "sets_with_rr_issues": 0,
+    "msrp_missing_jp": [],
+    "manual_supplement_sets": [
+      "SM5+",
+      "BW4"
+    ]
+  },
+  "no_image_rr_samples": [],
+  "bad_name_samples": [],
+  "rr_issues": []
+}

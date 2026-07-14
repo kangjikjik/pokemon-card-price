@@ -1,0 +1,120 @@
+﻿
+============================================================
+XY3 ?쇱씠吏뺥뵾?ㅽ듃 collectory=a08a8183-fdb3-4265-aa5a-f2efab9dcdd4
+collectory total=103
+raw rarity: {'C': 48, 'R': 11, 'RR': 6, 'U': 31, 'SR': 7}
+kept(display RR+ logic)=13 skipped=90
+kept by rarity: {'RR': 6, 'SR': 7}
+--- KEPT ---
+  RR   004/096 | raw=RR | ?ㅻ씪?щ줈??EX
+  RR   005/096 | raw=RR | M?ㅻ씪?щ줈??EX
+  RR   020/096 | raw=RR | ?먮퉭援?EX
+  RR   052/096 | raw=RR | 猷⑥뭅由ъ삤 EX
+  RR   053/096 | raw=RR | M猷⑥뭅由ъ삤 EX
+  RR   069/096 | raw=RR | 留앸굹??EX
+  SR   097/096 | raw=SR | ?ㅻ씪?щ줈??EX
+  SR   098/096 | raw=SR | ?먮퉭援?EX
+  SR   099/096 | raw=SR | 猷⑥뭅由ъ삤 EX
+  SR   100/096 | raw=SR | 留앸굹??EX
+  SR   101/096 | raw=SR | 諛고? 由ы룷??
+  SR   102/096 | raw=SR | 肄붾Ⅴ??
+  SR   103/096 | raw=SR | ?붿꽍 ?곌뎄??
+--- SKIP sample (first 30) ---
+  SKIP raw=C    001/096 | 紐⑤떎??
+  SKIP raw=C    002/096 | ?곗툩??
+  SKIP raw=R    003/096 | ?곗툩蹂댄듃
+  SKIP raw=C    006/096 | 踰꾩꽢瑗?
+  SKIP raw=U    007/096 | 由ы뵾??
+  SKIP raw=C    008/096 | 履쇰쭏由?
+  SKIP raw=C    009/096 | ?댁?由щ뜑
+  SKIP raw=C    010/096 | 留덇렇留?
+  SKIP raw=U    011/096 | 留덇렇留덈쾲
+  SKIP raw=C    012/096 | ?꾩감紐?
+  SKIP raw=C    013/096 | ?곸튂肄?
+  SKIP raw=R    014/096 | 踰덉튂肄?
+  SKIP raw=C    015/096 | 諛쒖콡??
+  SKIP raw=C    016/096 | ?덈쪠梨숈씠
+  SKIP raw=R    017/096 | 媛뺤콡??
+  SKIP raw=U    018/096 | ?뺢뎄由?
+  SKIP raw=U    019/096 | 湲?덉씠?쒖븘
+  SKIP raw=C    021/096 | 肄붽퀬誘?
+  SKIP raw=U    022/096 | ?곕쿋??
+  SKIP raw=C    023/096 | ?꾩쿋??
+  SKIP raw=R    024/096 | 釉붾줈?ㅽ꽣
+  SKIP raw=C    025/096 | ?꾨쭏猷⑥뒪
+  SKIP raw=U    026/096 | ?꾨쭏猷⑤Ⅴ媛
+  SKIP raw=C    027/096 | ?먮젅釉?
+  SKIP raw=U    028/096 | ?먮젅?ㅻ툝
+  SKIP raw=C    029/096 | ?뚮윭??
+  SKIP raw=C    030/096 | 留덉씠??
+  SKIP raw=U    031/096 | 蹂쇳듃濡쒖뒪
+  SKIP raw=U    032/096 | ?곕뜶??
+  SKIP raw=C    033/096 | ?щ━??
+  ... +60
+secret numbers (a>b): 7
+  097/096 SR ?ㅻ씪?щ줈??EX
+  098/096 SR ?먮퉭援?EX
+  099/096 SR 猷⑥뭅由ъ삤 EX
+  100/096 SR 留앸굹??EX
+  101/096 SR 諛고? 由ы룷??
+  102/096 SR 肄붾Ⅴ??
+  103/096 SR ?붿꽍 ?곌뎄??
+DB cards=13 dist={'RR': 6, 'SR': 7}
+  DB RR   004/096 ?ㅻ씪?щ줈??EX
+  DB RR   005/096 M?ㅻ씪?щ줈??EX
+  DB RR   020/096 ?먮퉭援?EX
+  DB RR   052/096 猷⑥뭅由ъ삤 EX
+  DB RR   053/096 M猷⑥뭅由ъ삤 EX
+  DB RR   069/096 留앸굹??EX
+  DB SR   097/096 ?ㅻ씪?щ줈??EX
+  DB SR   098/096 ?먮퉭援?EX
+  DB SR   099/096 猷⑥뭅由ъ삤 EX
+  DB SR   100/096 留앸굹??EX
+  DB SR   101/096 諛고? 由ы룷??
+  DB SR   102/096 肄붾Ⅴ??
+  DB SR   103/096 ?붿꽍 ?곌뎄??
+
+============================================================
+EBB1 EX 諛고? 遺?ㅽ듃 collectory=b72f19e0-54b5-4ebd-aa86-8c845a60d906
+collectory total=94
+raw rarity: {'N': 93, 'UR': 1}
+kept(display RR+ logic)=1 skipped=93
+kept by rarity: {'UR': 1}
+--- KEPT ---
+  UR   094/093 | raw=UR | ?덉떆?쇰Т EX
+--- SKIP sample (first 30) ---
+  SKIP raw=N    001/093 | ?⑤떒吏
+  SKIP raw=N    002/093 | 二쇰━鍮꾩?
+  SKIP raw=N    003/093 | ?ㅻ퉬
+  SKIP raw=N    004/093 | ?ㅻ줈??
+  SKIP raw=N    005/093 | ?먮Ⅴ蹂?
+  SKIP raw=N    006/093 | ?먮Ⅴ荑?
+  SKIP raw=N    007/093 | 紐⑥븘癒?
+  SKIP raw=N    008/093 | 鍮꾨━?붿삩
+  SKIP raw=N    009/093 | ?뚯씠由?
+  SKIP raw=N    010/093 | 由ъ옄??
+  SKIP raw=N    011/093 | 由ъ옄紐?
+  SKIP raw=N    012/093 | ?앹뒪?뚯씪
+  SKIP raw=N    013/093 | ?섏씤?뚯씪
+  SKIP raw=N    014/093 | ?뚯씠??
+  SKIP raw=N    015/093 | 鍮꾪겕?곕땲
+  SKIP raw=N    016/093 | 鍮꾪겕?곕땲 EX
+  SKIP raw=N    017/093 | ?쒓씀由?
+  SKIP raw=N    018/093 | 李⑥삤轅
+  SKIP raw=N    019/093 | ?쇰Т??
+  SKIP raw=N    020/093 | ?덉떆?쇰Т
+  SKIP raw=N    021/093 | ?덉떆?쇰Т EX
+  SKIP raw=N    022/093 | ?됱뼱??
+  SKIP raw=N    023/093 | 媛몃씪?꾩뒪
+  SKIP raw=N    024/093 | ?꾨━??
+  SKIP raw=N    025/093 | ?쎈룄由?
+  SKIP raw=N    026/093 | ?쏀깭??
+  SKIP raw=N    027/093 | ?좏럹瑜댄듃
+  SKIP raw=N    028/093 | ?쇱삤??
+  SKIP raw=N    029/093 | ?섎뙐??
+  SKIP raw=N    030/093 | ?띻??먮퉬
+  ... +63
+secret numbers (a>b): 1
+  094/093 UR ?덉떆?쇰Т EX
+DB cards=1 dist={'UR': 1}
+  DB UR   094/093 ?덉떆?쇰Т EX

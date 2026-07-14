@@ -1,0 +1,902 @@
+[
+  {
+    "code": "MG6",
+    "name": "어비스아이",
+    "url": "https://data1.pokemonkorea.co.kr/2026/06/2026-06-04_13-37-18-11403-1780547838.png",
+    "kind": "remote",
+    "bytes": 523409,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "MG5a",
+    "name": "닌자스피너",
+    "url": "https://data1.pokemonkorea.co.kr/2026/04/2026-04-03_16-28-57-18746-1775201337.png",
+    "kind": "remote",
+    "bytes": 531951,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "MG5",
+    "name": "니힐제로",
+    "url": "https://data1.pokemonkorea.co.kr/2026/02/2026-02-19_10-47-15-17514-1771465635.png",
+    "kind": "remote",
+    "bytes": 529718,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "MG4a",
+    "name": "MEGA 드림 ex",
+    "url": "https://data1.pokemonkorea.co.kr/2025/12/2025-12-30_11-00-50-12772-1767060050.png",
+    "kind": "remote",
+    "bytes": 538233,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "MG4",
+    "name": "인페르노X",
+    "url": "https://data1.pokemonkorea.co.kr/2025/11/2025-11-05_14-18-14-89295-1762319894.png",
+    "kind": "remote",
+    "bytes": 547767,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "MG3a",
+    "name": "메가심포니아",
+    "url": "https://data1.pokemonkorea.co.kr/2025/09/2025-09-04_19-09-25-19256-1756980565.png",
+    "kind": "remote",
+    "bytes": 468602,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "MG3",
+    "name": "메가브레이브",
+    "url": "https://data1.pokemonkorea.co.kr/2025/09/2025-09-04_19-10-23-72498-1756980623.png",
+    "kind": "remote",
+    "bytes": 511479,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "MG2a",
+    "name": "화이트플레어",
+    "url": "https://data1.pokemonkorea.co.kr/2025/07/2025-07-10_16-51-40-50682-1752133900.png",
+    "kind": "remote",
+    "bytes": 422012,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "MG2",
+    "name": "블랙볼트",
+    "url": "https://data1.pokemonkorea.co.kr/2025/07/2025-07-10_16-51-13-13534-1752133873.png",
+    "kind": "remote",
+    "bytes": 424450,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "MG1b",
+    "name": "로켓단의 영광",
+    "url": "https://data1.pokemonkorea.co.kr/2025/05/2025-05-28_17-24-50-69720-1748420690.png",
+    "kind": "remote",
+    "bytes": 455547,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "MG1a",
+    "name": "열풍의 아레나",
+    "url": "https://data1.pokemonkorea.co.kr/2025/04/2025-04-16_17-03-55-83045-1744790635.png",
+    "kind": "remote",
+    "bytes": 552038,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV8a",
+    "name": "배틀파트너즈",
+    "url": "/set-boxes/SV8a.png",
+    "kind": "local",
+    "bytes": 600155,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV8",
+    "name": "테라스탈 페스타 ex",
+    "url": "/set-boxes/SV8.png",
+    "kind": "local",
+    "bytes": 661979,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV7",
+    "name": "초전브레이커",
+    "url": "/set-boxes/SV7.png",
+    "kind": "local",
+    "bytes": 613767,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV6a",
+    "name": "낙원드래고나",
+    "url": "/set-boxes/SV6a.png",
+    "kind": "local",
+    "bytes": 684655,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV6",
+    "name": "스텔라미라클",
+    "url": "/set-boxes/SV6.png",
+    "kind": "local",
+    "bytes": 699676,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV5a",
+    "name": "나이트원더러",
+    "url": "/set-boxes/SV5a.png",
+    "kind": "local",
+    "bytes": 662452,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV5K",
+    "name": "변환의 가면",
+    "url": "https://data1.pokemonkorea.co.kr/2024/06/2024-06-05_18-31-47-27996-1717579907.png",
+    "kind": "remote",
+    "bytes": 1322198,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV5M",
+    "name": "크림슨헤이즈",
+    "url": "https://data1.pokemonkorea.co.kr/2024/05/2024-05-09_10-02-06-92768-1715216526.png",
+    "kind": "remote",
+    "bytes": 664448,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV4x",
+    "name": "사이버저지",
+    "url": "https://data1.pokemonkorea.co.kr/2024/02/2024-02-21_17-45-14-54933-1708505114.png",
+    "kind": "remote",
+    "bytes": 687120,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV4",
+    "name": "와일드포스",
+    "url": "https://data1.pokemonkorea.co.kr/2024/02/2024-02-21_17-50-13-57832-1708505413.png",
+    "kind": "remote",
+    "bytes": 684793,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV4a",
+    "name": "샤이니 트레저 ex",
+    "url": "https://data1.pokemonkorea.co.kr/2024/01/2024-01-16_09-54-41-42969-1705366481.png",
+    "kind": "remote",
+    "bytes": 655276,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV4K",
+    "name": "고대의 포효",
+    "url": "https://data1.pokemonkorea.co.kr/2023/11/2023-11-20_10-30-47-46597-1700443847.png",
+    "kind": "remote",
+    "bytes": 605161,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV4M",
+    "name": "미래의 일섬",
+    "url": "/set-boxes/SV4M.png",
+    "kind": "local",
+    "bytes": 639236,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV3a",
+    "name": "레이징서프",
+    "url": "/set-boxes/SV3a.png",
+    "kind": "local",
+    "bytes": 228363,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV3",
+    "name": "흑염의 지배자",
+    "url": "/set-boxes/SV3.png",
+    "kind": "local",
+    "bytes": 664063,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV2a",
+    "name": "포켓몬 카드 151",
+    "url": "/set-boxes/SV2a.png",
+    "kind": "local",
+    "bytes": 434514,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV2D",
+    "name": "클레이버스트",
+    "url": "/set-boxes/SV2D.png",
+    "kind": "local",
+    "bytes": 643706,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV2P",
+    "name": "스노해저드",
+    "url": "https://data1.pokemonkorea.co.kr/2025/03/2025-03-28_15-16-28-22396-1743142588.png",
+    "kind": "remote",
+    "bytes": 630890,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV1a",
+    "name": "트리플렛 비트",
+    "url": "/set-boxes/SV1a.png",
+    "kind": "local",
+    "bytes": 641873,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV1V",
+    "name": "바이올렛 ex",
+    "url": "https://data1.pokemonkorea.co.kr/2023/03/2023-03-20_13-45-25-84143-1679287525.png",
+    "kind": "remote",
+    "bytes": 701033,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SV1S",
+    "name": "스칼렛 ex",
+    "url": "https://data1.pokemonkorea.co.kr/2023/03/2023-03-20_13-45-32-57955-1679287532.png",
+    "kind": "remote",
+    "bytes": 691762,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S12a",
+    "name": "VSTAR 유니버스",
+    "url": "/set-boxes/S12a.png",
+    "kind": "local",
+    "bytes": 619595,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S12",
+    "name": "패러다임 트리거",
+    "url": "https://data1.pokemonkorea.co.kr/2022/11/2022-11-22_15-43-09-17892-1669099389.png",
+    "kind": "remote",
+    "bytes": 639409,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S11a",
+    "name": "백열의 아르카나",
+    "url": "https://data1.pokemonkorea.co.kr/2022/10/2022-10-06_18-14-27-98043-1665047667.png",
+    "kind": "remote",
+    "bytes": 624834,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S11",
+    "name": "로스트 어비스",
+    "url": "https://data1.pokemonkorea.co.kr/2022/08/2022-08-26_18-33-40-36466-1661506420.png",
+    "kind": "remote",
+    "bytes": 619592,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S10b",
+    "name": "다크 판타스마",
+    "url": "https://data1.pokemonkorea.co.kr/2022/07/2022-07-18_14-26-37-61722-1658121997.png",
+    "kind": "remote",
+    "bytes": 609395,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S10a",
+    "name": "Pokémon GO",
+    "url": "https://data1.pokemonkorea.co.kr/2022/06/2022-06-09_17-20-14-11650-1654762814.png",
+    "kind": "remote",
+    "bytes": 655940,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S9a",
+    "name": "타임 게이저",
+    "url": "https://data1.pokemonkorea.co.kr/2022/05/2022-05-19_17-21-18-82300-1652948478.png",
+    "kind": "remote",
+    "bytes": 638179,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S9",
+    "name": "스페이스 저글러",
+    "url": "https://data1.pokemonkorea.co.kr/2022/05/2022-05-19_17-12-13-51411-1652947933.png",
+    "kind": "remote",
+    "bytes": 637030,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S8",
+    "name": "배틀 리전",
+    "url": "https://data1.pokemonkorea.co.kr/2022/04/2022-04-21_16-42-42-37997-1650526962.png",
+    "kind": "remote",
+    "bytes": 623862,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S8a",
+    "name": "스타버스",
+    "url": "https://data1.pokemonkorea.co.kr/2022/02/2022-02-18_15-17-47-21906-1645165067.png",
+    "kind": "remote",
+    "bytes": 611509,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S8b",
+    "name": "VMAX 클라이맥스",
+    "url": "/set-boxes/S8b.png",
+    "kind": "local",
+    "bytes": 607466,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S7F",
+    "name": "퓨전아츠",
+    "url": "/set-boxes/S7F.png",
+    "kind": "local",
+    "bytes": 532446,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "CEL",
+    "name": "25주년 기념 컬렉션",
+    "url": "/set-boxes/CEL.png",
+    "kind": "local",
+    "bytes": 405639,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S7R",
+    "name": "창공스트림",
+    "url": "/set-boxes/S7R.png",
+    "kind": "local",
+    "bytes": 532902,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S7D",
+    "name": "마천퍼펙트",
+    "url": "/set-boxes/S7D.png",
+    "kind": "local",
+    "bytes": 509507,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S6H",
+    "name": "이브이 히어로즈",
+    "url": "/set-boxes/S6H.png",
+    "kind": "local",
+    "bytes": 587098,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S6G",
+    "name": "칠흑의 가이스트",
+    "url": "https://data1.pokemonkorea.co.kr/2021/05/2021-05-12_15-02-00-25111-1620799320.png",
+    "kind": "remote",
+    "bytes": 581130,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S6L",
+    "name": "백은의 랜스",
+    "url": "https://data1.pokemonkorea.co.kr/2021/05/2021-05-12_15-03-18-80959-1620799398.png",
+    "kind": "remote",
+    "bytes": 559760,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S5F",
+    "name": "쌍벽의 파이터",
+    "url": "https://data1.pokemonkorea.co.kr/2021/04/2021-04-06_17-45-17-83293-1617698717.png",
+    "kind": "remote",
+    "bytes": 647647,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S5S",
+    "name": "일격마스터",
+    "url": "https://data1.pokemonkorea.co.kr/2021/01/2021-01-28_15-19-19-81846-1611814759.png",
+    "kind": "remote",
+    "bytes": 610336,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S5P",
+    "name": "연격마스터",
+    "url": "https://data1.pokemonkorea.co.kr/2021/01/2021-01-28_14-56-56-52460-1611813416.png",
+    "kind": "remote",
+    "bytes": 636162,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S4SV",
+    "name": "샤이니스타 V",
+    "url": "/set-boxes/S4SV.png",
+    "kind": "local",
+    "bytes": 560479,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S4B",
+    "name": "앙천의 볼트태클",
+    "url": "/set-boxes/S4B.png",
+    "kind": "local",
+    "bytes": 550199,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S3H",
+    "name": "전설의 고동",
+    "url": "/set-boxes/S3H.png",
+    "kind": "local",
+    "bytes": 596053,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S3Z",
+    "name": "무한존",
+    "url": "/set-boxes/S3Z.png",
+    "kind": "local",
+    "bytes": 610998,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S2R",
+    "name": "폭염워커",
+    "url": "/set-boxes/S2R.png",
+    "kind": "local",
+    "bytes": 592983,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S2",
+    "name": "반역크래시",
+    "url": "/set-boxes/S2.png",
+    "kind": "local",
+    "bytes": 85326,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S1a",
+    "name": "VMAX라이징",
+    "url": "/set-boxes/S1a.png",
+    "kind": "local",
+    "bytes": 3378516,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S1W",
+    "name": "소드",
+    "url": "/set-boxes/S1W.png",
+    "kind": "local",
+    "bytes": 844504,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "S1H",
+    "name": "실드",
+    "url": "/set-boxes/S1H.png",
+    "kind": "local",
+    "bytes": 686543,
+    "whiteness": 0.002,
+    "issues": []
+  },
+  {
+    "code": "SM12a",
+    "name": "TAG TEAM GX 태그올스타즈",
+    "url": "/set-boxes/SM12a.png",
+    "kind": "local",
+    "bytes": 287501,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM12",
+    "name": "얼터제네시스",
+    "url": "/set-boxes/SM12.png",
+    "kind": "local",
+    "bytes": 98378,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM11b",
+    "name": "드림리그",
+    "url": "/set-boxes/SM11b.png",
+    "kind": "local",
+    "bytes": 94794,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM11a",
+    "name": "미라클트윈",
+    "url": "/set-boxes/SM11a.png",
+    "kind": "local",
+    "bytes": 88462,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM10",
+    "name": "더블블레이즈",
+    "url": "/set-boxes/SM10.png",
+    "kind": "local",
+    "bytes": 87171,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM9",
+    "name": "나이트유니슨",
+    "url": "https://data1.pokemonkorea.co.kr/2019/03/2019-03-19_19-16-12-98877-1552990572.png",
+    "kind": "remote",
+    "bytes": 468378,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM8b",
+    "name": "GX 울트라샤이니",
+    "url": "https://data1.pokemonkorea.co.kr/2019/02/2019-02-28_17-59-01-53294-1551344341.png",
+    "kind": "remote",
+    "bytes": 362743,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM9a",
+    "name": "태그볼트",
+    "url": "/set-boxes/SM9a.png",
+    "kind": "local",
+    "bytes": 93434,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM8",
+    "name": "플라스마 스파크",
+    "url": "/set-boxes/SM8.png",
+    "kind": "local",
+    "bytes": 1222746,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM7",
+    "name": "버스트임팩트",
+    "url": "/set-boxes/SM7.png",
+    "kind": "local",
+    "bytes": 1372354,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM6b",
+    "name": "창공의 카리스마",
+    "url": "/set-boxes/SM6b.png",
+    "kind": "local",
+    "bytes": 679676,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM6a",
+    "name": "챔피언로드",
+    "url": "/set-boxes/SM6a.png",
+    "kind": "local",
+    "bytes": 280407,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM6",
+    "name": "드래곤스톰",
+    "url": "/set-boxes/SM6.png",
+    "kind": "local",
+    "bytes": 840837,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM5+",
+    "name": "금단의 빛",
+    "url": "/set-boxes/SM5plus.png",
+    "kind": "local",
+    "bytes": 319440,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM5",
+    "name": "울트라포스",
+    "url": "/set-boxes/SM5.png",
+    "kind": "local",
+    "bytes": 327938,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM4+",
+    "name": "울트라문",
+    "url": "/set-boxes/SM4plus.png",
+    "kind": "local",
+    "bytes": 431630,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM4",
+    "name": "울트라썬",
+    "url": "/set-boxes/SM4.png",
+    "kind": "local",
+    "bytes": 448323,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM7a",
+    "name": "GX 배틀부스트 REMASTER",
+    "url": "/set-boxes/SM7a.png",
+    "kind": "local",
+    "bytes": 272960,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM4a",
+    "name": "GX 배틀부스트",
+    "url": "/set-boxes/SM4a.png",
+    "kind": "local",
+    "bytes": 272960,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM2+",
+    "name": "빛나는 전설",
+    "url": "/set-boxes/SM2plus.png",
+    "kind": "local",
+    "bytes": 229703,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM1+",
+    "name": "새로운 시련",
+    "url": "/set-boxes/SM1plus.png",
+    "kind": "local",
+    "bytes": 1642696,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM1M",
+    "name": "문 컬렉션",
+    "url": "/set-boxes/SM1M.png",
+    "kind": "local",
+    "bytes": 301251,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "SM1C",
+    "name": "썬 컬렉션",
+    "url": "/set-boxes/SM1C.png",
+    "kind": "local",
+    "bytes": 369481,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "CP6",
+    "name": "20th Anniversary",
+    "url": "/set-boxes/CP6.png",
+    "kind": "local",
+    "bytes": 116151,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "XY11",
+    "name": "타오르는 투사",
+    "url": "/set-boxes/XY11.png",
+    "kind": "local",
+    "bytes": 751188,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "XY8a",
+    "name": "초능력의 제왕",
+    "url": "/set-boxes/XY8a.png",
+    "kind": "local",
+    "bytes": 110956,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "XY9",
+    "name": "천공의 분노",
+    "url": "/set-boxes/XY9.png",
+    "kind": "local",
+    "bytes": 92862,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "XY7",
+    "name": "밴디트링",
+    "url": "/set-boxes/XY7.png",
+    "kind": "local",
+    "bytes": 88365,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "XY6",
+    "name": "에메랄드 브레이크",
+    "url": "/set-boxes/XY6.png",
+    "kind": "local",
+    "bytes": 89503,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "XY5a",
+    "name": "가이아 볼케이노",
+    "url": "/set-boxes/XY5a.png",
+    "kind": "local",
+    "bytes": 164321,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "XY5b",
+    "name": "타이달스톰",
+    "url": "/set-boxes/XY5b.png",
+    "kind": "local",
+    "bytes": 164321,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "XY4",
+    "name": "팬텀게이트",
+    "url": "/set-boxes/XY4.png",
+    "kind": "local",
+    "bytes": 87269,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "XY3",
+    "name": "라이징피스트",
+    "url": "/set-boxes/XY3.png",
+    "kind": "local",
+    "bytes": 82065,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "XY2",
+    "name": "와일드 블레이즈",
+    "url": "/set-boxes/XY2.png",
+    "kind": "local",
+    "bytes": 83636,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "EBB1",
+    "name": "EX 배틀 부스트",
+    "url": "/set-boxes/EBB1.png",
+    "kind": "local",
+    "bytes": 80246,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "XY5",
+    "name": "메갈로캐논",
+    "url": "/set-boxes/XY5.png",
+    "kind": "local",
+    "bytes": 86310,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "XY3a",
+    "name": "플라스마게일",
+    "url": "/set-boxes/XY3a.png",
+    "kind": "local",
+    "bytes": 76649,
+    "whiteness": 0.0,
+    "issues": []
+  },
+  {
+    "code": "BW4",
+    "name": "다크러시",
+    "url": "/set-boxes/BW4.png",
+    "kind": "local",
+    "bytes": 73463,
+    "whiteness": 0.0,
+    "issues": []
+  }
+]

@@ -1,0 +1,72 @@
+[
+  {
+    "id": 3480,
+    "set_code": "SV8",
+    "card_number": "142/187",
+    "name_kr": "밤의 들것",
+    "name_jp": "밤의 들것",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/142_187.webp",
+    "pink_ratio": 0.0,
+    "visual_ace": false
+  },
+  {
+    "id": 3485,
+    "set_code": "SV8",
+    "card_number": "146/187",
+    "name_kr": "카운터 캐처",
+    "name_jp": "카운터 캐처",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/146_187.webp",
+    "pink_ratio": 0.0,
+    "visual_ace": false
+  },
+  {
+    "id": 3488,
+    "set_code": "SV8",
+    "card_number": "148/187",
+    "name_kr": "테크노레이더",
+    "name_jp": "테크노레이더",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/148_187.webp",
+    "pink_ratio": 0.0,
+    "visual_ace": false
+  },
+  {
+    "id": 3493,
+    "set_code": "SV8",
+    "card_number": "152/187",
+    "name_kr": "기술머신 데볼루션",
+    "name_jp": "기술머신 데볼루션",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/152_187.webp",
+    "pink_ratio": 0.018,
+    "visual_ace": false
+  },
+  {
+    "id": 3501,
+    "set_code": "SV8",
+    "card_number": "159/187",
+    "name_kr": "부스트에너지 미래",
+    "name_jp": "부스트에너지 미래",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/159_187.webp",
+    "pink_ratio": 0.011,
+    "visual_ace": false
+  },
+  {
+    "id": 3527,
+    "set_code": "SV8",
+    "card_number": "184/187",
+    "name_kr": "축제회장",
+    "name_jp": "축제회장",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/184_187.webp",
+    "pink_ratio": 0.001,
+    "visual_ace": false
+  },
+  {
+    "id": 3531,
+    "set_code": "SV8",
+    "card_number": "187/187",
+    "name_kr": "제트 에너지",
+    "name_jp": "제트 에너지",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/187_187.webp",
+    "pink_ratio": 0.0,
+    "visual_ace": false
+  }
+]

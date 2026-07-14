@@ -1,0 +1,79 @@
+﻿NO_IMAGE total=21
+  S11     131/100   SSR  湲곕씪?곕굹 VSTAR
+  S12     137/098   SSR  猷④린??VSTAR
+  S2      110/096   HR   ?щ━釉?HR
+  S2      111/096   HR   ?щ━釉?HR
+  S7D     071/067   SR   猷④?猷⑥븫 V
+  S7D     072/067   SR   ?붿뒪?몃굹 V
+  S7F     039/100   RR   裕?V
+  S7F     110/100   SR   ?붿뵿由ъ뒪 V
+  S7F     112/100   SR   ?꾩꽌
+  S7F     113/100   SR   移대??덉쓽 諛섏쭩??
+  S7F     114/100   SR   ?잕낵 ?댄듃? 肄?
+  S7F     115/100   SR   ?곸쭊
+  S7F     117/100   HR   ?꾩뒪硫?VMAX
+  S7F     121/100   HR   ?꾩꽌
+  S7F     123/100   HR   ?잕낵 ?댄듃? 肄?
+  S7F     124/100   HR   ?곸쭊
+  S7F     125/100   UR   蹂댁넚??
+  S7F     126/100   UR   ?뚯썙?쒕툝由?
+  S7F     127/100   UR   ?몃젅?대떇 肄뷀듃
+  S7F     128/100   UR   湲곕낯 ? ?먮꼫吏
+  SM9     069/055   UR   濡쒖폆?⑥쓽 留덉옄??
+NO_IMAGE_BY_SET {'S11': 1, 'S12': 1, 'S7F': 14, 'S7D': 2, 'S2': 2, 'SM9': 1}
+
+MG6_RRPLUS db=45 exp=45 miss=26 extra=26
+MG6 missing expected:
+  MISS 15/081    RR   怨좊옒??ex
+  MISS 26/081    RR   硫붽? ?쒕씪?ㅻ씪 ex
+  MISS 36/081    RR   硫붽? ?밸뜽??ex
+  MISS 4/081     RR   ?쇰??곗뒪 ex
+  MISS 43/081    RR   ?⑦럡??
+  MISS 46/081    RR   硫붽? ?ㅽ겕?쇱씠 ex
+  MISS 53/081    RR   紐⑤Ⅴ?섏퐫 ex
+  MISS 63/081    RR   硫붽? 紐곕뱶瑜?ex
+  MISS 82/081    AR   吏쒕옉??
+  MISS 83/081    AR   移대뵒?섎Ⅴ留?
+  MISS 84/081    AR   肄섏튂
+  MISS 85/081    AR   ?꾨━?덈뒓
+  MISS 86/081    AR   ?щ뜑蹂쇳듃
+  MISS 87/081    AR   ?쇰룄?
+  MISS 88/081    AR   ??瑜?
+  MISS 89/081    AR   ??뒳?쇱씠
+  MISS 90/081    AR   ?먮（??
+  MISS 91/081    AR   諛붾━?깆뒪
+  MISS 92/081    AR   ?뺥겙遺由?
+  MISS 93/081    AR   ?ㅻ쾭??
+  MISS 94/081    SR   ?쇰??곗뒪 ex
+  MISS 95/081    SR   怨좊옒??ex
+  MISS 96/081    SR   硫붽? ?쒕씪?ㅻ씪 ex
+  MISS 97/081    SR   硫붽? ?밸뜽??ex
+  MISS 98/081    SR   ?⑦럡??ex
+  MISS 99/081    SR   硫붽? ?ㅽ겕?쇱씠 ex
+MG6 extra db:
+  EXTRA 004/081   RR   ?쇰??곗뒪 ex
+  EXTRA 015/081   RR   怨좊옒??ex
+  EXTRA 026/081   RR   硫붽??쒕씪?ㅻ씪 ex
+  EXTRA 036/081   RR   硫붽??밸뜽??ex
+  EXTRA 043/081   RR   ?⑦럡??ex
+  EXTRA 046/081   RR   硫붽??ㅽ겕?쇱씠 ex
+  EXTRA 053/081   RR   紐⑤Ⅴ?섏퐫 ex
+  EXTRA 063/081   RR   硫붽?紐곕뱶瑜?ex
+  EXTRA 082/081   AR   吏쒕옉??
+  EXTRA 083/081   AR   移대뵒?섎Ⅴ留?
+  EXTRA 084/081   AR   肄섏튂
+  EXTRA 085/081   AR   ?꾨━?덈뒓
+  EXTRA 086/081   AR   ?щ뜑蹂쇳듃
+  EXTRA 087/081   AR   ?쇰룄?
+  EXTRA 088/081   AR   ??瑜?
+  EXTRA 089/081   AR   ??뒳?쇱씠
+  EXTRA 090/081   AR   ?먮（??
+  EXTRA 091/081   AR   諛붾━?깆뒪
+  EXTRA 092/081   AR   ?뺥겙遺由?
+  EXTRA 093/081   AR   ?ㅻ쾭??
+  EXTRA 094/081   SR   ?쇰??곗뒪 ex
+  EXTRA 095/081   SR   怨좊옒??ex
+  EXTRA 096/081   SR   硫붽??쒕씪?ㅻ씪 ex
+  EXTRA 097/081   SR   硫붽??밸뜽??ex
+  EXTRA 098/081   SR   ?⑦럡??ex
+  EXTRA 099/081   SR   硫붽??ㅽ겕?쇱씠 ex

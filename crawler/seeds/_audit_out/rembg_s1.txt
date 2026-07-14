@@ -1,0 +1,146 @@
+﻿python : Downloading data from 'https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx' to file 'C:\U
+sers\rkdgu\.u2net\u2net.onnx'.
+위치 C:\Users\rkdgu\AppData\Local\Temp\ps-script-830ecc66-7ff1-4655-8ab8-5dc2cc2ba1f4.ps1:102 문자:63
++ ... okemon-card-price\crawler\seeds; python _fix_s1_rembg.py 2>&1 | Out-F ...
++                                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Downloading dat...et\u2net.onnx'.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+=== rembg from poster ===
+
+  0%|                                               | 0.00/176M [00:00<?, ?B/s]
+  1%|3                                     | 1.67M/176M [00:00<00:10, 16.1MB/s]
+  2%|8                                     | 4.01M/176M [00:00<00:08, 20.1MB/s]
+  4%|#3                                    | 6.43M/176M [00:00<00:07, 21.9MB/s]
+  5%|#9                                    | 9.07M/176M [00:00<00:07, 23.6MB/s]
+  6%|##4                                   | 11.4M/176M [00:00<00:10, 15.9MB/s]
+  8%|###                                   | 14.2M/176M [00:00<00:08, 18.9MB/s]
+  9%|###5                                  | 16.5M/176M [00:00<00:08, 19.9MB/s]
+ 11%|####1                                 | 19.2M/176M [00:00<00:07, 21.8MB/s]
+ 12%|####6                                 | 21.5M/176M [00:01<00:09, 16.8MB/s]
+ 14%|#####3                                | 24.7M/176M [00:01<00:07, 20.3MB/s]
+ 16%|#####9                                | 27.8M/176M [00:01<00:06, 22.8MB/s]
+ 17%|######5                               | 30.3M/176M [00:01<00:06, 22.8MB/s]
+ 19%|#######                               | 32.8M/176M [00:01<00:08, 17.3MB/s]
+ 20%|#######6                              | 35.2M/176M [00:01<00:07, 18.8MB/s]
+ 21%|########1                             | 37.6M/176M [00:01<00:06, 19.8MB/s]
+ 23%|########5                             | 39.8M/176M [00:02<00:06, 19.9MB/s]
+ 24%|#########                             | 41.9M/176M [00:02<00:14, 9.08MB/s]
+ 25%|#########6                            | 44.7M/176M [00:02<00:11, 11.7MB/s]
+ 27%|##########2                           | 47.5M/176M [00:02<00:08, 14.5MB/s]
+ 29%|##########9                           | 50.5M/176M [00:02<00:07, 17.4MB/s]
+ 30%|###########4                          | 52.9M/176M [00:03<00:08, 15.1MB/s]
+ 32%|############                          | 55.8M/176M [00:03<00:06, 17.7MB/s]
+ 33%|############6                         | 58.8M/176M [00:03<00:05, 20.5MB/s]
+ 35%|#############3                        | 61.9M/176M [00:03<00:04, 23.0MB/s]
+ 37%|#############9                        | 64.6M/176M [00:03<00:05, 19.2MB/s]
+ 38%|##############5                       | 67.5M/176M [00:03<00:05, 21.4MB/s]
+ 40%|###############2                      | 70.7M/176M [00:03<00:04, 24.0MB/s]
+ 42%|###############8                      | 73.4M/176M [00:04<00:05, 20.0MB/s]
+ 43%|################4                     | 76.3M/176M [00:04<00:04, 22.1MB/s]
+ 45%|#################1                    | 79.3M/176M [00:04<00:04, 23.9MB/s]
+ 47%|#################6                    | 81.9M/176M [00:04<00:03, 24.1MB/s]
+ 48%|##################2                   | 84.5M/176M [00:04<00:04, 19.6MB/s]
+ 49%|##################8                   | 87.1M/176M [00:04<00:04, 21.1MB/s]
+ 51%|###################3                  | 89.4M/176M [00:04<00:04, 20.4MB/s]
+ 52%|###################8                  | 91.9M/176M [00:04<00:03, 21.6MB/s]
+ 54%|####################3                 | 94.4M/176M [00:05<00:04, 18.2MB/s]
+ 55%|####################8                 | 96.5M/176M [00:05<00:04, 18.8MB/s]
+ 56%|#####################4                | 99.4M/176M [00:05<00:03, 21.4MB/s]
+ 58%|######################5                | 102M/176M [00:05<00:03, 21.8MB/s]
+ 59%|#######################1               | 104M/176M [00:05<00:03, 22.9MB/s]
+ 61%|#######################6               | 107M/176M [00:05<00:03, 19.2MB/s]
+ 62%|########################2              | 110M/176M [00:05<00:03, 21.3MB/s]
+ 64%|########################9              | 113M/176M [00:05<00:02, 23.8MB/s]
+ 66%|#########################5             | 115M/176M [00:05<00:03, 20.2MB/s]
+ 67%|##########################1            | 118M/176M [00:06<00:02, 21.7MB/s]
+ 69%|##########################7            | 121M/176M [00:06<00:02, 23.4MB/s]
+ 70%|###########################4           | 124M/176M [00:06<00:02, 24.9MB/s]
+ 72%|############################           | 126M/176M [00:06<00:03, 15.8MB/s]
+ 73%|############################5          | 129M/176M [00:06<00:02, 17.1MB/s]
+ 75%|#############################1         | 132M/176M [00:06<00:02, 20.1MB/s]
+ 77%|#############################9         | 135M/176M [00:06<00:01, 22.9MB/s]
+ 78%|##############################4        | 138M/176M [00:07<00:02, 19.0MB/s]
+ 80%|###############################1       | 141M/176M [00:07<00:01, 21.7MB/s]
+ 82%|###############################8       | 144M/176M [00:07<00:01, 23.4MB/s]
+ 83%|################################4      | 146M/176M [00:07<00:01, 24.3MB/s]
+ 85%|#################################      | 149M/176M [00:07<00:01, 19.0MB/s]
+ 86%|#################################5     | 151M/176M [00:07<00:01, 20.0MB/s]
+ 88%|##################################2    | 155M/176M [00:07<00:00, 23.2MB/s]
+ 89%|##################################8    | 157M/176M [00:08<00:00, 19.7MB/s]
+ 91%|###################################5   | 160M/176M [00:08<00:00, 21.8MB/s]
+ 93%|####################################1  | 163M/176M [00:08<00:00, 23.5MB/s]
+ 94%|####################################8  | 166M/176M [00:08<00:00, 25.1MB/s]
+ 96%|#####################################4 | 169M/176M [00:08<00:00, 18.7MB/s]
+ 97%|#####################################8 | 171M/176M [00:08<00:00, 19.4MB/s]
+ 99%|######################################4| 174M/176M [00:08<00:00, 20.7MB/s]
+  0%|                                               | 0.00/176M [00:00<?, ?B/s]
+100%|#######################################| 176M/176M [00:00<00:00, 1.41TB/s]
+  rembg poster S1W -> (432, 432)
+  rembg poster S1H -> (432, 432)
+=== store scrape ===
+  page 200 https://www.japan2uk.com/products/pokemon-sword-s1w-korean-booster-pack
+  S1W [0] (227, 227) https://www.japan2uk.com/cdn/shop/files/j2uk-mobile-social-facebook.png
+  S1W [1] (227, 227) https://www.japan2uk.com/cdn/shop/files/j2uk-mobile-social-instagram.png
+  S1W [2] (227, 227) https://www.japan2uk.com/cdn/shop/files/j2uk-mobile-social-tiktok.png
+  S1W [3] (227, 227) https://www.japan2uk.com/cdn/shop/files/j2uk-mobile-social-x.png
+  S1W [4] (700, 700) https://www.japan2uk.com/cdn/shop/files/Pokemon_Sword_s1W_Korean_Booster_Pack_700x700.png
+  S1W [6] (227, 227) https://cdn.shopify.com/s/files/1/0498/2122/1019/files/j2uk-mobile-social-instagram.png
+  S1W [7] (227, 227) https://cdn.shopify.com/s/files/1/0498/2122/1019/files/j2uk-mobile-social-facebook.png
+  S1W [8] (227, 227) https://cdn.shopify.com/s/files/1/0498/2122/1019/files/j2uk-mobile-social-x.png
+  S1W [9] (227, 227) https://cdn.shopify.com/s/files/1/0498/2122/1019/files/j2uk-mobile-social-tiktok.png
+  S1W [10] (1200, 1200) https://www.japan2uk.com/cdn/shop/files/Pokemon_Sword_s1W_Korean_Booster_Pack_1200x1200.png
+  S1W [11] (1200, 1200) https://www.japan2uk.com/cdn/shop/files/Pokemon_Sword_s1W_Korean_Booster_Pack_1200x1200_crop_center.
+  S1W [12] (3900, 2195) https://cdn.shopify.com/s/files/1/0498/2122/1019/files/BRICKWALL_BACKGROUND_TILE_V2.png
+  page 200 https://koreantoyshop.com/pokemon-cards-sword-v-booster-1-box-s1w-30-packs-5-cards-sword-shield-korean/
+  S1W [1] (502, 608) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/608x608/products/2162/9451/image__48235__9
+  S1W [2] (280, 150) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/280x150/20260528_0305_04_2_1779905643__652
+  S1W [3] (1056, 1280) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/1280x1280/products/2162/9451/image__48235_
+  S1W [4] (285, 350) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/350x350/products/1924/7904/image__26461.16
+  S1W [5] (350, 350) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/350x350/products/2161/9450/EeveeHeros__194
+  S1W [6] (236, 350) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/350x350/products/2164/9453/image__19140.17
+  S1W [7] (238, 350) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/350x350/products/2165/9454/image__77566.17
+  S1W [8] (239, 350) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/350x350/products/2166/9455/image__40867.17
+  S1W [9] (500, 606) https://cdn11.bigcommerce.com/s-vmqm39m2w5/products/2162/images/9451/image__48235__99779.1700462945.
+  S1W [10] (560, 300) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/560w/20260528_0305_04_2_1779905643__65282.
+  S1W [11] (1056, 1280) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/original/products/2162/9451/image__48235__
+  S1W [12] (80, 98) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/80w/products/1924/7904/image__26461.164139
+  S1W [13] (160, 196) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/160w/products/1924/7904/image__26461.16413
+  S1W [14] (320, 393) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/320w/products/1924/7904/image__26461.16413
+  S1W [15] (544, 668) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/640w/products/1924/7904/image__26461.16413
+  S1W [16] (544, 668) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/960w/products/1924/7904/image__26461.16413
+  S1W [17] (544, 668) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/1280w/products/1924/7904/image__26461.1641
+  S1W [18] (544, 668) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/1920w/products/1924/7904/image__26461.1641
+  S1W [19] (544, 668) https://cdn11.bigcommerce.com/s-vmqm39m2w5/images/stencil/2560w/products/1924/7904/image__26461.1641
+  page 200 https://eclipsegames.com.au/products/pokemon-tcg-s1w-sword-v-booster-box-korean
+  S1W [0] (1225, 90) https://eclipsegames.com.au/cdn/shop/files/sweet_suprise_banner_v3.png
+  S1W [1] (1225, 180) https://eclipsegames.com.au/cdn/shop/files/sweet_suprise_banner_v4.png
+  S1W [2] (1225, 90) https://eclipsegames.com.au/cdn/shop/files/Product_Banner_Desktop_-_1225_x_90_px_2.png
+  S1W [3] (1225, 180) https://eclipsegames.com.au/cdn/shop/files/Eclipse_Product_Banner_Mobile_Slide_1225_x_90_px.png
+  S1W [4] (1225, 90) https://eclipsegames.com.au/cdn/shop/files/Product_Banner_Desktop_-_1225_x_90_px_2aea5c7e-8388-4aa9-
+  S1W [5] (1225, 180) https://eclipsegames.com.au/cdn/shop/files/Untitled_design_32dd0436-ec76-4f00-a049-3194e2447626.png
+  S1W [6] (720, 720) https://eclipsegames.com.au/cdn/shop/files/pokemon-tcg-151-sv2a-booster-box-korean-version-1.webp
+  S1W [7] (1920, 1920) https://eclipsegames.com.au/cdn/shop/files/3fd681e37d454c52f53be77a1fe15c84c8811a12.webp
+  S1W [8] (720, 720) https://eclipsegames.com.au/cdn/shop/files/pokemon-tcg-151-sv2a-booster-box-korean-version-2.webp
+  S1W [9] (1200, 1200) https://eclipsegames.com.au/cdn/shop/files/pokemon-tcg-s1w-sword-v-booster-box-korean-1.webp
+  S1W [10] (1000, 1000) https://eclipsegames.com.au/cdn/shop/files/pokemon-tcg-s1w-sword-v-booster-box-korean-2.webp
+  S1W [12] (1024, 1024) https://eclipsegames.com.au/cdn/shop/files/SecureCheckout.png
+  S1W [13] (1024, 1024) https://eclipsegames.com.au/cdn/shop/files/PriceMatch.png
+  S1W [14] (1024, 1024) https://eclipsegames.com.au/cdn/shop/files/tech_customer_support_widget.webp
+  S1W [15] (1489, 1099) https://eclipsegames.com.au/cdn/shop/files/collect_and_play_pokemon_tcg_with_eclipse_games.webp
+  S1W [16] (1200, 1200) http://eclipsegames.com.au/cdn/shop/files/pokemon-tcg-s1w-sword-v-booster-box-korean-1.webp
+  S1W [18] (800, 400) https://cdnapps.avada.io/joy/settings-branding/templateHeaders/v2/sports.webp
+  page 200 https://www.japan2uk.com/products/pokemon-shield-s1h-korean-booster-pack
+  S1H [0] (227, 227) https://www.japan2uk.com/cdn/shop/files/j2uk-mobile-social-facebook.png
+  S1H [1] (227, 227) https://www.japan2uk.com/cdn/shop/files/j2uk-mobile-social-instagram.png
+  S1H [2] (227, 227) https://www.japan2uk.com/cdn/shop/files/j2uk-mobile-social-tiktok.png
+  S1H [3] (227, 227) https://www.japan2uk.com/cdn/shop/files/j2uk-mobile-social-x.png
+  S1H [4] (700, 700) https://www.japan2uk.com/cdn/shop/files/Pokemon_Shield_s1H_Korean_Booster_Pack_700x700.png
+  S1H [6] (227, 227) https://cdn.shopify.com/s/files/1/0498/2122/1019/files/j2uk-mobile-social-instagram.png
+  S1H [7] (227, 227) https://cdn.shopify.com/s/files/1/0498/2122/1019/files/j2uk-mobile-social-facebook.png
+  S1H [8] (227, 227) https://cdn.shopify.com/s/files/1/0498/2122/1019/files/j2uk-mobile-social-x.png
+  S1H [9] (227, 227) https://cdn.shopify.com/s/files/1/0498/2122/1019/files/j2uk-mobile-social-tiktok.png
+  S1H [10] (1200, 1200) https://www.japan2uk.com/cdn/shop/files/Pokemon_Shield_s1H_Korean_Booster_Pack_1200x1200.png
+  S1H [11] (1200, 1200) https://www.japan2uk.com/cdn/shop/files/Pokemon_Shield_s1H_Korean_Booster_Pack_1200x1200_crop_center
+  S1H [12] (3900, 2195) https://cdn.shopify.com/s/files/1/0498/2122/1019/files/BRICKWALL_BACKGROUND_TILE_V2.png
+  page 404 https://koreantoyshop.com/pokemon-cards-shield-v-booster-1-box-s1h-30-packs-5-cards-sword-shield-korean/

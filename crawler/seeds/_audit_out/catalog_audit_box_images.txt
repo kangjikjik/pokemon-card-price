@@ -1,0 +1,176 @@
+﻿code   | page | stored | page | db | http
+----------------------------------------------------------------------
+MG6    |  907 | Y      | Y    | Y  | Y    | OK (page_diff)
+MG5a   |  887 | Y      | Y    | Y  | Y    | OK (page_diff)
+MG5    |  869 | Y      | Y    | Y  | Y    | OK (page_diff)
+MG4a   |  859 | Y      | Y    | Y  | Y    | OK (page_diff)
+MG4    |  838 | Y      | Y    | Y  | Y    | OK (page_diff)
+MG3a   |  815 | Y      | Y    | Y  | Y    | OK (page_diff)
+MG3    |  816 | Y      | Y    | Y  | Y    | OK (page_diff)
+MG2a   |  796 | Y      | Y    | Y  | Y    | OK (page_diff)
+MG2    |  797 | Y      | Y    | Y  | Y    | OK (page_diff)
+MG1b   |  785 | Y      | Y    | Y  | Y    | OK (page_diff)
+MG1a   |  772 | Y      | Y    | Y  | Y    | OK (page_diff)
+SV8a   |  731 | N      | Y    | Y  | N    | stored_bad,http_err
+SV8    |  708 | N      | Y    | Y  | N    | stored_bad,http_err
+SV7    |  675 | N      | Y    | Y  | N    | stored_bad,http_err
+SV6a   |  668 | N      | Y    | Y  | N    | stored_bad,http_err
+SV6    |  659 | N      | Y    | Y  | N    | stored_bad,http_err
+SV5a   |  650 | N      | Y    | Y  | N    | stored_bad,http_err
+SV5K   |  642 | Y      | Y    | Y  | Y    | OK (page_diff)
+SV5M   |  636 | Y      | Y    | Y  | Y    | OK (page_diff)
+SV4x   |  616 | Y      | Y    | Y  | Y    | OK (page_diff)
+SV4    |  617 | Y      | Y    | Y  | Y    | OK (page_diff)
+SV4a   |  601 | Y      | Y    | Y  | Y    | OK (page_diff)
+SV4K   |  579 | Y      | Y    | Y  | Y    | OK (page_diff)
+SV4M   |  578 | N      | Y    | Y  | N    | stored_bad,http_err
+SV3a   |  573 | N      | Y    | Y  | N    | stored_bad,http_err
+SV3    |  558 | N      | Y    | Y  | N    | stored_bad,http_err
+SV2a   |  551 | N      | Y    | Y  | N    | stored_bad,http_err
+SV2D   |  545 | N      | Y    | Y  | N    | stored_bad,http_err
+SV2P   |  546 | Y      | Y    | Y  | Y    | OK
+SV1a   |  536 | N      | Y    | Y  | N    | stored_bad,http_err
+SV1V   |  522 | Y      | Y    | Y  | Y    | OK
+SV1S   |  523 | Y      | Y    | Y  | Y    | OK
+S12a   |  506 | N      | Y    | Y  | N    | stored_bad,http_err
+S12    |  499 | Y      | Y    | Y  | Y    | OK
+S11a   |  479 | Y      | Y    | Y  | Y    | OK (page_diff)
+S11    |  468 | Y      | Y    | Y  | Y    | OK (page_diff)
+S10b   |  447 | Y      | Y    | Y  | Y    | OK (page_diff)
+S10a   |  439 | Y      | Y    | Y  | Y    | OK (page_diff)
+S9a    |  430 | Y      | Y    | Y  | Y    | OK (page_diff)
+S9     |  429 | Y      | Y    | Y  | Y    | OK (page_diff)
+S8     |  417 | Y      | Y    | Y  | Y    | OK (page_diff)
+S8a    |  407 | Y      | Y    | Y  | Y    | OK (page_diff)
+S8b    |  401 | N      | Y    | Y  | N    | stored_bad,http_err
+S7F    |  392 | N      | Y    | Y  | N    | stored_bad,http_err
+CEL    |  387 | N      | Y    | Y  | N    | stored_bad,http_err
+S7R    |  379 | N      | Y    | Y  | N    | stored_bad,http_err
+S7D    |  380 | N      | Y    | Y  | N    | stored_bad,http_err
+S6H    |  376 | N      | Y    | Y  | N    | stored_bad,http_err
+S6G    |  364 | Y      | Y    | Y  | Y    | OK (page_diff)
+S6L    |  365 | Y      | Y    | Y  | Y    | OK (page_diff)
+S5F    |  360 | Y      | Y    | Y  | Y    | OK (page_diff)
+S5S    |  350 | Y      | Y    | Y  | Y    | OK (page_diff)
+S5P    |  349 | Y      | Y    | Y  | Y    | OK (page_diff)
+S4SV   |  343 | N      | Y    | Y  | N    | stored_bad,http_err
+S4B    |  333 | N      | Y    | Y  | N    | stored_bad,http_err
+S3H    |  320 | N      | Y    | Y  | N    | stored_bad,http_err
+S3Z    |  317 | N      | Y    | Y  | N    | stored_bad,http_err
+S2R    |  313 | N      | Y    | Y  | N    | stored_bad,http_err
+S2     |  297 | N      | Y    | Y  | N    | stored_bad,http_err
+S1a    |  291 | N      | Y    | Y  | N    | stored_bad,http_err
+S1W    |  286 | N      | Y    | Y  | N    | stored_bad,http_err
+S1H    |  286 | N      | Y    | Y  | N    | stored_bad,http_err
+SM12a  |  271 | N      | Y    | Y  | N    | stored_bad,http_err
+SM12   |  261 | N      | Y    | Y  | N    | stored_bad,http_err
+SM11b  |  257 | N      | Y    | Y  | N    | stored_bad,http_err
+SM11a  |  211 | N      | Y    | Y  | N    | stored_bad,http_err
+SM10   |  180 | N      | Y    | Y  | N    | stored_bad,http_err
+SM9    |  166 | N      | Y    | Y  | N    | stored_bad,db!=kr_sets,http_err
+SM8b   |  163 | N      | Y    | Y  | N    | stored_bad,db!=kr_sets,http_err
+SM9a   |  156 | N      | Y    | Y  | N    | stored_bad,http_err
+SM8    |  152 | N      | Y    | Y  | N    | stored_bad,http_err
+SM7    |  149 | N      | Y    | Y  | N    | stored_bad,http_err
+SM6b   |  140 | N      | Y    | Y  | N    | stored_bad,http_err
+SM6a   |  137 | N      | Y    | Y  | N    | stored_bad,http_err
+SM6    |  132 | N      | Y    | Y  | N    | stored_bad,http_err
+SM5+   |  130 | N      | Y    | Y  | N    | stored_bad,http_err
+SM5    |  128 | N      | Y    | Y  | N    | stored_bad,http_err
+SM4+   |  124 | N      | Y    | Y  | N    | stored_bad,http_err
+SM4    |  124 | N      | Y    | Y  | N    | stored_bad,http_err
+
+total=79 ok=34 issues=45
+
+=== issues ===
+SV8a: ['stored_bad', 'http_err']
+  stored: /set-boxes/SV8a.png
+  page:   https://data1.pokemonkorea.co.kr/2025/SV9/sv9_bg_1920%C3%971
+SV8: ['stored_bad', 'http_err']
+  stored: /set-boxes/SV8.png
+  page:   https://data1.pokemonkorea.co.kr/2025/01/2025-01-23_10-22-18
+SV7: ['stored_bad', 'http_err']
+  stored: /set-boxes/SV7.png
+  page:   https://data1.pokemonkorea.co.kr/2024/SV8/sv8_bg_1920%C3%971
+SV6a: ['stored_bad', 'http_err']
+  stored: /set-boxes/SV6a.png
+  page:   https://data1.pokemonkorea.co.kr/2024/SV7a/sv7a_bg_1920횞1080
+SV6: ['stored_bad', 'http_err']
+  stored: /set-boxes/SV6.png
+  page:   https://data1.pokemonkorea.co.kr/2024/SV7/sv7_bg_1920횞1080_R
+SV5a: ['stored_bad', 'http_err']
+  stored: /set-boxes/SV5a.png
+  page:   https://data1.pokemonkorea.co.kr/2024/08/2024-08-12_11-34-10
+SV4M: ['stored_bad', 'http_err']
+  stored: /set-boxes/SV4M.png
+  page:   https://data1.pokemonkorea.co.kr/2024/02/2024-02-07_12-07-38
+SV3a: ['stored_bad', 'http_err']
+  stored: /set-boxes/SV3a.png
+  page:   https://data1.pokemonkorea.co.kr/2023/SV3a/sv3a_bg_1920횞1080
+SV3: ['stored_bad', 'http_err']
+  stored: /set-boxes/SV3.png
+  page:   https://data1.pokemonkorea.co.kr/2023/SV3/sv3_bg_1920횞1080_R
+SV2a: ['stored_bad', 'http_err']
+  stored: /set-boxes/SV2a.png
+  page:   https://data1.pokemonkorea.co.kr/2023/SV2a/sv2a_bg_1920횞1080
+SV2D: ['stored_bad', 'http_err']
+  stored: /set-boxes/SV2D.png
+  page:   https://data1.pokemonkorea.co.kr/2023/06/2023-06-16_15-31-17
+SV1a: ['stored_bad', 'http_err']
+  stored: /set-boxes/SV1a.png
+  page:   https://data1.pokemonkorea.co.kr/2023/05/2023-05-02_09-58-52
+S12a: ['stored_bad', 'http_err']
+  stored: /set-boxes/S12a.png
+  page:   https://data1.pokemonkorea.co.kr/2023/01/2023-01-05_18-05-10
+S8b: ['stored_bad', 'http_err']
+  stored: /set-boxes/S8b.png
+  page:   https://data1.pokemonkorea.co.kr/2022/01/2022-01-27_09-36-14
+S7F: ['stored_bad', 'http_err']
+  stored: /set-boxes/S7F.png
+  page:   https://data1.pokemonkorea.co.kr/2021/11/2021-11-29_08-39-05
+CEL: ['stored_bad', 'http_err']
+  stored: /set-boxes/CEL.png
+  page:   https://data1.pokemonkorea.co.kr/2021/11/2021-11-12_17-35-51
+S7R: ['stored_bad', 'http_err']
+  stored: /set-boxes/S7R.png
+  page:   https://data1.pokemonkorea.co.kr/2021/09/2021-09-08_12-11-05
+S7D: ['stored_bad', 'http_err']
+  stored: /set-boxes/S7D.png
+  page:   https://data1.pokemonkorea.co.kr/2021/09/2021-09-08_12-14-13
+S6H: ['stored_bad', 'http_err']
+  stored: /set-boxes/S6H.png
+  page:   https://data1.pokemonkorea.co.kr/2021/08/2021-08-06_11-27-46
+S4SV: ['stored_bad', 'http_err']
+  stored: /set-boxes/S4SV.png
+  page:   https://data1.pokemonkorea.co.kr/2021/01/2021-01-07_12-01-46
+S4B: ['stored_bad', 'http_err']
+  stored: /set-boxes/S4B.png
+  page:   https://data1.pokemonkorea.co.kr/2021/07/2021-07-30_13-41-27
+S3H: ['stored_bad', 'http_err']
+  stored: /set-boxes/S3H.png
+  page:   https://data1.pokemonkorea.co.kr/2021/07/2021-07-30_13-41-27
+S3Z: ['stored_bad', 'http_err']
+  stored: /set-boxes/S3Z.png
+  page:   https://data1.pokemonkorea.co.kr/2021/07/2021-07-30_13-41-27
+S2R: ['stored_bad', 'http_err']
+  stored: /set-boxes/S2R.png
+  page:   https://data1.pokemonkorea.co.kr/2021/07/2021-07-30_13-41-27
+S2: ['stored_bad', 'http_err']
+  stored: /set-boxes/S2.png
+  page:   https://data1.pokemonkorea.co.kr/2021/07/2021-07-30_13-41-27
+S1a: ['stored_bad', 'http_err']
+  stored: /set-boxes/S1a.png
+  page:   https://data1.pokemonkorea.co.kr/2020/03/2020-03-19_17-16-22
+S1W: ['stored_bad', 'http_err']
+  stored: /set-boxes/S1W.png
+  page:   https://data1.pokemonkorea.co.kr/2021/07/2021-07-30_13-41-27
+S1H: ['stored_bad', 'http_err']
+  stored: /set-boxes/S1H.png
+  page:   https://data1.pokemonkorea.co.kr/2021/07/2021-07-30_13-41-27
+SM12a: ['stored_bad', 'http_err']
+  stored: /set-boxes/SM12a.png
+  page:   https://data1.pokemonkorea.co.kr/2019/12/2019-12-24_19-43-26
+SM12: ['stored_bad', 'http_err']
+  stored: /set-boxes/SM12.png
+  page:   https://data1.pokemonkorea.co.kr/2019/11/gms05_hover.png
+  ... +15 more

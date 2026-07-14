@@ -1,0 +1,44 @@
+﻿missing=21 apply=False
+NOIMG S11    131/100  SSR  湲곕씪?곕굹 VSTAR
+NOIMG S12    137/098  SSR  猷④린??VSTAR
+NOIMG S2     110/096  HR   ?щ━釉?HR
+NOIMG S2     111/096  HR   ?щ━釉?HR
+NOIMG S7D    071/067  SR   猷④?猷⑥븫 V
+NOIMG S7D    072/067  SR   ?붿뒪?몃굹 V
+NOIMG S7F    039/100  RR   裕?V
+NOIMG S7F    110/100  SR   ?붿뵿由ъ뒪 V
+NOIMG S7F    112/100  SR   ?꾩꽌
+NOIMG S7F    113/100  SR   移대??덉쓽 諛섏쭩??
+NOIMG S7F    114/100  SR   ?잕낵 ?댄듃? 肄?
+NOIMG S7F    115/100  SR   ?곸쭊
+NOIMG S7F    117/100  HR   ?꾩뒪硫?VMAX
+NOIMG S7F    121/100  HR   ?꾩꽌
+NOIMG S7F    123/100  HR   ?잕낵 ?댄듃? 肄?
+NOIMG S7F    124/100  HR   ?곸쭊
+NOIMG S7F    125/100  UR   蹂댁넚??
+NOIMG S7F    126/100  UR   ?뚯썙?쒕툝由?
+NOIMG S7F    127/100  UR   ?몃젅?대떇 肄뷀듃
+NOIMG S7F    128/100  UR   湲곕낯 ? ?먮꼫吏
+FIX   SM9    069/055  UR   -> https://cdn.collectory.cc/cards/jp/SM9a/069_055.webp?v=t
+
+fixed_candidates=1 unresolved=20
+  no_candidate_image: S11 131/100 SSR 湲곕씪?곕굹 VSTAR
+  no_candidate_image: S12 137/098 SSR 猷④린??VSTAR
+  no_candidate_image: S2 110/096 HR ?щ━釉?HR
+  no_candidate_image: S2 111/096 HR ?щ━釉?HR
+  no_candidate_image: S7D 071/067 SR 猷④?猷⑥븫 V
+  no_candidate_image: S7D 072/067 SR ?붿뒪?몃굹 V
+  no_candidate_image: S7F 039/100 RR 裕?V
+  no_candidate_image: S7F 110/100 SR ?붿뵿由ъ뒪 V
+  no_candidate_image: S7F 112/100 SR ?꾩꽌
+  no_candidate_image: S7F 113/100 SR 移대??덉쓽 諛섏쭩??
+  no_candidate_image: S7F 114/100 SR ?잕낵 ?댄듃? 肄?
+  no_candidate_image: S7F 115/100 SR ?곸쭊
+  no_candidate_image: S7F 117/100 HR ?꾩뒪硫?VMAX
+  no_candidate_image: S7F 121/100 HR ?꾩꽌
+  no_candidate_image: S7F 123/100 HR ?잕낵 ?댄듃? 肄?
+  no_candidate_image: S7F 124/100 HR ?곸쭊
+  no_candidate_image: S7F 125/100 UR 蹂댁넚??
+  no_candidate_image: S7F 126/100 UR ?뚯썙?쒕툝由?
+  no_candidate_image: S7F 127/100 UR ?몃젅?대떇 肄뷀듃
+  no_candidate_image: S7F 128/100 UR 湲곕낯 ? ?먮꼫吏

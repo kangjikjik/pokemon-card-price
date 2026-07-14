@@ -1,0 +1,314 @@
+[
+  {
+    "id": 4047,
+    "set_code": "SV4",
+    "card_number": "061/071",
+    "name_kr": "각성의 드럼",
+    "name_jp": "각성의 드럼",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024004/061_071ACE.webp"
+  },
+  {
+    "id": 4048,
+    "set_code": "SV4",
+    "card_number": "065/071",
+    "name_kr": "맥시멈 벨트",
+    "name_jp": "맥시멈 벨트",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024004/065_071ACE.webp"
+  },
+  {
+    "id": 4049,
+    "set_code": "SV4",
+    "card_number": "071/071",
+    "name_kr": "네오 어퍼 에너지",
+    "name_jp": "네오 어퍼 에너지",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024004/071_071ACE.webp"
+  },
+  {
+    "id": 4009,
+    "set_code": "SV4x",
+    "card_number": "061/071",
+    "name_kr": "리부트 포드",
+    "name_jp": "리부트 포드",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024005/061_071ACE.webp"
+  },
+  {
+    "id": 4010,
+    "set_code": "SV4x",
+    "card_number": "062/071",
+    "name_kr": "프라임 캐처",
+    "name_jp": "프라임 캐처",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024005/062_071ACE.webp"
+  },
+  {
+    "id": 4011,
+    "set_code": "SV4x",
+    "card_number": "066/071",
+    "name_kr": "히어로 망토",
+    "name_jp": "히어로 망토",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024005/066_071ACE.webp"
+  },
+  {
+    "id": 3803,
+    "set_code": "SV5K",
+    "card_number": "092/101",
+    "name_kr": "시크릿박스",
+    "name_jp": "시크릿박스",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024008/092_101ACE.webp"
+  },
+  {
+    "id": 3804,
+    "set_code": "SV5K",
+    "card_number": "093/101",
+    "name_kr": "포켓몬 회수 사이클론",
+    "name_jp": "포켓몬 회수 사이클론",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024008/093_101ACE.webp"
+  },
+  {
+    "id": 3805,
+    "set_code": "SV5K",
+    "card_number": "101/101",
+    "name_kr": "레거시 에너지",
+    "name_jp": "레거시 에너지",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024008/101_101ACE.webp"
+  },
+  {
+    "id": 3970,
+    "set_code": "SV5M",
+    "card_number": "055/066",
+    "name_kr": "언페어 스탬프",
+    "name_jp": "언페어 스탬프",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024007/055_066ACE.webp"
+  },
+  {
+    "id": 3971,
+    "set_code": "SV5M",
+    "card_number": "058/066",
+    "name_kr": "하이퍼 아로마",
+    "name_jp": "하이퍼 아로마",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024007/058_066ACE.webp"
+  },
+  {
+    "id": 3972,
+    "set_code": "SV5M",
+    "card_number": "060/066",
+    "name_kr": "서바이브 깁스",
+    "name_jp": "서바이브 깁스",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024007/060_066ACE.webp"
+  },
+  {
+    "id": 2664,
+    "set_code": "SV5a",
+    "card_number": "054/064",
+    "name_kr": "데인저러스 레이저",
+    "name_jp": "Dangerous Laser",
+    "image_url": "https://cdn.collectory.cc/cards/jp/SV6a/054_064.webp?v=t"
+  },
+  {
+    "id": 2665,
+    "set_code": "SV5a",
+    "card_number": "055/064",
+    "name_kr": "포켓바이탈A",
+    "name_jp": "Poké-Vital A",
+    "image_url": "https://cdn.collectory.cc/cards/jp/SV6a/055_064.webp?v=t"
+  },
+  {
+    "id": 2666,
+    "set_code": "SV5a",
+    "card_number": "063/064",
+    "name_kr": "뉴트럴센터",
+    "name_jp": "Neutral Center",
+    "image_url": "https://cdn.collectory.cc/cards/jp/SV6a/063_064.webp?v=t"
+  },
+  {
+    "id": 3759,
+    "set_code": "SV6",
+    "card_number": "092/102",
+    "name_kr": "디럭스봄",
+    "name_jp": "디럭스봄",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024012/092_102ACE.webp"
+  },
+  {
+    "id": 3760,
+    "set_code": "SV6",
+    "card_number": "093/102",
+    "name_kr": "반짝이는 결정",
+    "name_jp": "반짝이는 결정",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024012/093_102ACE.webp"
+  },
+  {
+    "id": 3761,
+    "set_code": "SV6",
+    "card_number": "101/102",
+    "name_kr": "위대한 거목",
+    "name_jp": "위대한 거목",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024012/101_102ACE.webp"
+  },
+  {
+    "id": 3718,
+    "set_code": "SV6a",
+    "card_number": "054/064",
+    "name_kr": "메가톤 블로어",
+    "name_jp": "메가톤 블로어",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024016/054_064ACE.webp"
+  },
+  {
+    "id": 3719,
+    "set_code": "SV6a",
+    "card_number": "056/064",
+    "name_kr": "에너지 전송 PRO",
+    "name_jp": "에너지 전송 PRO",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024016/056_064ACE.webp"
+  },
+  {
+    "id": 3720,
+    "set_code": "SV6a",
+    "card_number": "064/064",
+    "name_kr": "리치 에너지",
+    "name_jp": "리치 에너지",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024016/064_064ACE.webp"
+  },
+  {
+    "id": 2764,
+    "set_code": "SV7",
+    "card_number": "095/106",
+    "name_kr": "미라클인터컴",
+    "name_jp": "미라클인터컴",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024017/095_106ACE.webp"
+  },
+  {
+    "id": 2765,
+    "set_code": "SV7",
+    "card_number": "096/106",
+    "name_kr": "스크램블 스위치",
+    "name_jp": "스크램블 스위치",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024017/096_106ACE.webp"
+  },
+  {
+    "id": 2766,
+    "set_code": "SV7",
+    "card_number": "101/106",
+    "name_kr": "희망의 애뮬렛",
+    "name_jp": "희망의 애뮬렛",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024017/101_106ACE.webp"
+  },
+  {
+    "id": 3477,
+    "set_code": "SV8",
+    "card_number": "139/187",
+    "name_kr": "낚싯대MAX",
+    "name_jp": "낚싯대MAX",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/139_187ACE.webp"
+  },
+  {
+    "id": 3480,
+    "set_code": "SV8",
+    "card_number": "142/187",
+    "name_kr": "밤의 들것",
+    "name_jp": "밤의 들것",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/142_187.webp"
+  },
+  {
+    "id": 3485,
+    "set_code": "SV8",
+    "card_number": "146/187",
+    "name_kr": "카운터 캐처",
+    "name_jp": "카운터 캐처",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/146_187.webp"
+  },
+  {
+    "id": 3488,
+    "set_code": "SV8",
+    "card_number": "148/187",
+    "name_kr": "테크노레이더",
+    "name_jp": "테크노레이더",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/148_187.webp"
+  },
+  {
+    "id": 3490,
+    "set_code": "SV8",
+    "card_number": "149/187",
+    "name_kr": "트레져 가젯",
+    "name_jp": "트레져 가젯",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/149_187ACE.webp"
+  },
+  {
+    "id": 3491,
+    "set_code": "SV8",
+    "card_number": "150/187",
+    "name_kr": "포켓몬 회수 사이클론",
+    "name_jp": "포켓몬 회수 사이클론",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/150_187ACE.webp"
+  },
+  {
+    "id": 3492,
+    "set_code": "SV8",
+    "card_number": "151/187",
+    "name_kr": "프라임 캐처",
+    "name_jp": "프라임 캐처",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/151_187ACE.webp"
+  },
+  {
+    "id": 3493,
+    "set_code": "SV8",
+    "card_number": "152/187",
+    "name_kr": "기술머신 데볼루션",
+    "name_jp": "기술머신 데볼루션",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/152_187.webp"
+  },
+  {
+    "id": 3498,
+    "set_code": "SV8",
+    "card_number": "156/187",
+    "name_kr": "맥시멈 벨트",
+    "name_jp": "맥시멈 벨트",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/156_187ACE.webp"
+  },
+  {
+    "id": 3499,
+    "set_code": "SV8",
+    "card_number": "157/187",
+    "name_kr": "반짝이는 결정",
+    "name_jp": "반짝이는 결정",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/157_187ACE.webp"
+  },
+  {
+    "id": 3501,
+    "set_code": "SV8",
+    "card_number": "159/187",
+    "name_kr": "부스트에너지 미래",
+    "name_jp": "부스트에너지 미래",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/159_187.webp"
+  },
+  {
+    "id": 3523,
+    "set_code": "SV8",
+    "card_number": "180/187",
+    "name_kr": "뉴트럴센터",
+    "name_jp": "뉴트럴센터",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/180_187ACE.webp"
+  },
+  {
+    "id": 3527,
+    "set_code": "SV8",
+    "card_number": "184/187",
+    "name_kr": "축제회장",
+    "name_jp": "축제회장",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/184_187.webp"
+  },
+  {
+    "id": 3529,
+    "set_code": "SV8",
+    "card_number": "185/187",
+    "name_kr": "레거시 에너지",
+    "name_jp": "레거시 에너지",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/185_187ACE.webp"
+  },
+  {
+    "id": 3531,
+    "set_code": "SV8",
+    "card_number": "187/187",
+    "name_kr": "제트 에너지",
+    "name_jp": "제트 에너지",
+    "image_url": "https://cdn.collectory.cc/cards/kr/BS2024019/187_187.webp"
+  }
+]
