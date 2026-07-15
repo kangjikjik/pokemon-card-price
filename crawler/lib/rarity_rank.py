@@ -51,8 +51,8 @@ def rank_for_rarity(rarity: str | None) -> int:
 
 
 # web/lib/rarity.ts MIN_DISPLAY_RARITY_RANK 와 동기화
-MIN_DISPLAY_RARITY_RANK = 18
-_SKIP_DISPLAY = {"U", "C", "SA", "N", "CM", "UM", "PROMO", "R", "M", "RR"}
+MIN_DISPLAY_RARITY_RANK = 9
+_SKIP_DISPLAY = {"U", "C", "SA", "N", "CM", "UM", "PROMO", "R", "M"}
 
 
 def is_displayable_rarity(rarity: str | None) -> bool:

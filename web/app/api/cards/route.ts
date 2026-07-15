@@ -56,7 +56,7 @@ export async function GET(request: NextRequest) {
   const rarity = searchParams.get('rarity') || '';
   const sort = searchParams.get('sort') || 'rarity_desc';
   const page = parseInt(searchParams.get('page') || '1');
-  const limit = parseInt(searchParams.get('limit') || '5000');
+  const limit = Math.min(parseInt(searchParams.get('limit') || '10000', 10), 15000);
 
   try {
     const supabase = getSupabaseServer();

@@ -5,6 +5,7 @@ import re
 
 # 검색 시 상위 등급 오염 방지 (SR 검색 시 SAR/MUR 제외)
 RARITY_BLOCK_ABOVE: dict[str, list[str]] = {
+    "RR": ["AR", "SR", "SAR", "MUR", "UR", "HR", "SSR", "CSR", "CHR", "ACE", "RRR", "PR", "TR"],
     "AR": ["SAR", "SR", "MUR", "UR", "HR", "SSR", "CSR"],
     "SR": ["SAR", "MUR", "UR", "HR", "SSR"],
     "SAR": ["MUR", "UR"],
@@ -33,6 +34,7 @@ RARITY_TOKENS: dict[str, list[str]] = {
     "PR": ["PR", "프리즘"],
     "TR": ["TR", "트레이너스레어"],
     "RRR": ["RRR", "트리플레어"],
+    "RR": ["RR", "더블레어", "더블 레어", "더블"],
     "BWR": ["BWR"],
     "MA": ["MA", "메가어택"],
     "FUR": ["FUR"],
@@ -69,6 +71,8 @@ BUNDLE_KEYWORDS = [
 
 SET_CODE_ALIASES: dict[str, list[str]] = {
     "MG6": ["MG6", "M5", "m5", "어비스아이", "어비스 아이"],
+    "MG5": ["MG5", "니힐제로", "니힐 제로"],
+    "MG4a": ["MG4a", "MG4A", "메가드림", "메가 드림", "MEGA 드림", "드림 ex", "MEGA 드림 ex"],
 }
 
 
@@ -117,7 +121,16 @@ def _title_matches_rarity(title: str, rarity: str) -> bool:
     t = title.upper()
     r = rarity.upper()
     tokens = RARITY_TOKENS.get(r, [r])
-    if not any(tok.upper() in t for tok in tokens):
+    has_rarity_token = any(tok.upper() in t for tok in tokens)
+
+    if r == "RR":
+        for block in RARITY_BLOCK_ABOVE.get("RR", []):
+            for bt in RARITY_TOKENS.get(block, [block]):
+                if bt.upper() in t and not has_rarity_token:
+                    return False
+        return True
+
+    if not has_rarity_token:
         if r in ("SR", "SAR", "AR", "MUR", "UR", "ACE"):
             return False
         return True
@@ -213,6 +226,8 @@ def filter_bunjang_listings(
     card_number: str = "",
     set_code: str = "",
     set_name_kr: str = "",
+    *,
+    relaxed: bool = False,
 ) -> list[int]:
     """번개장터 리스팅에서 미등급 한글판 단품 가격만 추출."""
     prices: list[int] = []
@@ -225,21 +240,30 @@ def filter_bunjang_listings(
             continue
         if price < 300 or price > 5_000_000:
             continue
-        if not is_raw_kr_listing(title, name_kr, rarity, card_number, set_code, set_name_kr):
+        if relaxed:
+            if not _title_matches_name(title, name_kr):
+                continue
+            if not _title_matches_rarity(title, rarity):
+                continue
+            if _is_graded_listing(title) or _is_japanese_listing(title):
+                continue
+        elif not is_raw_kr_listing(title, name_kr, rarity, card_number, set_code, set_name_kr):
             continue
         prices.append(price)
     return prices
 
 
 def filter_prices_by_rarity_band(prices: list[int], rarity: str) -> list[int]:
-    """등급별 대략적 가격 밴드 (한글판 미등급 기준)."""
+    """등급별 이상치 필터 (상·하한 강제 아님 — 밴드 밖은 제외 후 없으면 원본)."""
     if not prices:
         return prices
     bands: dict[str, tuple[int, int]] = {
-        "AR": (300, 3_500),
+        "AR": (500, 15_000),
+        "RR": (300, 3_500),
         "SR": (500, 80_000),
         "SAR": (3_000, 250_000),
         "MUR": (30_000, 800_000),
+        "MA": (3_000, 300_000),
         "UR": (3_000, 200_000),
         "ACE": (5_000, 150_000),
         "HR": (3_000, 150_000),
@@ -248,6 +272,29 @@ def filter_prices_by_rarity_band(prices: list[int], rarity: str) -> list[int]:
     lo, hi = bands.get(rarity.upper(), (300, 3_000_000))
     filtered = [p for p in prices if lo <= p <= hi]
     return filtered if filtered else prices
+
+
+def calculate_trimmed_mean(prices: list[int]) -> int:
+    """상·하위 10% 제외 평균 (대표 시세용)."""
+    if not prices:
+        return 0
+    if len(prices) < 3:
+        return sum(prices) // len(prices)
+    sorted_prices = sorted(prices)
+    trim = max(1, len(sorted_prices) // 10)
+    trimmed = sorted_prices[trim:-trim] if len(sorted_prices) > trim * 2 else sorted_prices
+    return sum(trimmed) // len(trimmed)
+
+
+def calculate_conservative_price(prices: list[int]) -> int:
+    """실거래·저가 중심 대표가 (하위 25%ile, 최소 1건)."""
+    if not prices:
+        return 0
+    sorted_prices = sorted(prices)
+    if len(sorted_prices) == 1:
+        return sorted_prices[0]
+    idx = max(0, (len(sorted_prices) - 1) // 4)
+    return sorted_prices[idx]
 
 
 def calculate_median_price(prices: list[int]) -> int:

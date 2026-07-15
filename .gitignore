@@ -28,6 +28,8 @@ web/.next/
 web/out/
 web/.open-next/
 web/.wrangler/
+crawler/seeds/_batch_state.json
+crawler/seeds/_batch_logs/
 web/.vercel/
 *.tsbuildinfo
 web/next-env.d.ts

@@ -35,10 +35,9 @@ LIMIT = 20 if "--all" not in sys.argv else 9999
 APPLY = "--apply" in sys.argv
 
 RR_PLUS = {
-    r for r, rank in {
-        "SR": 19, "AR": 18, "SAR": 22, "UR": 25, "ACE": 26, "BWR": 27, "MUR": 28,
-        "MA": 29, "FUR": 30, "SSR": 24, "HR": 23, "CSR": 21, "PR": 20,
-    }.items()
+    "RR",
+    "SR", "AR", "SAR", "UR", "ACE", "BWR", "MUR", "MA", "FUR",
+    "SSR", "HR", "CSR", "PR",
 }
 
 EX_NAME_RE = re.compile(r"(?:\bEX\b|ＥＸ|(?<![A-Za-z])ex(?![A-Za-z]))")

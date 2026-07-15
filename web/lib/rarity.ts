@@ -2,8 +2,6 @@
 
 export const EXCLUDED_RARITIES = new Set([
   "U", "C", "SA", "N", "CM", "UM", "PROMO", "R",
-  /** 더블레어 — 시세 추적 제외 (고대팩 등 추후 선별 추가) */
-  "RR",
   /** collectory: 마스터볼 미러 카드번호 접미사 M — 공식 단독 등급명 아님 */
   "M",
 ]);
@@ -23,8 +21,8 @@ export function normalizeRarity(rarity: string): string {
   return RARITY_ALIASES[r] ?? r;
 }
 
-/** 목록·검색 노출 최소 등급 — AR(18) 이상 (S·CHR·RRR 등 제외) */
-export const MIN_DISPLAY_RARITY_RANK = 18;
+/** 목록·검색 노출 최소 등급 — RR(9) 이상 히트 카드 */
+export const MIN_DISPLAY_RARITY_RANK = 9;
 
 export function isDisplayableRarity(rarity: string): boolean {
   const norm = normalizeRarity(rarity);
@@ -97,7 +95,7 @@ export const RARITY_RANK: Record<string, number> = {
   P: 0,
 };
 
-const CURRENT_RARITIES = ["SR", "AR", "SAR", "UR", "ACE", "BWR", "MUR", "MA", "FUR"] as const;
+const CURRENT_RARITIES = ["SR", "AR", "SAR", "UR", "ACE", "BWR", "MUR", "MA", "FUR", "RR"] as const;
 const LEGACY_RARITIES = ["SSR", "HR", "CSR", "CHR", "RRR", "A", "K", "S", "PR", "TR", "H", "SL", "P"] as const;
 
 function sortByRarityDesc(codes: readonly string[]): string[] {

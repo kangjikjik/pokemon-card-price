@@ -64,7 +64,7 @@ function CardsPageContent() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/cards?limit=5000&sort=rarity_desc")
+    fetch("/api/cards?limit=10000&sort=rarity_desc")
       .then(r => r.json())
       .then(json => setAllCards(json.data || []))
       .catch(() => setAllCards([]))

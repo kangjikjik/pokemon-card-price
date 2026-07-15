@@ -1,0 +1,33 @@
+# 일일 시세 배치 (3팩) — GitHub Actions
+# Secrets: SUPABASE_URL, SUPABASE_SERVICE_KEY, COLLECTORY_COOKIE (선택)
+# 기본 비활성 — repo Settings > Actions 에서 활성화 후 cron 동작
+
+name: Daily price batch
+
+on:
+  workflow_dispatch:
+  schedule:
+    # UTC 19:00 = KST 04:00
+    - cron: "0 19 * * *"
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install -r crawler/requirements.txt
+
+      - name: Run batch (3 sets)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          COLLECTORY_COOKIE: ${{ secrets.COLLECTORY_COOKIE }}
+        working-directory: crawler/seeds
+        run: python crawl_prices_batch.py --apply
