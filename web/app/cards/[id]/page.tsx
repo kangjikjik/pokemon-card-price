@@ -56,13 +56,14 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  const chartData = card.historyKR.length > 0
-    ? card.historyKR.map((kr, index) => ({
-        name: kr.date,
-        KRW: kr.price,
-        JPY_converted: card.historyJP[index]?.price || 0,
-      }))
-    : [{ name: '데이터 없음', KRW: card.priceKR, JPY_converted: card.priceJP }];
+  const chartData =
+    chartType === 'KR'
+      ? card.historyKR.length > 0
+        ? card.historyKR.map((kr) => ({ name: kr.date, KRW: kr.price }))
+        : [{ name: '데이터 없음', KRW: card.priceKR }]
+      : card.historyJP.length > 0
+        ? card.historyJP.map((jp) => ({ name: jp.date, JPY_converted: jp.price }))
+        : [{ name: '데이터 없음', JPY_converted: card.priceJP }];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">

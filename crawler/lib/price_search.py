@@ -42,12 +42,12 @@ RARITY_TOKENS: dict[str, list[str]] = {
 
 CARD_NUMBER_RE = re.compile(r"\b(\d{1,3}/\d{1,3})\b")
 
-# PSA·BGS 등 등급(슬랩) 카드 제외
+# PSA·BGS·BRG 등 등급(슬랩) 카드 제외
 GRADED_KEYWORDS = [
-    "PSA", "BGS", "CGC", "SGC", "ARS", "GRAAD", "PCG", "HGA", "KSA",
-    "슬랩", "slab", "SLAB", "등급", "감정", "실물감정", "채점",
+    "PSA", "BGS", "CGC", "SGC", "ARS", "GRAAD", "PCG", "HGA", "KSA", "BRG",
+    "슬랩", "slab", "SLAB", "등급", "감정", "실물감정", "채점", "그레이딩",
     "GEM", "gem", "10점", "9.5", "mint10", "MINT10", "NM10",
-    "ss급", "SS급",
+    "ss급", "SS급", "brg10", "brg9", "brg8", "psa10", "psa9",
 ]
 
 # 일본/해외판 (한글판 표기 없으면 제외)

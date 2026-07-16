@@ -1,10 +1,11 @@
 """
-확장팩 시세를 N팩씩 배치로 수집. 상태 파일로 다음 배치 위치를 기억한다.
+확장팩(KR) 시세를 N팩씩 배치로 수집. 상태 파일로 다음 배치 위치를 기억한다.
 
-  python crawl_prices_batch.py --apply              # 다음 배치(기본 3팩)
-  python crawl_prices_batch.py --apply --batch 0    # 첫 배치부터
-  python crawl_prices_batch.py --apply --set MG4    # 특정 팩만
-  python crawl_prices_batch.py --list               # 배치 목록만 출력
+  python crawl_prices_batch.py --apply --daily      # 전 팩 순환(일일 권장)
+  python crawl_prices_batch.py --apply              # RECrawl_FROM 이후 재수집 모드
+  python crawl_prices_batch.py --apply --batch 0
+  python crawl_prices_batch.py --apply --set MG4
+  python crawl_prices_batch.py --list --daily
 
 일일 자동 실행: crawler/scripts/run_daily_price_batch.ps1
 """
@@ -32,8 +33,10 @@ sb = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
 SEEDS_DIR = Path(__file__).resolve().parent
 STATE_PATH = SEEDS_DIR / "_batch_state.json"
 CRAWLER = SEEDS_DIR / "crawl_set_prices.py"
-# 이미 시세 수집 완료한 최신 4팩 — 배치 대상에서 제외
-SKIP_SETS = frozenset({"MG5", "MG4a", "MG6", "MG5a"})
+# 이미 개선 정책으로 시세 수집 완료한 팩 — 배치 대상에서 제외
+SKIP_SETS = frozenset({"MG6", "MG5a"})
+# 이 팩(포함)부터 발매 최신순 전체 재수집 (기존 시세 있어도 덮어씀)
+RECrawl_FROM = "MG5"
 
 
 def get_arg(flag: str, default: str = "") -> str:
@@ -54,11 +57,23 @@ def save_state(state: dict) -> None:
     STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def sets_needing_prices() -> list[tuple[str, str, int, int]]:
-    """(code, name_kr, card_count, priced_count) — 발매일 최신순, SKIP_SETS 제외."""
+def sets_needing_prices(*, daily: bool = False) -> list[tuple[str, str, int, int]]:
+    """(code, name_kr, card_count, priced_count).
+
+    daily=True: featured 전체(collectory 있는 팩) 순환.
+    daily=False: RECrawl_FROM 이후, SKIP_SETS 제외(일회성 재수집).
+    """
     out: list[tuple[str, str, int, int]] = []
+    started = daily
     for s in KR_SETS:
-        if s.code in SKIP_SETS or not s.collectory_id:
+        if not daily and s.code in SKIP_SETS:
+            continue
+        if not started:
+            if s.code == RECrawl_FROM:
+                started = True
+            else:
+                continue
+        if not s.collectory_id:
             continue
         row = sb.table("card_sets").select("id").eq("set_code", s.code).execute().data
         if not row:
@@ -84,8 +99,7 @@ def sets_needing_prices() -> list[tuple[str, str, int, int]]:
             .data
             or []
         )
-        if len(priced) < len(cards):
-            out.append((s.code, s.name_kr, len(cards), len(priced)))
+        out.append((s.code, s.name_kr, len(cards), len(priced)))
     return out
 
 
@@ -94,12 +108,14 @@ def batch_sets(need: list[tuple[str, str, int, int]], batch_size: int) -> list[l
     return [codes[i : i + batch_size] for i in range(0, len(codes), batch_size)]
 
 
-def run_set(set_code: str, apply: bool, thorough: bool) -> int:
+def run_set(set_code: str, apply: bool, thorough: bool, quiet: bool = True) -> int:
     cmd = [sys.executable, str(CRAWLER), "--set", set_code]
     if apply:
         cmd.append("--apply")
     if thorough:
         cmd.append("--thorough")
+    if quiet:
+        cmd.append("--quiet")
     print(f"\n{'=' * 60}\n>>> {set_code} 시작: {' '.join(cmd)}\n{'=' * 60}")
     return subprocess.call(cmd, cwd=str(SEEDS_DIR))
 
@@ -107,17 +123,22 @@ def run_set(set_code: str, apply: bool, thorough: bool) -> int:
 def main() -> None:
     apply = "--apply" in sys.argv
     thorough = "--thorough" in sys.argv
+    quiet = "--verbose" not in sys.argv
     list_only = "--list" in sys.argv
+    daily = "--daily" in sys.argv
     batch_size = int(get_arg("--size", "3") or "3")
     single_set = get_arg("--set", "")
 
-    need = sets_needing_prices()
+    need = sets_needing_prices(daily=daily)
     batches = batch_sets(need, batch_size)
 
     if list_only:
-        skipped = ", ".join(sorted(SKIP_SETS))
-        print(f"제외(시세 완료): {skipped}")
-        print(f"시세 필요: {len(need)}팩, 배치 크기 {batch_size} → {len(batches)}회")
+        if daily:
+            print("모드: 일일 순환 (featured 전체)")
+        else:
+            skipped = ", ".join(sorted(SKIP_SETS))
+            print(f"모드: 재수집 (제외 {skipped}, from {RECrawl_FROM})")
+        print(f"시세 대상: {len(need)}팩, 배치 크기 {batch_size} → {len(batches)}회")
         for i, batch in enumerate(batches):
             detail = [f"{c}({next(n for x, n, _, _ in need if x == c)})" for c in batch]
             print(f"  batch {i}: {', '.join(detail)}")
@@ -145,7 +166,7 @@ def main() -> None:
     failed: list[str] = []
 
     for code in targets:
-        rc = run_set(code, apply=apply, thorough=thorough)
+        rc = run_set(code, apply=apply, thorough=thorough, quiet=quiet)
         if rc != 0:
             failed.append(code)
 

@@ -1,0 +1,66 @@
+"""일별 시세 스냅샷 저장 — 과거 이력 유지, 같은 날(KST)은 교체."""
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+from typing import Any
+
+KST = timezone(timedelta(hours=9))
+
+
+def kst_day_bounds_utc(
+    when: datetime | None = None,
+) -> tuple[str, str]:
+    """KST 기준 당일 [start, end) 를 UTC ISO 문자열로 반환."""
+    now = when or datetime.now(KST)
+    if now.tzinfo is None:
+        now = now.replace(tzinfo=KST)
+    else:
+        now = now.astimezone(KST)
+    start_kst = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_kst = start_kst + timedelta(days=1)
+    start_utc = start_kst.astimezone(timezone.utc)
+    end_utc = end_kst.astimezone(timezone.utc)
+    return (
+        start_utc.isoformat().replace("+00:00", "Z"),
+        end_utc.isoformat().replace("+00:00", "Z"),
+    )
+
+
+def save_daily_snapshots(
+    sb: Any,
+    table: str,
+    card_ids: list[int],
+    rows: list[dict],
+) -> tuple[int, int]:
+    """
+    card_ids 대상 카드의 오늘(KST) 스냅샷만 지우고 rows를 insert.
+    과거 날짜 행은 유지. 오늘 시세가 없는 카드는 과거 이력을 지우지 않음.
+
+    Returns: (deleted_today, inserted)
+    """
+    if not card_ids:
+        return 0, 0
+
+    start, end = kst_day_bounds_utc()
+    deleted = 0
+    # Supabase in_ 필터 한도 대비 배치
+    batch = 200
+    for i in range(0, len(card_ids), batch):
+        chunk = card_ids[i : i + batch]
+        res = (
+            sb.table(table)
+            .delete()
+            .in_("card_id", chunk)
+            .gte("fetched_at", start)
+            .lt("fetched_at", end)
+            .execute()
+        )
+        deleted += len(res.data or [])
+
+    inserted = 0
+    if rows:
+        for i in range(0, len(rows), batch):
+            chunk = rows[i : i + batch]
+            sb.table(table).insert(chunk).execute()
+            inserted += len(chunk)
+    return deleted, inserted

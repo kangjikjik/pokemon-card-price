@@ -29,6 +29,7 @@ web/out/
 web/.open-next/
 web/.wrangler/
 crawler/seeds/_batch_state.json
+crawler/seeds/_batch_state_jp.json
 crawler/seeds/_batch_logs/
 web/.vercel/
 *.tsbuildinfo
@@ -41,6 +42,14 @@ yarn-error.log*
 crawler/seeds/_cel_dbg*.txt
 crawler/seeds/_cel_pack.txt
 crawler/seeds/probe_*_out.txt
+crawler/seeds/_probe_*.py
+crawler/seeds/_yuyu_*.html
+crawler/seeds/_batch_run.log
+crawler/seeds/_reprice_snapshot.json
+crawler/seeds/_tmp_*.json
+crawler/seeds/_mg6_run.txt
+crawler/seeds/daangn_out.html
+crawler/seeds/test_daangn.py
 
 # 선택: node_modules만 제외하고 audit JSON은 추적 (팀 공유용)
 # crawler/seeds/_audit_out/ 는 커밋함 — 감사 리포트 공유

@@ -1,6 +1,6 @@
 /**
  * 시세 계산 유틸리티
- * 번개장터/유유테이에서 수집된 다수의 가격 데이터를 분석합니다.
+ * 일별 스냅샷(prices_kr / prices_jp)에서 최신가·추이·7일 히스토리를 계산합니다.
  */
 
 import { roundDisplayPrice } from './price-round';
@@ -20,19 +20,28 @@ function median(arr: number[]): number {
     : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
 }
 
-/** IQR 방식으로 이상치를 제거합니다. */
-function removeOutliers(arr: number[]): number[] {
-  if (arr.length < 4) return arr;
-  const sorted = [...arr].sort((a, b) => a - b);
-  const q1 = sorted[Math.floor(sorted.length * 0.25)];
-  const q3 = sorted[Math.floor(sorted.length * 0.75)];
-  const iqr = q3 - q1;
-  const lower = q1 - iqr * 1.5;
-  const upper = q3 + iqr * 1.5;
-  return sorted.filter(v => v >= lower && v <= upper);
+/** KST 기준 YYYY-MM-DD */
+function kstDateKey(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
 }
 
-/** 가격 데이터에서 대표 시세(중앙값)와 트렌드를 계산합니다. */
+/** 표시용 MM-DD (KST) */
+function kstDateLabel(iso: string): string {
+  return new Date(iso)
+    .toLocaleDateString('ko-KR', {
+      timeZone: 'Asia/Seoul',
+      month: '2-digit',
+      day: '2-digit',
+    })
+    .replace(/\. /g, '-')
+    .replace('.', '');
+}
+
+/**
+ * 대표 시세 = 가장 최근 수집일 중앙값.
+ * 트렌드 = 최근일 vs 직전 수집일 (%).
+ * history = 최근 7개 수집일.
+ */
 export function calcRepresentativePrice(prices: PriceRecord[]): {
   price: number;
   trend: number;
@@ -40,37 +49,52 @@ export function calcRepresentativePrice(prices: PriceRecord[]): {
 } {
   if (prices.length === 0) return { price: 0, trend: 0, history: [] };
 
-  const all = prices.map(p => p.price_krw).filter(p => p > 0);
-  const cleaned = removeOutliers(all);
-  const price = median(cleaned);
-
-  // 최근 7일치 히스토리 (날짜별 중앙값)
   const byDate: Record<string, number[]> = {};
-  prices.forEach(p => {
-    if (!p.fetched_at) return;
-    const date = new Date(p.fetched_at).toLocaleDateString('ko-KR', {
-      month: '2-digit',
-      day: '2-digit',
-    }).replace(/\. /g, '-').replace('.', '');
-    if (!byDate[date]) byDate[date] = [];
-    byDate[date].push(p.price_krw);
-  });
+  const labels: Record<string, string> = {};
 
-  const history = Object.entries(byDate)
-    .sort(([a], [b]) => a.localeCompare(b))
-    .slice(-7)
-    .map(([date, vals]) => ({ date, price: roundDisplayPrice(median(vals)) }));
+  for (const p of prices) {
+    if (!p.fetched_at || !(p.price_krw > 0)) continue;
+    const key = kstDateKey(p.fetched_at);
+    if (!byDate[key]) byDate[key] = [];
+    byDate[key].push(p.price_krw);
+    labels[key] = kstDateLabel(p.fetched_at);
+  }
 
-  // 트렌드: 최근 절반 vs 이전 절반 비교
+  const sortedKeys = Object.keys(byDate).sort();
+  if (sortedKeys.length === 0) {
+    // fetched_at 없는 레거시 행 — 전체 중앙값
+    const vals = prices.map((p) => p.price_krw).filter((v) => v > 0);
+    const price = roundDisplayPrice(median(vals));
+    return { price, trend: 0, history: price ? [{ date: '시세', price }] : [] };
+  }
+
+  const history = sortedKeys.slice(-7).map((key) => ({
+    date: labels[key],
+    price: roundDisplayPrice(median(byDate[key])),
+  }));
+
+  const price = history[history.length - 1]?.price || 0;
+
   let trend = 0;
-  if (cleaned.length >= 4) {
-    const half = Math.floor(cleaned.length / 2);
-    const older = median(cleaned.slice(0, half));
-    const newer = median(cleaned.slice(half));
+  if (history.length >= 2) {
+    const older = history[history.length - 2].price;
+    const newer = history[history.length - 1].price;
     if (older > 0) {
       trend = Math.round(((newer - older) / older) * 1000) / 10;
     }
   }
 
-  return { price: roundDisplayPrice(price), trend, history };
+  return { price, trend, history };
+}
+
+/** 최신 스냅샷 1건의 price_krw (목록/홈용). */
+export function latestPriceKrw(prices: { price_krw: number; fetched_at?: string }[]): number {
+  if (!prices.length) return 0;
+  let best: { price_krw: number; t: number } | null = null;
+  for (const p of prices) {
+    if (!(p.price_krw > 0)) continue;
+    const t = p.fetched_at ? new Date(p.fetched_at).getTime() : 0;
+    if (!best || t >= best.t) best = { price_krw: p.price_krw, t };
+  }
+  return best?.price_krw || 0;
 }

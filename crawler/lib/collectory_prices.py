@@ -6,6 +6,9 @@ import re
 
 import httpx
 
+from lib.collectory_public import fetch_collectory_public_quotes, public_quotes_to_trades
+from lib.price_resolve import classify_collectory_row
+
 COLLECTORY_API = "https://collectory.cc/api"
 
 # SR 이상: collectory set API price_krw 는 최저가일 수 있음 → 마켓 평균 우선
@@ -214,13 +217,33 @@ def lookup_collectory_card_id(
 
 
 def fetch_collectory_market_price(card_id: str, client: httpx.Client) -> int:
-    """collectory 거래·리스팅 중앙 시세 (collections API variants.priceKrw)."""
-    if not card_id:
+    """collectory 체결 시세 (collections API, 인증 필요)."""
+    sold, _ = fetch_collectory_kr_trades(card_id, client)
+    if not sold:
         return 0
-    cookie = os.getenv("COLLECTORY_COOKIE", "").strip()
+    return sold[0] if len(sold) == 1 else sum(sold) // len(sold)
+
+
+def _collectory_headers() -> dict[str, str]:
     headers = {"User-Agent": "Mozilla/5.0", "Accept": "application/json"}
+    cookie = os.getenv("COLLECTORY_COOKIE", "").strip()
     if cookie:
         headers["Cookie"] = cookie
+    return headers
+
+
+def fetch_collectory_kr_trades(
+    card_id: str,
+    client: httpx.Client,
+) -> tuple[list[int], list[int]]:
+    """collectory KR 체결가·호가 분리. (sold_prices, listing_prices)"""
+    if not card_id:
+        return [], []
+
+    sold: list[int] = []
+    listings: list[int] = []
+    headers = _collectory_headers()
+
     try:
         res = client.get(
             f"{COLLECTORY_API}/collections",
@@ -228,20 +251,87 @@ def fetch_collectory_market_price(card_id: str, client: httpx.Client) -> int:
             headers=headers,
             timeout=20,
         )
-        if res.status_code != 200:
-            return 0
-        variants = res.json().get("variants") or []
-        best = 0
-        best_count = 0
-        for v in variants:
-            price = int(v.get("priceKrw") or 0)
-            count = int(v.get("count") or 0)
-            if price > 0 and count >= best_count:
-                best_count = count
-                best = price
-        return best
+        if res.status_code == 200:
+            for v in res.json().get("variants") or []:
+                grade = str(v.get("grade") or v.get("grading") or "Single")
+                price = int(v.get("priceKrw") or 0)
+                count = int(v.get("count") or 0)
+                if price <= 0 or count <= 0:
+                    continue
+                tier = classify_collectory_row("collectory-market", grade, "")
+                if tier is None:
+                    continue
+                if tier == "sold":
+                    sold.append(price)
+                else:
+                    listings.append(price)
     except Exception:
-        return 0
+        pass
+
+    try:
+        res = client.get(
+            f"{COLLECTORY_API}/collections/sales",
+            params={"cardId": card_id},
+            headers=headers,
+            timeout=20,
+        )
+        if res.status_code == 200:
+            for row in res.json().get("sales") or []:
+                source = str(row.get("source") or row.get("platform") or "")
+                grade = str(row.get("grade") or row.get("grading") or "Single")
+                title = str(row.get("title") or row.get("name") or "")
+                tier = classify_collectory_row(source, grade, title)
+                price = int(row.get("priceKrw") or row.get("price_krw") or row.get("price") or 0)
+                if price <= 0 or tier is None:
+                    continue
+                if tier == "sold":
+                    sold.append(price)
+                else:
+                    listings.append(price)
+    except Exception:
+        pass
+
+    return sold, listings
+
+
+def resolve_market_trades(
+    card_id: str,
+    client: httpx.Client | None,
+    *,
+    preloaded_quotes: list[PriceQuote] | None = None,
+    use_auth_api: bool = True,
+) -> tuple[list[int], list[int], list[str], list[str]]:
+    """체결·호가 통합 — 인증 API(쿠키 있을 때) + 공개 카드 페이지."""
+    sold: list[int] = []
+    listings: list[int] = []
+    sold_src: list[str] = []
+    listing_src: list[str] = []
+
+    cid = (card_id or "").strip()
+    if not cid:
+        return sold, listings, sold_src, listing_src
+
+    has_cookie = bool(os.getenv("COLLECTORY_COOKIE", "").strip())
+    if client is not None and has_cookie and use_auth_api:
+        api_sold, api_listings = fetch_collectory_kr_trades(cid, client)
+        sold.extend(api_sold)
+        listings.extend(api_listings)
+        if api_sold:
+            sold_src.extend(["collectory"] * len(api_sold))
+        if api_listings:
+            listing_src.extend(["collectory"] * len(api_listings))
+
+    if preloaded_quotes is not None:
+        quotes = preloaded_quotes
+    else:
+        quotes = fetch_collectory_public_quotes(cid, client)
+    pub = public_quotes_to_trades(quotes)
+    sold.extend(pub.sold)
+    listings.extend(pub.listings)
+    sold_src.extend(pub.sold_sources)
+    listing_src.extend(pub.listing_sources)
+
+    return sold, listings, sold_src, listing_src
 
 
 def merge_collectory_primary(
@@ -253,44 +343,36 @@ def merge_collectory_primary(
     calculate_conservative_price=None,
     rarity: str = "",
     collectory_market: int = 0,
+    sold_prices: list[int] | None = None,
+    listing_prices: list[int] | None = None,
+    sold_sources: list[str] | None = None,
+    listing_sources: list[str] | None = None,
 ) -> tuple[int, int, int, str]:
-    """대표 시세 = 거래/마켓 평균(상위등급) 또는 중앙값(RR/AR). collectory price_krw 는 최저가 참고."""
-    market = [p for p in market_prices if p > 0]
-    r = (rarity or "").upper()
-    conservative = calculate_conservative_price or calculate_median_price
+    """체결 → 호가 → 미등록. collectory set API 최저가(collectory 인자)는 사용하지 않음."""
+    from lib.price_resolve import resolve_tiered_price
 
-    pool: list[int] = []
-    source_parts: list[str] = []
+    sold: list[int] = list(sold_prices or [])
+    listings: list[int] = list(listing_prices or [])
 
-    # 1) collectory 거래 중앙가 (스크린샷 현재 시세와 동일 소스)
     if collectory_market > 0:
-        pool.append(collectory_market)
-        source_parts.append("collectory-market")
+        sold.append(collectory_market)
 
-    pool.extend(market)
-    if market:
-        source_parts.append("bunjang")
+    listings.extend(p for p in market_prices if p > 0)
 
-    # 2) set API 최저가 — 마켓 대비 지나치게 낮으면 대표가에서 제외
-    if collectory > 0:
-        ref = calculate_trimmed_mean(market) if market else 0
-        if not market or (ref > 0 and collectory >= ref * 0.65):
-            pool.append(collectory)
-            if "collectory" not in source_parts:
-                source_parts.append("collectory")
+    sold_src = list(sold_sources or [])
+    if sold and not sold_src:
+        sold_src = ["collectory"] * len(sold)
+    listing_src = list(listing_sources or [])
+    if market_prices and not listing_src:
+        listing_src = ["bunjang"] * len(market_prices)
 
-    if not pool:
-        return 0, 0, 0, "none"
-
-    if r == "RR":
-        price = conservative(pool) if len(pool) >= 4 else calculate_median_price(pool)
-    elif r == "AR":
-        price = calculate_median_price(pool)
-    elif r in HIGH_TIER_RARITIES or len(pool) >= 3:
-        price = calculate_trimmed_mean(pool)
-    else:
-        price = calculate_median_price(pool)
-
-    low = min(pool)
-    src = "+".join(dict.fromkeys(source_parts)) or "mixed"
-    return price, low, len(pool), src
+    return resolve_tiered_price(
+        sold,
+        listings,
+        rarity,
+        calculate_median_price=calculate_median_price,
+        calculate_trimmed_mean=calculate_trimmed_mean,
+        calculate_conservative_price=calculate_conservative_price or calculate_median_price,
+        sold_sources=sold_src,
+        listing_sources=listing_src,
+    )

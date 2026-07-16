@@ -13,6 +13,7 @@ import { compareCardsByRarity, isDisplayableRarity } from '@/lib/rarity';
 import { ClickableTableRow } from '@/components/clickable-table-row';
 import { RarityBadge, RegionLabel } from '@/components/ui';
 import { formatKRW } from '@/lib/data';
+import { latestPriceKrw } from '@/lib/price-calc';
 
 export default async function SetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -27,7 +28,7 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
     image_url: '',
     prices_box: [],
   });
-  let cards: { id: number; name_kr: string; name_jp: string; name_en: string; rarity: string; card_number: string; image_color: string; prices_kr: { price_krw: number }[]; prices_jp: { price_krw: number }[] }[] = [];
+  let cards: { id: number; name_kr: string; name_jp: string; name_en: string; rarity: string; card_number: string; image_color: string; prices_kr: { price_krw: number; fetched_at?: string }[]; prices_jp: { price_krw: number; fetched_at?: string }[] }[] = [];
   let usedMock = false;
 
   try {
@@ -42,7 +43,7 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
         .single(),
       supabase
         .from('cards')
-        .select(`id, name_kr, name_jp, name_en, rarity, rarity_rank, image_url, image_color, card_number, prices_kr ( price_krw ), prices_jp ( price_krw )`)
+        .select(`id, name_kr, name_jp, name_en, rarity, rarity_rank, image_url, image_color, card_number, prices_kr ( price_krw, fetched_at ), prices_jp ( price_krw, fetched_at )`)
         .eq('set_id', numericId)
         .order('rarity_rank', { ascending: false })
         .order('card_number', { ascending: true }),
@@ -126,8 +127,8 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
                       </ClickableTableRow>
                     ))
                   : cards.map(card => {
-                      const priceKR = Array.isArray(card.prices_kr) ? card.prices_kr[card.prices_kr.length - 1]?.price_krw || 0 : 0;
-                      const priceJP = Array.isArray(card.prices_jp) ? card.prices_jp[card.prices_jp.length - 1]?.price_krw || 0 : 0;
+                      const priceKR = Array.isArray(card.prices_kr) ? latestPriceKrw(card.prices_kr) : 0;
+                      const priceJP = Array.isArray(card.prices_jp) ? latestPriceKrw(card.prices_jp) : 0;
                       return (
                         <ClickableTableRow key={card.id} href={`/cards/${card.id}`}>
                           <td className="p-4 font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">

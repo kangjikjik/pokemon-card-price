@@ -8,6 +8,7 @@ import { FEATURED_SET_CODES } from '@/lib/constants';
 import { RarityBadge, TrendBadge, CardImage, RegionLabel } from '@/components/ui';
 import { getSetShortName } from '@/lib/set-names';
 import { mapRawSet } from '@/lib/set-map';
+import { latestPriceKrw } from '@/lib/price-calc';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,7 +36,7 @@ async function getHomeData(): Promise<{ cards: Card[]; sets: SetData[] }> {
     const [cardsResult, setsResult] = await Promise.all([
       supabase
         .from('cards')
-        .select(`id, name_kr, name_en, rarity, rarity_rank, image_url, image_color, card_number, card_sets ( id, set_code, name_kr ), prices_kr ( price_krw ), prices_jp ( price_krw )`)
+        .select(`id, name_kr, name_en, rarity, rarity_rank, image_url, image_color, card_number, card_sets ( id, set_code, name_kr ), prices_kr ( price_krw, fetched_at ), prices_jp ( price_krw, fetched_at )`)
         .in('set_id', featuredSetIds)
         .order('rarity_rank', { ascending: false })
         .limit(5),
@@ -50,8 +51,8 @@ async function getHomeData(): Promise<{ cards: Card[]; sets: SetData[] }> {
     if (cardsResult.error || setsResult.error) throw new Error('query error');
 
     const cards: Card[] = (cardsResult.data || []).map(raw => {
-      const pricesKR = Array.isArray(raw.prices_kr) ? raw.prices_kr as { price_krw: number }[] : [];
-      const pricesJP = Array.isArray(raw.prices_jp) ? raw.prices_jp as { price_krw: number }[] : [];
+      const pricesKR = Array.isArray(raw.prices_kr) ? raw.prices_kr as { price_krw: number; fetched_at?: string }[] : [];
+      const pricesJP = Array.isArray(raw.prices_jp) ? raw.prices_jp as { price_krw: number; fetched_at?: string }[] : [];
       const set = (Array.isArray(raw.card_sets) ? raw.card_sets[0] : raw.card_sets) as { id: number; set_code: string; name_kr: string } | null;
       return {
         id: String(raw.id),
@@ -65,8 +66,8 @@ async function getHomeData(): Promise<{ cards: Card[]; sets: SetData[] }> {
         rarityRank: raw.rarity_rank || 0,
         imageUrl: (raw.image_url as string) || '',
         imageColor: (raw.image_color as string) || SET_COLORS[set?.set_code || ''] || 'from-slate-400 to-slate-600',
-        priceKR: pricesKR[pricesKR.length - 1]?.price_krw || 0,
-        priceJP: pricesJP[pricesJP.length - 1]?.price_krw || 0,
+        priceKR: latestPriceKrw(pricesKR),
+        priceJP: latestPriceKrw(pricesJP),
         trendKR: 0, trendJP: 0, historyKR: [], historyJP: [],
       };
     });

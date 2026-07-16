@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS cards (
   created_at   TIMESTAMP DEFAULT NOW()
 );
 
--- 한국판 카드 시세 이력
+-- 한국판 카드 시세 이력 (일별 스냅샷 누적 — 같은 날 재수집은 교체)
 CREATE TABLE IF NOT EXISTS prices_kr (
   id          SERIAL PRIMARY KEY,
   card_id     INTEGER REFERENCES cards(id),
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS prices_kr (
   fetched_at  TIMESTAMP DEFAULT NOW()
 );
 
--- 일본판 카드 시세 이력
+-- 일본판 카드 시세 이력 (일별 스냅샷 누적 — 같은 날 재수집은 교체)
 CREATE TABLE IF NOT EXISTS prices_jp (
   id          SERIAL PRIMARY KEY,
   card_id     INTEGER REFERENCES cards(id),
