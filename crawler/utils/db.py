@@ -11,13 +11,22 @@ load_dotenv()
 _client: Client | None = None
 
 
+def _env(name: str) -> str:
+    return (os.getenv(name) or "").strip().strip('"').strip("'")
+
+
 def get_supabase() -> Client:
     global _client
     if _client is None:
-        url = os.getenv("SUPABASE_URL", "")
-        key = os.getenv("SUPABASE_SERVICE_KEY", "")
+        url = _env("SUPABASE_URL")
+        key = _env("SUPABASE_SERVICE_KEY")
         if not url or not key:
             raise ValueError("SUPABASE_URL 또는 SUPABASE_SERVICE_KEY 환경 변수가 없습니다.")
+        if not url.startswith("https://") or ".supabase.co" not in url:
+            raise ValueError(
+                "SUPABASE_URL 형식이 잘못되었습니다. "
+                "https://YOUR_PROJECT.supabase.co 형태여야 합니다."
+            )
         _client = create_client(url, key)
     return _client
 

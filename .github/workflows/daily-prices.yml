@@ -29,6 +29,12 @@ jobs:
       - name: Install deps
         run: pip install -r crawler/requirements.txt
 
+      - name: Validate Supabase env
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python crawler/scripts/sync_github_secrets.py --check-only
+
       - name: Crawl KR all sets
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -50,6 +56,12 @@ jobs:
 
       - name: Install deps
         run: pip install -r crawler/requirements.txt
+
+      - name: Validate Supabase env
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python crawler/scripts/sync_github_secrets.py --check-only
 
       - name: Crawl JP all sets in groups of five
         env:

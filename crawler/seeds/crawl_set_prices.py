@@ -18,7 +18,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from time import sleep
 
 from dotenv import load_dotenv
-from supabase import create_client
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.stdout.reconfigure(encoding="utf-8")
@@ -49,9 +48,10 @@ from lib.collectory_prices import (  # noqa: E402
     resolve_market_trades,
 )
 from kr_sets import KR_BY_CODE  # noqa: E402
+from utils.db import get_supabase  # noqa: E402
 
 load_dotenv()
-sb = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
+sb = get_supabase()
 
 HEADERS = {
     "User-Agent": (

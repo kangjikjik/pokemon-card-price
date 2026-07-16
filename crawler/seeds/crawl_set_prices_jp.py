@@ -12,7 +12,6 @@ import time
 
 import httpx
 from dotenv import load_dotenv
-from supabase import create_client
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.stdout.reconfigure(encoding="utf-8")
@@ -26,9 +25,10 @@ from lib.yuyutei_prices import (  # noqa: E402
     card_numbers_match,
     fetch_set_listings,
 )
+from utils.db import get_supabase  # noqa: E402
 
 load_dotenv()
-sb = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_SERVICE_KEY"))
+sb = get_supabase()
 
 APPLY = "--apply" in sys.argv
 QUIET = "--quiet" in sys.argv
