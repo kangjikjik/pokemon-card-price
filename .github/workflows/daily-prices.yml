@@ -1,14 +1,14 @@
-# 일일 전 팩 시세 크롤 (KR 79팩 + JP 79팩) — GitHub Actions
+# 일일 전 팩 시세 크롤 — GitHub Actions (수동 실행 전용)
+# collectory / yuyutei 가 클라우드 IP(403)를 차단하므로 cron 비활성화.
+# 일일 자동 실행: Windows 작업 PokemonCardPrice-DailyBatch (로컬 PC)
 # Secrets: SUPABASE_URL, SUPABASE_SERVICE_KEY, COLLECTORY_COOKIE (선택)
-# repo Settings > Actions 활성화 후 cron 동작
 
 name: Daily price batch
 
 on:
   workflow_dispatch:
-  schedule:
-    # UTC 15:00 = KST 00:00 (자정)
-    - cron: "0 15 * * *"
+  # schedule disabled — cloud runners get 403 from collectory/yuyutei
+  # - cron: "0 15 * * *"
 
 concurrency:
   group: daily-price-crawl
