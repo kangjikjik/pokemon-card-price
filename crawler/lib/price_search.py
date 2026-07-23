@@ -65,9 +65,19 @@ BUNDLE_KEYWORDS = [
     "박스", "팩", "덱", "앨범", "바인더", "슬리브", "다량", "대량", "통판",
     "일괄", "묶음", "세트", "SET", "set", "종 ", "종(", "종세트",
     "2종", "3종", "4종", "5종", "6종", "7종", "8종", "9종", "10종",
-    "2장", "3장", "4장", "5장", "6장", "7장", "8장", "9장", "10장",
     "장세트", "장 팝", "장팝", "장판",
 ]
+
+# 동일 카드 N장 — 장당 환산 (제외하지 않음)
+QUANTITY_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(r"(\d{1,2})\s*장(?!\s*(?:세트|판|팝|식))"),
+    re.compile(r"(\d{1,2})\s*매"),
+    re.compile(r"(\d{1,2})\s*개"),
+    re.compile(r"[xX×]\s*(\d{1,2})"),
+    re.compile(r"(\d{1,2})\s*[xX×](?!\d)"),
+]
+
+MAX_SINGLE_LISTING_QTY = 20
 
 SET_CODE_ALIASES: dict[str, list[str]] = {
     "MG6": ["MG6", "M5", "m5", "어비스아이", "어비스 아이"],
@@ -106,6 +116,36 @@ def build_search_queries(
         queries.append(f"포켓몬카드 {set_name_kr} {num_short} {r}")
     if set_name_kr and num and r:
         queries.append(f"포켓몬카드 {set_name_kr} {num} {r}")
+
+    seen: set[str] = set()
+    out: list[str] = []
+    for q in queries:
+        q = re.sub(r"\s+", " ", q).strip()
+        if q and q not in seen:
+            seen.add(q)
+            out.append(q)
+    return out
+
+
+def build_promo_search_queries(
+    name_kr: str,
+    card_number: str = "",
+    promo_source: str = "",
+) -> list[str]:
+    """프로모(P) 카드 — 세트명 없이 증정·이벤트 키워드 중심."""
+    base = name_kr.strip()
+    num = card_number.strip()
+    queries: list[str] = [
+        f"포켓몬카드 {base} 프로모 한글",
+        f"포켓몬카드 {base} 프로모",
+        f"포켓몬카드 {base} P 한글",
+        f"포켓몬카드 {base} P",
+    ]
+    if promo_source:
+        queries.append(f"포켓몬카드 {promo_source} {base} 프로모")
+    if num:
+        queries.append(f"포켓몬카드 {base} {num} 프로모")
+        queries.append(f"포켓몬카드 {num} {base} 프로모")
 
     seen: set[str] = set()
     out: list[str] = []
@@ -167,6 +207,52 @@ def _is_japanese_listing(title: str) -> bool:
 def _is_graded_listing(title: str) -> bool:
     t = title.upper()
     return any(k.upper() in t for k in GRADED_KEYWORDS)
+
+
+def parse_listing_quantity(title: str) -> int:
+    """제목에서 동일 카드 매수 추정 (2장·3매·x3 등). 없으면 1."""
+    qty = 1
+    for pat in QUANTITY_PATTERNS:
+        m = pat.search(title)
+        if not m:
+            continue
+        n = int(m.group(1))
+        if 2 <= n <= MAX_SINGLE_LISTING_QTY:
+            qty = max(qty, n)
+    return qty
+
+
+def unit_price_from_listing(
+    total_price: int,
+    title: str,
+    name_kr: str,
+    rarity: str,
+    card_number: str = "",
+    set_code: str = "",
+    set_name_kr: str = "",
+    *,
+    relaxed: bool = False,
+) -> int | None:
+    """총액 → 1장당 가격. 다종·묶음 매물은 None."""
+    if total_price < 300 or total_price > 5_000_000:
+        return None
+    if relaxed:
+        if not _title_matches_name(title, name_kr):
+            return None
+        if not _title_matches_rarity(title, rarity):
+            return None
+        if _is_graded_listing(title) or _is_japanese_listing(title):
+            return None
+        if _is_bundle_listing(title, name_kr):
+            return None
+    elif not is_raw_kr_listing(title, name_kr, rarity, card_number, set_code, set_name_kr):
+        return None
+
+    qty = parse_listing_quantity(title)
+    unit = total_price // qty
+    if unit < 300 or unit > 5_000_000:
+        return None
+    return unit
 
 
 def _is_bundle_listing(title: str, name_kr: str) -> bool:
@@ -247,9 +333,16 @@ def filter_bunjang_listings(
                 continue
             if _is_graded_listing(title) or _is_japanese_listing(title):
                 continue
-        elif not is_raw_kr_listing(title, name_kr, rarity, card_number, set_code, set_name_kr):
+            unit = unit_price_from_listing(
+                price, title, name_kr, rarity, card_number, set_code, set_name_kr, relaxed=True,
+            )
+        else:
+            unit = unit_price_from_listing(
+                price, title, name_kr, rarity, card_number, set_code, set_name_kr,
+            )
+        if unit is None:
             continue
-        prices.append(price)
+        prices.append(unit)
     return prices
 
 

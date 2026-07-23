@@ -157,7 +157,7 @@ KR_SETS: list[KrSet] = [
           "/set-boxes/S7F.png",
           "BS2021018", "d4e370fe-533d-4dfb-aac3-ad8aee5a25ab", 1000, 30000, 392),
     KrSet("CEL", "25주년 기념 컬렉션", "2021-10-22",
-          "/set-boxes/CEL.png",
+          "https://data1.pokemonkorea.co.kr/2021/10/2021-10-15_16-01-01-13015-1634281261.png",
           "BS2021015", "1331f663-aaa7-4a73-b371-4193edad37bf", 2500, 40000, 387),
     KrSet("S7R", "창공스트림", "2021-09-08",
           "/set-boxes/S7R.png",

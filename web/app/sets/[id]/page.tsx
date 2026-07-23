@@ -3,7 +3,7 @@ import { ChevronLeft } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { getSupabaseServer } from '@/lib/supabase';
 import { MOCK_SETS, MOCK_CARDS } from '@/lib/data';
-import { FEATURED_SET_CODES, isFeaturedSetCode } from '@/lib/constants';
+import { FEATURED_SET_CODES, isViewableSetCode } from '@/lib/constants';
 import { mapRawSet } from '@/lib/set-map';
 import { SetPackImage } from '@/components/set-pack-image';
 import { SetBoxPriceRows } from '@/components/set-box-price';
@@ -51,7 +51,7 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
 
     if (setResult.error) throw setResult.error;
     if (!setResult.data) throw new Error('not found');
-    if (!isFeaturedSetCode(setResult.data.set_code)) notFound();
+    if (!isViewableSetCode(setResult.data.set_code)) notFound();
 
     const raw = setResult.data;
     set = mapRawSet(raw);

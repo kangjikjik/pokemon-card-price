@@ -7,7 +7,8 @@ import re
 import httpx
 
 from lib.collectory_public import fetch_collectory_public_quotes, public_quotes_to_trades
-from lib.price_resolve import classify_collectory_row
+from lib.price_resolve import PriceQuote, classify_collectory_row
+from lib.price_search import unit_price_from_listing
 
 COLLECTORY_API = "https://collectory.cc/api"
 
@@ -294,12 +295,36 @@ def fetch_collectory_kr_trades(
     return sold, listings
 
 
+def _normalize_quotes_for_card(quotes: list[PriceQuote], card: dict) -> list[PriceQuote]:
+    """공개 거래내역 — 동일 카드 N장은 장당 가격으로, 다종 묶음은 제외."""
+    if not card:
+        return quotes
+    out: list[PriceQuote] = []
+    for q in quotes:
+        unit = unit_price_from_listing(
+            q.price_krw,
+            q.title or "",
+            card.get("name_kr") or "",
+            card.get("rarity") or "",
+            card.get("card_number") or "",
+            card.get("set_code") or "",
+            card.get("set_name_kr") or "",
+        )
+        if unit is None:
+            continue
+        out.append(
+            PriceQuote(price_krw=unit, tier=q.tier, source=q.source, title=q.title),
+        )
+    return out
+
+
 def resolve_market_trades(
     card_id: str,
     client: httpx.Client | None,
     *,
     preloaded_quotes: list[PriceQuote] | None = None,
     use_auth_api: bool = True,
+    card: dict | None = None,
 ) -> tuple[list[int], list[int], list[str], list[str]]:
     """체결·호가 통합 — 인증 API(쿠키 있을 때) + 공개 카드 페이지."""
     sold: list[int] = []
@@ -325,6 +350,13 @@ def resolve_market_trades(
         quotes = preloaded_quotes
     else:
         quotes = fetch_collectory_public_quotes(cid, client)
+    if card:
+        card_ctx = {
+            **card,
+            "set_code": card.get("set_code") or "",
+            "set_name_kr": card.get("set_name_kr") or "",
+        }
+        quotes = _normalize_quotes_for_card(quotes, card_ctx)
     pub = public_quotes_to_trades(quotes)
     sold.extend(pub.sold)
     listings.extend(pub.listings)

@@ -28,6 +28,10 @@ try {
     "" | Tee-Object -FilePath $LogFile -Append
     "===== JP all 79 sets (5-set groups) =====" | Tee-Object -FilePath $LogFile -Append
     Invoke-Logged @("python", "crawl_prices_batch_jp.py", "--apply", "--all", "--size", "5", "--pause", "60")
+
+    "" | Tee-Object -FilePath $LogFile -Append
+    "===== Promo cards (batch rotate) =====" | Tee-Object -FilePath $LogFile -Append
+    Invoke-Logged @("python", "crawl_promo_prices_batch.py", "--apply")
 } finally {
     Pop-Location
 }

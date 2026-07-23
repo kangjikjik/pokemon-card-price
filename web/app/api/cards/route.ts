@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { MOCK_CARDS, type Card } from '@/lib/data';
-import { calcRepresentativePrice } from '@/lib/price-calc';
-import { FEATURED_SET_CODES } from '@/lib/constants';
+import { calcRepresentativePrice, latestPriceKrw } from '@/lib/price-calc';
+import { CARDS_LIST_SET_CODES } from '@/lib/constants';
 import { getSetShortName } from '@/lib/set-names';
 import { compareCardsByRarity, isDisplayableRarity, normalizeRarity } from '@/lib/rarity';
 import { matchesSearchQuery, searchIlikePattern } from '@/lib/search';
@@ -16,7 +16,7 @@ const SET_COLORS: Record<string, string> = {
   S12:  'from-blue-500 to-indigo-700',
 };
 
-function transformCard(raw: Record<string, unknown>): Card {
+function transformCard(raw: Record<string, unknown>, compact: boolean): Card {
   const pricesKR = Array.isArray(raw.prices_kr)
     ? (raw.prices_kr as { price_krw: number; fetched_at: string }[])
     : [];
@@ -28,6 +28,8 @@ function transformCard(raw: Record<string, unknown>): Card {
 
   const kr = calcRepresentativePrice(pricesKR);
   const jp = calcRepresentativePrice(pricesJP);
+  const priceKR = compact ? latestPriceKrw(pricesKR) : kr.price;
+  const priceJP = compact ? latestPriceKrw(pricesJP) : jp.price;
 
   return {
     id: String(raw.id),
@@ -41,12 +43,12 @@ function transformCard(raw: Record<string, unknown>): Card {
     rarityRank: (raw.rarity_rank as number) || 0,
     imageUrl: (raw.image_url as string) || '',
     imageColor: (raw.image_color as string) || SET_COLORS[set?.set_code || ''] || 'from-slate-400 to-slate-600',
-    priceKR: kr.price,
-    priceJP: jp.price,
+    priceKR,
+    priceJP,
     trendKR: kr.trend,
     trendJP: jp.trend,
-    historyKR: kr.history,
-    historyJP: jp.history,
+    historyKR: compact ? [] : kr.history,
+    historyJP: compact ? [] : jp.history,
   };
 }
 
@@ -55,8 +57,9 @@ export async function GET(request: NextRequest) {
   const q = searchParams.get('q') || '';
   const rarity = searchParams.get('rarity') || '';
   const sort = searchParams.get('sort') || 'rarity_desc';
-  const page = parseInt(searchParams.get('page') || '1');
-  const limit = Math.min(parseInt(searchParams.get('limit') || '10000', 10), 15000);
+  const compact = searchParams.get('compact') !== '0';
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+  const limit = Math.min(Math.max(1, parseInt(searchParams.get('limit') || '40', 10)), 200);
 
   try {
     const supabase = getSupabaseServer();
@@ -64,19 +67,39 @@ export async function GET(request: NextRequest) {
     const { data: featuredSets } = await supabase
       .from('card_sets')
       .select('id')
-      .in('set_code', [...FEATURED_SET_CODES]);
+      .in('set_code', [...CARDS_LIST_SET_CODES]);
 
     const featuredSetIds = (featuredSets || []).map(s => s.id);
     if (featuredSetIds.length === 0) throw new Error('No featured sets');
 
-    const selectFields = `
+    const selectFields = compact
+      ? `
+        id, name_kr, name_jp, name_en, rarity, rarity_rank, image_url, image_color, card_number,
+        card_sets ( id, set_code, name_kr, name_en, name_jp ),
+        prices_kr ( price_krw, fetched_at ),
+        prices_jp ( price_krw, fetched_at )
+      `
+      : `
         id, name_kr, name_jp, name_en, rarity, rarity_rank, image_url, image_color, card_number,
         card_sets ( id, set_code, name_kr, name_en, name_jp ),
         prices_kr ( price_krw, fetched_at ),
         prices_jp ( price_krw, price_jpy, fetched_at )
       `;
 
-    // Supabase는 요청당 최대 1000건 → 전체 조회 시 배치로 가져옴
+    let countQuery = supabase
+      .from('cards')
+      .select('id', { count: 'exact', head: true })
+      .in('set_id', featuredSetIds);
+
+    if (q) {
+      const pattern = searchIlikePattern(q);
+      countQuery = countQuery.or(`name_kr.ilike.${pattern},name_jp.ilike.${pattern},name_en.ilike.${pattern}`);
+    }
+    if (rarity) countQuery = countQuery.eq('rarity', rarity);
+
+    const { count: rawCount, error: countError } = await countQuery;
+    if (countError) throw countError;
+
     const BATCH = 1000;
     const allRows: Record<string, unknown>[] = [];
     let offset = (page - 1) * limit;
@@ -106,17 +129,27 @@ export async function GET(request: NextRequest) {
 
     if (allRows.length === 0) throw new Error('No data');
 
-    const cards = allRows
-      .map(d => transformCard(d))
+    let cards = allRows
+      .map(d => transformCard(d, compact))
       .filter(c => isDisplayableRarity(c.rarity));
 
     if (sort === 'price_asc') cards.sort((a, b) => a.priceKR - b.priceKR);
     else if (sort === 'price_desc') cards.sort((a, b) => b.priceKR - a.priceKR);
+    else if (sort === 'popular') cards.sort((a, b) => b.trendKR - a.trendKR);
     else cards.sort(compareCardsByRarity);
 
-    return NextResponse.json({ data: cards, total: cards.length, source: 'db' });
+    return NextResponse.json(
+      {
+        data: cards,
+        total: rawCount || cards.length,
+        page,
+        limit,
+        source: 'db',
+      },
+      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' } },
+    );
   } catch {
-    const featuredCodes = FEATURED_SET_CODES as readonly string[];
+    const featuredCodes = CARDS_LIST_SET_CODES as readonly string[];
     let result = MOCK_CARDS.filter(c => featuredCodes.includes(c.setCode) && isDisplayableRarity(c.rarity));
     if (q) result = result.filter(c => matchesSearchQuery(c.name, q) || matchesSearchQuery(c.enName, q));
     if (rarity) result = result.filter(c => c.rarity === rarity);

@@ -53,16 +53,22 @@ function clearSavedCardsState() {
   sessionStorage.removeItem(SCROLL_KEY);
 }
 
-export function saveSetsListState(scrollY: number) {
+export function saveSetsListState(scrollY: number, tabId: string) {
   sessionStorage.setItem(SETS_SCROLL_KEY, String(scrollY));
+  sessionStorage.setItem(`${SETS_SCROLL_KEY}-tab`, tabId);
 }
 
-export function useSetsListRestore(ready = true) {
+export function useSetsListRestore(ready = true, setTab?: (tab: any) => void) {
   useEffect(() => {
     if (!ready) return;
     if ("scrollRestoration" in history) {
       history.scrollRestoration = "manual";
     }
+    const savedTab = sessionStorage.getItem(`${SETS_SCROLL_KEY}-tab`);
+    if (savedTab && setTab) {
+      setTab(savedTab);
+    }
+
     const savedScroll = sessionStorage.getItem(SETS_SCROLL_KEY);
     if (!savedScroll) return;
 
@@ -75,10 +81,11 @@ export function useSetsListRestore(ready = true) {
     const t = window.setTimeout(() => {
       restore();
       sessionStorage.removeItem(SETS_SCROLL_KEY);
+      sessionStorage.removeItem(`${SETS_SCROLL_KEY}-tab`);
     }, 150);
 
     return () => window.clearTimeout(t);
-  }, [ready]);
+  }, [ready, setTab]);
 }
 
 export function saveCardsListState(scrollY: number, filters: { rarity: string; sort: string }) {

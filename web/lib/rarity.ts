@@ -24,8 +24,13 @@ export function normalizeRarity(rarity: string): string {
 /** 목록·검색 노출 최소 등급 — RR(9) 이상 히트 카드 */
 export const MIN_DISPLAY_RARITY_RANK = 9;
 
+export function isPromoRarity(rarity: string): boolean {
+  return normalizeRarity(rarity) === "P";
+}
+
 export function isDisplayableRarity(rarity: string): boolean {
   const norm = normalizeRarity(rarity);
+  if (isPromoRarity(norm)) return true;
   if (EXCLUDED_RARITIES.has(norm)) return false;
   return rankForRarity(norm) >= MIN_DISPLAY_RARITY_RANK;
 }
@@ -95,8 +100,8 @@ export const RARITY_RANK: Record<string, number> = {
   P: 0,
 };
 
-const CURRENT_RARITIES = ["SR", "AR", "SAR", "UR", "ACE", "BWR", "MUR", "MA", "FUR", "RR"] as const;
-const LEGACY_RARITIES = ["SSR", "HR", "CSR", "CHR", "RRR", "A", "K", "S", "PR", "TR", "H", "SL", "P"] as const;
+const CURRENT_RARITIES = ["SR", "AR", "SAR", "UR", "ACE", "BWR", "MUR", "MA", "RR"] as const;
+const LEGACY_RARITIES = ["SSR", "HR", "CSR", "CHR", "RRR", "A", "K", "S", "PR", "TR", "P"] as const;
 
 function sortByRarityDesc(codes: readonly string[]): string[] {
   return [...codes].sort((a, b) => (RARITY_RANK[b] ?? -1) - (RARITY_RANK[a] ?? -1));

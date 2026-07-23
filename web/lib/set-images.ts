@@ -44,7 +44,9 @@ export const SET_BOX_IMAGES: Record<string, string> = {
   S8a: 'https://data1.pokemonkorea.co.kr/2022/02/2022-02-18_15-17-47-21906-1645165067.png',
   S8b: '/set-boxes/S8b.png',
   S7F: '/set-boxes/S7F.png',
-  CEL: '/set-boxes/CEL.png',
+  CEL: 'https://data1.pokemonkorea.co.kr/2021/10/2021-10-15_16-01-01-13015-1634281261.png',
+  CEL25PK: '/set-boxes/CEL25PK.png',
+  'PRM-MISC': '/set-boxes/promo-misc.png',
   S7R: '/set-boxes/S7R.png',
   S7D: '/set-boxes/S7D.png',
   S6H: '/set-boxes/S6H.png',
@@ -81,11 +83,14 @@ export const SET_BOX_IMAGES: Record<string, string> = {
   SM4: '/set-boxes/SM4.png',
 };
 
-const BLOCKED = ['pokemontcg.io', '/cards/sets/', 'set-logo', 'pokemon-card.com', 'cdn.collectory.cc/cards/'];
+const BLOCKED = ['pokemontcg.io', '/cards/sets/', 'pokemon-card.com'];
 
 function isBadBoxUrl(url: string): boolean {
   const u = url.toLowerCase();
-  return BLOCKED.some(h => u.includes(h));
+  if (BLOCKED.some(h => u.includes(h))) return true;
+  // 개별 카드 이미지는 박스/팩 썸네일로 쓰지 않음
+  if (u.includes('cdn.collectory.cc/cards/') && !u.includes('/set-logo')) return true;
+  return false;
 }
 
 export function getSetBoxImageUrl(code: string, dbUrl?: string | null): string {

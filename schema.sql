@@ -3,7 +3,7 @@
 -- Supabase 대시보드 > SQL Editor에서 전체 실행하세요.
 -- ============================================================
 
--- 카드 세트(확장팩) 정보
+-- 카드 세트(확장팩·스페셜·기념 등) 정보
 CREATE TABLE IF NOT EXISTS card_sets (
   id          SERIAL PRIMARY KEY,
   set_code    VARCHAR(20) UNIQUE NOT NULL,
@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS card_sets (
   name_en     VARCHAR(100),
   released_at DATE,
   image_url   TEXT,
+  -- expansion | special | promo (웹 constants.ts SPECIAL_SET_CODES 와 동기화)
+  set_kind    VARCHAR(20) DEFAULT 'expansion',
   created_at  TIMESTAMP DEFAULT NOW()
 );
 

@@ -102,7 +102,7 @@ export const CardImage = ({
           src={imageUrl}
           alt={altText}
           fill
-          sizes="(max-width: 768px) 50vw, 300px"
+          sizes="(max-width: 768px) 50vw, 25vw"
           className="object-contain drop-shadow-xl"
           unoptimized
         />

@@ -55,8 +55,14 @@ MIN_DISPLAY_RARITY_RANK = 9
 _SKIP_DISPLAY = {"U", "C", "SA", "N", "CM", "UM", "PROMO", "R", "M"}
 
 
+def is_promo_rarity(rarity: str | None) -> bool:
+    return normalize_rarity(rarity) == "P"
+
+
 def is_displayable_rarity(rarity: str | None) -> bool:
     norm = normalize_rarity(rarity)
+    if is_promo_rarity(norm):
+        return True
     if norm in _SKIP_DISPLAY:
         return False
     return rank_for_rarity(norm) >= MIN_DISPLAY_RARITY_RANK

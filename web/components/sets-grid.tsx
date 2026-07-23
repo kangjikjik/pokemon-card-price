@@ -8,13 +8,14 @@ import { saveSetsListState, useSetsListRestore } from '@/lib/scroll-restore';
 
 type Props = {
   sets: SetData[];
+  currentTabId?: string;
 };
 
-export function SetsGrid({ sets }: Props) {
-  useSetsListRestore(true);
+export function SetsGrid({ sets, currentTabId = 'expansion' }: Props) {
+  // SetsTabs에서 useSetsListRestore를 호출하도록 변경했으므로 여기서는 제거합니다.
 
   const onSetClick = () => {
-    saveSetsListState(window.scrollY);
+    saveSetsListState(window.scrollY, currentTabId);
   };
 
   return (

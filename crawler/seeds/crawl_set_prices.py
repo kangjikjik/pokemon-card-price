@@ -154,6 +154,8 @@ def resolve_collectory_price(
     col_prices: CollectoryPriceIndex | None,
     col_client: httpx.Client | None,
     *,
+    set_code: str = "",
+    set_name_kr: str = "",
     quote_cache: dict[str, list[PriceQuote]] | None = None,
     use_auth_api: bool = True,
 ) -> tuple[list[int], list[int], list[str], list[str]]:
@@ -165,12 +167,24 @@ def resolve_collectory_price(
     name_kr = card["name_kr"] or ""
     rarity = card["rarity"] or ""
     cid = lookup_collectory_card_id(col_prices, card_number, name_kr, rarity)
+    if not cid and (rarity or "").upper() == "P":
+        cid = lookup_collectory_card_id(col_prices, card_number, name_kr, "PROMO")
     if not cid:
         return [], [], [], []
 
     preloaded = quote_cache.get(cid) if quote_cache else None
     return resolve_market_trades(
-        cid, col_client, preloaded_quotes=preloaded, use_auth_api=use_auth_api,
+        cid,
+        col_client,
+        preloaded_quotes=preloaded,
+        use_auth_api=use_auth_api,
+        card={
+            "name_kr": name_kr,
+            "rarity": rarity,
+            "card_number": card_number,
+            "set_code": set_code,
+            "set_name_kr": set_name_kr,
+        },
     )
 
 
@@ -184,6 +198,10 @@ def pick_search_queries(
     fast: bool,
 ) -> list[str]:
     r_upper = rarity.upper()
+    if r_upper == "P":
+        from lib.price_search import build_promo_search_queries
+
+        return build_promo_search_queries(name_kr, card_number, set_name_kr)
     if fast:
         if r_upper in HIGH_TIER_RARITIES:
             return [
@@ -294,7 +312,13 @@ def crawl_card(
     listing_src: list[str] = []
     if col_prices is not None:
         sold_col, listing_col, sold_src, listing_src = resolve_collectory_price(
-            card, col_prices, col_client, quote_cache=quote_cache, use_auth_api=use_auth_api,
+            card,
+            col_prices,
+            col_client,
+            set_code=set_code,
+            set_name_kr=set_name_kr,
+            quote_cache=quote_cache,
+            use_auth_api=use_auth_api,
         )
     if sold_col:
         src_label = "+".join(dict.fromkeys(sold_src)) or "market"
@@ -454,7 +478,13 @@ def main() -> None:
         need_bj: list[dict] = []
         for card in cards:
             sold, listings, _, listing_src = resolve_collectory_price(
-                card, col_prices, col_client, quote_cache=quote_cache, use_auth_api=False,
+                card,
+                col_prices,
+                col_client,
+                set_code=set_code,
+                set_name_kr=set_name,
+                quote_cache=quote_cache,
+                use_auth_api=False,
             )
             if not sold and not _has_bunjang_listing(listing_src):
                 need_bj.append(card)

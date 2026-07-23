@@ -10,7 +10,7 @@ import { SearchBox } from './search-box';
 const NAV_ITEMS = [
   { to: '/', label: '홈' },
   { to: '/cards', label: '모든 카드' },
-  { to: '/sets', label: '확장팩 시세' },
+  { to: '/sets', label: '세트 시세' },
   { to: '/community', label: '커뮤니티' },
 ] as const;
 

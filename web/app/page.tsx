@@ -4,7 +4,7 @@ import { SearchBox } from '@/components/search-box';
 import { getSupabaseServer } from '@/lib/supabase';
 import { MOCK_CARDS, MOCK_SETS, formatKRW, type Card, type SetData } from '@/lib/data';
 import { formatYen } from '@/lib/set-msrp';
-import { FEATURED_SET_CODES } from '@/lib/constants';
+import { FEATURED_SET_CODES, EXPANSION_SET_CODES } from '@/lib/constants';
 import { RarityBadge, TrendBadge, CardImage, RegionLabel } from '@/components/ui';
 import { getSetShortName } from '@/lib/set-names';
 import { mapRawSet } from '@/lib/set-map';
@@ -43,7 +43,7 @@ async function getHomeData(): Promise<{ cards: Card[]; sets: SetData[] }> {
       supabase
         .from('card_sets')
         .select(`id, set_code, name_kr, name_en, released_at, image_url, prices_box ( region, price_krw )`)
-        .in('set_code', [...FEATURED_SET_CODES])
+        .in('set_code', [...EXPANSION_SET_CODES])
         .order('released_at', { ascending: false })
         .limit(4),
     ]);
@@ -212,7 +212,7 @@ export default async function HomePage() {
         {sets.length > 0 && (
           <section>
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">주요 확장팩</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">주요 세트</h2>
               <Link href="/sets" className="text-amber-600 dark:text-amber-500 hover:text-amber-500 dark:hover:text-amber-400 text-sm flex items-center font-medium">
                 전체보기 <ChevronRight className="w-4 h-4" />
               </Link>

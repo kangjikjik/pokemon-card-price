@@ -1,17 +1,14 @@
 "use client";
 
-import { useMemo, useState, useEffect, useLayoutEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Filter, ArrowUpDown, TrendingUp, Loader2, Sparkles } from "lucide-react";
 import { type Card, formatKRW } from "@/lib/data";
 import {
-  compareCardsByRarity,
   getRarityLabel,
-  normalizeRarity,
   RARITY_FILTER_GROUPS,
 } from "@/lib/rarity";
-import { matchesSearchQuery } from "@/lib/search";
 import {
   saveCardsListState,
   readSavedCardsState,
@@ -36,7 +33,10 @@ export default function CardsPage() {
 function CardsPageContent() {
   const searchParams = useSearchParams();
   const searchQuery = (searchParams.get("q") || "").trim().toLowerCase();
-  const [allCards, setAllCards] = useState<Card[]>([]);
+  const [cards, setCards] = useState<Card[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [rarityCounts, setRarityCounts] = useState<Map<string, number>>(new Map());
+  const [statsTotal, setStatsTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [activeRarity, setActiveRarity] = useState("All");
   const [sortBy, setSortBy] = useState<"rarity" | "price" | "popular">("rarity");
@@ -64,53 +64,47 @@ function CardsPageContent() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/cards?limit=10000&sort=rarity_desc")
+    fetch("/api/cards/stats")
       .then(r => r.json())
-      .then(json => setAllCards(json.data || []))
-      .catch(() => setAllCards([]))
-      .finally(() => setLoading(false));
+      .then(json => {
+        const byRarity = json.byRarity || {};
+        setRarityCounts(new Map(Object.entries(byRarity)));
+        setStatsTotal(json.total || 0);
+      })
+      .catch(() => {
+        setRarityCounts(new Map());
+        setStatsTotal(0);
+      });
   }, []);
 
-  const rarityCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const card of allCards) {
-      counts.set(card.rarity, (counts.get(card.rarity) || 0) + 1);
-    }
-    return counts;
-  }, [allCards]);
-
-  const filteredCards = useMemo(() => {
-    const target = normalizeRarity(activeRarity);
-    let cards =
-      activeRarity === "All"
-        ? [...allCards]
-        : allCards.filter(c => normalizeRarity(c.rarity) === target);
-
-    if (searchQuery) {
-      cards = cards.filter(
-        c =>
-          matchesSearchQuery(c.name, searchQuery) ||
-          matchesSearchQuery(c.enName, searchQuery) ||
-          matchesSearchQuery(c.set, searchQuery) ||
-          matchesSearchQuery(c.setCode, searchQuery),
-      );
-    }
-
-    cards.sort((a, b) => {
-      if (sortBy === "price") return b.priceKR - a.priceKR;
-      if (sortBy === "popular") return b.trendKR - a.trendKR;
-      return compareCardsByRarity(a, b);
+  useEffect(() => {
+    setLoading(true);
+    const sortParam =
+      sortBy === "price" ? "price_desc" : sortBy === "popular" ? "popular" : "rarity_desc";
+    const params = new URLSearchParams({
+      page: String(page),
+      limit: String(PAGE_SIZE),
+      sort: sortParam,
+      compact: "1",
     });
+    if (activeRarity !== "All") params.set("rarity", activeRarity);
+    if (searchQuery) params.set("q", searchQuery);
 
-    return cards;
-  }, [allCards, activeRarity, searchQuery, sortBy]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredCards.length / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const pagedCards = useMemo(() => {
-    const start = (currentPage - 1) * PAGE_SIZE;
-    return filteredCards.slice(start, start + PAGE_SIZE);
-  }, [filteredCards, currentPage]);
+    fetch(`/api/cards?${params}`)
+      .then(r => {
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      })
+      .then(json => {
+        setCards(json.data || []);
+        setTotalCount(json.total || 0);
+      })
+      .catch(() => {
+        setCards([]);
+        setTotalCount(0);
+      })
+      .finally(() => setLoading(false));
+  }, [page, activeRarity, sortBy, searchQuery]);
 
   useEffect(() => {
     setPage(1);
@@ -121,6 +115,9 @@ function CardsPageContent() {
   const handleCardClick = () => {
     saveCardsListState(window.scrollY, { rarity: activeRarity, sort: sortBy });
   };
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
 
   const goToPage = (next: number) => {
     const clamped = Math.max(1, Math.min(totalPages, next));
@@ -155,7 +152,7 @@ function CardsPageContent() {
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
               }`}
             >
-              전체 ({allCards.length})
+              전체 ({statsTotal || totalCount})
             </button>
 
             <div className="space-y-5">
@@ -197,7 +194,7 @@ function CardsPageContent() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-              모든 카드 {!loading && `(${filteredCards.length})`}
+              모든 카드 {!loading && `(${totalCount})`}
             </h2>
             {searchQuery && (
               <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
@@ -246,7 +243,7 @@ function CardsPageContent() {
             key={`${activeRarity}-${sortBy}-${listKey}-${currentPage}`}
             className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6"
           >
-            {pagedCards.map(card => (
+            {cards.map(card => (
               <Link
                 href={`/cards/${card.id}`}
                 key={card.id}
@@ -280,20 +277,20 @@ function CardsPageContent() {
                 </div>
               </Link>
             ))}
-            {filteredCards.length === 0 && (
+            {cards.length === 0 && (
               <div className="col-span-full text-center py-16 text-slate-500">
                 {searchQuery ? `「${searchParams.get("q")}」 검색 결과가 없습니다.` : "해당 레어도의 카드가 없습니다."}
               </div>
             )}
           </div>
 
-          {filteredCards.length > 0 && (
+          {totalCount > 0 && (
             <div className="mt-8 flex flex-col gap-4">
               <p className="text-sm text-slate-500 dark:text-slate-400 text-center sm:text-left">
                 {(currentPage - 1) * PAGE_SIZE + 1}
-                –{Math.min(currentPage * PAGE_SIZE, filteredCards.length)}
+                –{Math.min(currentPage * PAGE_SIZE, totalCount)}
                 {" / "}
-                {filteredCards.length}장 · {currentPage}/{totalPages}페이지
+                {totalCount}장 · {currentPage}/{totalPages}페이지
               </p>
               <div className="w-full flex flex-wrap items-center justify-center gap-2 sm:gap-2.5">
                 <button

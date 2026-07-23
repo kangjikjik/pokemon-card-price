@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { MOCK_CARDS, type Card } from '@/lib/data';
 import { calcRepresentativePrice } from '@/lib/price-calc';
-import { FEATURED_SET_CODES, isFeaturedSetCode } from '@/lib/constants';
+import { CARDS_LIST_SET_CODES, FEATURED_SET_CODES, isViewableSetCode } from '@/lib/constants';
 
 const SET_COLORS: Record<string, string> = {
   SV2a: 'from-green-500 to-emerald-700',
@@ -74,14 +74,14 @@ export async function GET(
 
     const setRaw = data.card_sets as { set_code: string } | { set_code: string }[] | null;
     const setCode = (Array.isArray(setRaw) ? setRaw[0] : setRaw)?.set_code || '';
-    if (!isFeaturedSetCode(setCode)) {
+    if (!isViewableSetCode(setCode)) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
     return NextResponse.json({ data: transformCard(data as Record<string, unknown>), source: 'db' });
   } catch {
-    const featuredCodes = FEATURED_SET_CODES as readonly string[];
-    const card = MOCK_CARDS.find(c => c.id === id && featuredCodes.includes(c.setCode));
+    const viewableCodes = CARDS_LIST_SET_CODES as readonly string[];
+    const card = MOCK_CARDS.find(c => c.id === id && viewableCodes.includes(c.setCode));
     if (!card) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     return NextResponse.json({ data: card, source: 'mock' });
   }

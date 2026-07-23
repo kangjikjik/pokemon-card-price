@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { MOCK_SETS, MOCK_CARDS } from '@/lib/data';
-import { isFeaturedSetCode } from '@/lib/constants';
+import { isViewableSetCode } from '@/lib/constants';
 
 export async function GET(
   _request: NextRequest,
@@ -23,7 +23,7 @@ export async function GET(
       .single();
 
     if (setError) throw setError;
-    if (!isFeaturedSetCode(setData.set_code)) {
+    if (!isViewableSetCode(setData.set_code)) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 

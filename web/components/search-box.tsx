@@ -231,7 +231,7 @@ export function SearchBox({
           const active = idx === activeIndex;
           const header =
             idx === firstSetIdx ? (
-              <p className="px-4 pt-3 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wide">확장팩</p>
+              <p className="px-4 pt-3 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wide">세트</p>
             ) : idx === firstCardIdx ? (
               <p className="px-4 pt-3 pb-1 text-xs font-semibold text-slate-400 uppercase tracking-wide">카드</p>
             ) : null;

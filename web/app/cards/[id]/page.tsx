@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ChevronLeft, Loader2 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { type Card, formatKRW } from '@/lib/data';
+import { chartAxisMax, formatChartAxisKrw } from '@/lib/chart-axis';
 import { RarityBadge, TrendBadge, CardImage, RegionLabel } from '@/components/ui';
 
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { color: string; name: string; value: number }[]; label?: string }) => {
@@ -56,7 +57,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
     );
   }
 
-  const chartData =
+  const chartData: { name: string; KRW?: number; JPY_converted?: number }[] =
     chartType === 'KR'
       ? card.historyKR.length > 0
         ? card.historyKR.map((kr) => ({ name: kr.date, KRW: kr.price }))
@@ -64,6 +65,11 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
       : card.historyJP.length > 0
         ? card.historyJP.map((jp) => ({ name: jp.date, JPY_converted: jp.price }))
         : [{ name: '데이터 없음', JPY_converted: card.priceJP }];
+
+  const priceKey = chartType === 'KR' ? 'KRW' : 'JPY_converted';
+  const chartMax = chartAxisMax(
+    chartData.map((d) => (d[priceKey as keyof typeof d] as number | undefined) ?? 0),
+  );
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -155,7 +161,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
                 <LineChart data={chartData} margin={{ top: 5, right: 20, left: 20, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" strokeOpacity={0.5} vertical={false} />
                   <XAxis dataKey="name" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `₩${(val / 10000).toFixed(0)}만`} />
+                  <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => formatChartAxisKrw(val, chartMax)} />
                   <Tooltip content={<CustomTooltip />} />
                   {chartType === 'KR' && (
                     <Line type="monotone" name="한국판" dataKey="KRW" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
