@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { Menu, Search, Sun, Moon, X } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { SearchBox } from './search-box';
+import { PokeballIcon } from './pokeball-icon';
 
 const NAV_ITEMS = [
   { to: '/', label: '홈' },
@@ -42,11 +43,7 @@ export function Navbar() {
     <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#0B132B]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
       <div className="max-w-6xl mx-auto px-4 h-16 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
         <Link href="/" className="flex items-center gap-2 group shrink-0 justify-self-start">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-red-500 to-red-600 border-2 border-white dark:border-slate-900 flex items-center justify-center relative overflow-hidden shadow-[0_0_10px_rgba(239,68,68,0.5)] group-hover:rotate-180 transition-transform duration-500">
-            <div className="absolute top-1/2 left-0 w-full h-[2px] bg-white dark:bg-slate-900 -translate-y-1/2" />
-            <div className="absolute top-1/2 left-1/2 w-3 h-3 bg-slate-900 dark:bg-white rounded-full border-[2px] border-white dark:border-slate-900 -translate-x-1/2 -translate-y-1/2 z-10" />
-            <div className="w-full h-1/2 bg-slate-900 dark:bg-white absolute bottom-0" />
-          </div>
+          <PokeballIcon size="lg" className="group-hover:rotate-180 transition-transform duration-500" />
           <span className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight hidden sm:inline">
             Poké<span className="text-amber-500">Price</span>
           </span>

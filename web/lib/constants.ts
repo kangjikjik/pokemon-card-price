@@ -179,6 +179,13 @@ export const PROMO_EVENT_SET_CODES = [] as const;
 
 export const PROMO_MISC_SET_CODE = 'PRM-MISC' as const;
 
+/** 주간 핫카드 — 프로모 잉어킹 (040/M-P) */
+export const WEEKLY_HOT_CARD = {
+  setCode: PROMO_MISC_SET_CODE,
+  cardNumber: '040/M-P',
+  cardId: 9150,
+} as const;
+
 
 
 /** 세트 시세 — 프로모·이벤트 탭 */

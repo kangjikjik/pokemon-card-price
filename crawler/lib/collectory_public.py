@@ -8,7 +8,12 @@ from dataclasses import dataclass
 
 import httpx
 
-from lib.price_resolve import PriceQuote, classify_collectory_row, is_graded_grade
+from lib.price_resolve import (
+    PriceQuote,
+    classify_collectory_row,
+    classify_collectory_row_jp,
+    is_graded_grade,
+)
 
 COLLECTORY_CARD_URL = "https://collectory.cc/cards/{card_id}"
 TR_ROW_RE = re.compile(r"<tr[^>]*>(.*?)</tr>", re.DOTALL | re.IGNORECASE)
@@ -25,7 +30,17 @@ SOURCE_ALIASES: dict[str, str] = {
     "킨들샵": "kream",
     "TCGBox": "tcgbox",
     "KREAM": "kream",
+    "メルカリ": "mercari",
+    "SNKRDUNK": "snkrdunk",
+    "mercari": "mercari",
 }
+
+JP_ROW_TOKENS = (
+    "cardmvk/", "번개장터", "네이버쇼핑", "네이버카페", "break.market", "Break",
+    "킨들샵", "TCGBox", "KREAM", "メルカリ", "SNKRDUNK", "mercari",
+)
+
+JP_KR_EXCLUDE = ("한글판", "한국판", "한글", "한국)", "KR ", "코리안")
 
 _PAGE_CACHE: dict[str, tuple[float, list[PriceQuote]]] = {}
 _CACHE_TTL_SEC = 300
@@ -86,6 +101,47 @@ def _parse_transaction_row(row_html: str) -> PriceQuote | None:
     return PriceQuote(price_krw=price, tier=tier, source=source, title=title)
 
 
+def _parse_transaction_row_jp(row_html: str) -> PriceQuote | None:
+    """일본판 — 메ルカ리·SNKRDUNK·카페 체결 + 번개·크림 호가."""
+    if not any(token in row_html for token in JP_ROW_TOKENS):
+        return None
+
+    price_m = PRICE_RE.search(row_html)
+    if not price_m:
+        return None
+    price = int(price_m.group(1).replace(",", ""))
+    if price < 100 or price > 50_000_000:
+        return None
+
+    parts = _row_text(row_html)
+    source_raw = parts[1] if len(parts) > 1 else ""
+    grade = parts[2] if len(parts) > 2 else "Single"
+    title = parts[-1] if parts else ""
+
+    if is_graded_grade(grade):
+        return None
+    if any(k in title for k in JP_KR_EXCLUDE):
+        return None
+    t_upper = title.upper()
+    if any(k in t_upper for k in ("PSA", "BGS", "CGC", "BRG", "슬랩", "SLAB")):
+        return None
+
+    source = _normalize_source(source_raw, row_html)
+    tier = classify_collectory_row_jp(source, grade, title)
+    if tier is None:
+        return None
+    return PriceQuote(price_krw=price, tier=tier, source=source, title=title)
+
+
+def _parse_page_quotes_jp(html: str) -> list[PriceQuote]:
+    quotes: list[PriceQuote] = []
+    for row_html in TR_ROW_RE.findall(html):
+        q = _parse_transaction_row_jp(row_html)
+        if q:
+            quotes.append(q)
+    return quotes
+
+
 def _parse_page_quotes(html: str) -> list[PriceQuote]:
     quotes: list[PriceQuote] = []
     for row_html in TR_ROW_RE.findall(html):
@@ -93,6 +149,83 @@ def _parse_page_quotes(html: str) -> list[PriceQuote]:
         if q:
             quotes.append(q)
     return quotes
+
+
+def fetch_collectory_public_quotes_jp(
+    card_id: str,
+    client: httpx.Client | None = None,
+    *,
+    use_cache: bool = True,
+) -> list[PriceQuote]:
+    """일본판 카드 상세 — 거래내역(메ルカ리·SNKRDUNK·카페) + 번개·크림 호가."""
+    cid = (card_id or "").strip()
+    if not cid:
+        return []
+
+    cache_key = f"jp:{cid}"
+    now = time.time()
+    if use_cache and cache_key in _PAGE_CACHE:
+        ts, cached = _PAGE_CACHE[cache_key]
+        if now - ts < _CACHE_TTL_SEC:
+            return list(cached)
+
+    own = client is None
+    if own:
+        client = httpx.Client(timeout=30, headers={"User-Agent": "Mozilla/5.0"})
+
+    quotes: list[PriceQuote] = []
+    try:
+        res = client.get(COLLECTORY_CARD_URL.format(card_id=cid))
+        if res.status_code != 200:
+            return []
+        quotes = _parse_page_quotes_jp(res.text)
+        if use_cache:
+            _PAGE_CACHE[cache_key] = (now, list(quotes))
+    finally:
+        if own:
+            client.close()
+    return quotes
+
+
+def preload_public_quotes_jp(
+    card_ids: list[str],
+    client: httpx.Client,
+    *,
+    workers: int = 16,
+) -> dict[str, list[PriceQuote]]:
+    """일본판 collectory 카드 페이지 병렬 프리로드."""
+    ids = [c.strip() for c in card_ids if c and c.strip()]
+    if not ids:
+        return {}
+
+    now = time.time()
+    out: dict[str, list[PriceQuote]] = {}
+    todo: list[str] = []
+    for cid in ids:
+        cache_key = f"jp:{cid}"
+        if cache_key in _PAGE_CACHE and now - _PAGE_CACHE[cache_key][0] < _CACHE_TTL_SEC:
+            out[cid] = list(_PAGE_CACHE[cache_key][1])
+        else:
+            todo.append(cid)
+
+    if not todo:
+        return out
+
+    def _fetch_one(card_id: str) -> tuple[str, list[PriceQuote]]:
+        res = client.get(COLLECTORY_CARD_URL.format(card_id=card_id))
+        if res.status_code != 200:
+            return card_id, []
+        quotes = _parse_page_quotes_jp(res.text)
+        _PAGE_CACHE[f"jp:{card_id}"] = (time.time(), list(quotes))
+        return card_id, quotes
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        futures = {pool.submit(_fetch_one, cid): cid for cid in todo}
+        for fut in as_completed(futures):
+            cid, quotes = fut.result()
+            out[cid] = quotes
+
+    return out
 
 
 def fetch_collectory_public_quotes(

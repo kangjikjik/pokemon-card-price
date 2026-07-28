@@ -46,7 +46,6 @@ export const SET_BOX_IMAGES: Record<string, string> = {
   S7F: '/set-boxes/S7F.png',
   CEL: 'https://data1.pokemonkorea.co.kr/2021/10/2021-10-15_16-01-01-13015-1634281261.png',
   CEL25PK: '/set-boxes/CEL25PK.png',
-  'PRM-MISC': '/set-boxes/promo-misc.png',
   S7R: '/set-boxes/S7R.png',
   S7D: '/set-boxes/S7D.png',
   S6H: '/set-boxes/S6H.png',
@@ -94,6 +93,9 @@ function isBadBoxUrl(url: string): boolean {
 }
 
 export function getSetBoxImageUrl(code: string, dbUrl?: string | null): string {
+  // 단일 프로모 묶음에는 대표 상품 이미지가 없으므로 기본 이미지를 표시한다.
+  if (code === 'PRM-MISC') return '';
+
   const preset = SET_BOX_IMAGES[code];
   if (preset) return preset;
   if (dbUrl && !isBadBoxUrl(dbUrl)) {

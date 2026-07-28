@@ -28,7 +28,13 @@ export function SetsGrid({ sets, currentTabId = 'expansion' }: Props) {
           className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden hover:border-amber-500/50 dark:hover:border-amber-500/50 transition-all group hover:-translate-y-1 shadow-sm hover:shadow-md"
         >
           <div className="pt-6 pb-3 px-4 flex justify-center">
-            <SetPackImage imageUrl={set.imageUrl} alt={set.name} colorClass={set.imageColor} size="lg" />
+            <SetPackImage
+              imageUrl={set.imageUrl}
+              alt={set.name}
+              compact={set.code === 'CEL25PK'}
+              colorClass={set.imageColor}
+              size="lg"
+            />
           </div>
           <div className="px-6 pb-6 pt-2">
             <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1">{set.name}</h3>

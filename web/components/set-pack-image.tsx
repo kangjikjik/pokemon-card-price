@@ -4,16 +4,17 @@ import Image from 'next/image';
 import { Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-/** 확장팩·프로모팩 박스/팩 이미지 — 비율 통일, 잘림 방지 */
+/** 확장팩·프로모팩 박스/팩 이미지 — 원본 전체가 보이도록 비율 유지 */
 export const SetPackImage = ({
   imageUrl,
   alt,
-  colorClass = 'from-slate-600 to-slate-800',
+  compact = false,
   className,
   size = 'md',
 }: {
   imageUrl?: string;
   alt: string;
+  compact?: boolean;
   colorClass?: string;
   className?: string;
   size?: 'sm' | 'md' | 'lg';
@@ -24,12 +25,11 @@ export const SetPackImage = ({
   return (
     <div
       className={cn(
-        'aspect-[3/4] w-full mx-auto bg-slate-950 relative overflow-hidden rounded-xl',
+        'aspect-[3/4] w-full mx-auto bg-black relative overflow-hidden rounded-xl',
         sizeClass,
         className,
       )}
     >
-      <div className={cn('absolute inset-0 bg-gradient-to-br opacity-15', colorClass)} />
       {imageUrl ? (
         <div className="absolute inset-0 flex items-center justify-center p-3 sm:p-4">
           <Image
@@ -37,13 +37,17 @@ export const SetPackImage = ({
             alt={alt}
             width={400}
             height={520}
-            className="max-w-full max-h-full w-auto h-auto object-contain drop-shadow-lg relative z-10"
+            className={cn(
+              'max-w-full h-auto w-auto object-contain drop-shadow-lg relative z-10',
+              compact ? 'max-h-[60%]' : 'max-h-full',
+            )}
             unoptimized
           />
         </div>
       ) : (
-        <div className="relative z-10 w-full h-full flex items-center justify-center">
-          <Package className="w-10 h-10 text-slate-400" />
+        <div className="relative z-10 w-full h-full flex flex-col items-center justify-center gap-3 text-slate-500">
+          <Package className="w-12 h-12 text-slate-400" />
+          <span className="text-xs font-medium">기본 이미지</span>
         </div>
       )}
     </div>

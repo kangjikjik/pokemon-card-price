@@ -142,14 +142,15 @@ def fetch_set_kr_prices(collectory_id: str, client: httpx.Client | None = None) 
             if not is_kr_raw_collectory_card(card):
                 continue
             price = int(card.get("price_krw") or 0)
-            if price <= 0:
+            cid = (card.get("card_id") or "").strip()
+            if price <= 0 and not cid:
                 continue
             index.add(
                 card.get("card_number") or "",
                 card.get("name_ko") or card.get("name") or "",
                 card.get("rarity") or "",
                 price,
-                card_id=card.get("card_id") or "",
+                card_id=cid,
             )
     finally:
         if own:
@@ -164,6 +165,65 @@ def lookup_collectory_price(
     rarity: str,
 ) -> int:
     return index.lookup(card_number, name_kr, rarity)
+
+
+def _promo_rarity_match(card_rarity: str, target: str) -> bool:
+    cr = (card_rarity or "").upper()
+    tr = (target or "").upper()
+    if cr == tr:
+        return True
+    if tr in ("P", "PROMO") and cr in ("P", "PROMO", "프로모"):
+        return True
+    return False
+
+
+def search_collectory_card_id(
+    name_kr: str,
+    card_number: str,
+    rarity: str,
+    client: httpx.Client,
+) -> str:
+    """collectory 검색 API로 KR 카드 ID 조회 (세트 API 없는 프로모용)."""
+    r_upper = (rarity or "P").upper()
+    queries = [
+        f"{name_kr} {card_number}".strip(),
+        f"{card_number} {name_kr}".strip(),
+        name_kr,
+    ]
+    for q in queries:
+        if not q:
+            continue
+        res = client.get(f"{COLLECTORY_API}/cards/search", params={"q": q})
+        if res.status_code != 200:
+            continue
+        for card in res.json().get("results", {}).get("cards") or []:
+            if (card.get("region") or "").lower() != "kr":
+                continue
+            if not _promo_rarity_match(card.get("rarity") or "", r_upper):
+                continue
+            num = card.get("cardNumber") or card.get("card_number") or ""
+            if card_number and num and card_num_key(num) != card_num_key(card_number):
+                continue
+            cid = (card.get("card_id") or card.get("id") or "").strip()
+            if cid:
+                return cid
+    return ""
+
+
+def build_collectory_index_from_search(
+    cards: list[dict],
+    client: httpx.Client,
+) -> CollectoryPriceIndex:
+    """세트 collectory_id 없을 때 카드별 검색으로 card_id만 채운 인덱스."""
+    index = CollectoryPriceIndex()
+    for card in cards:
+        name_kr = card.get("name_kr") or ""
+        card_number = card.get("card_number") or ""
+        rarity = card.get("rarity") or "P"
+        cid = search_collectory_card_id(name_kr, card_number, rarity, client)
+        if cid:
+            index.add(card_number, name_kr, rarity, 0, card_id=cid)
+    return index
 
 
 def search_kr_price(
@@ -192,7 +252,7 @@ def search_kr_price(
             for card in res.json().get("results", {}).get("cards") or []:
                 if (card.get("region") or "").lower() != "kr":
                     continue
-                if (card.get("rarity") or "").upper() != r_upper:
+                if not _promo_rarity_match(card.get("rarity") or "", r_upper):
                     continue
                 num = card.get("cardNumber") or card.get("card_number") or ""
                 if card_number and num and card_num_key(num) != card_num_key(card_number):

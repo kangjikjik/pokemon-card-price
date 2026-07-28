@@ -10,10 +10,7 @@ import { SetBoxPriceRows } from '@/components/set-box-price';
 import { ScrollFab } from '@/components/scroll-fab';
 import { ScrollRestore } from '@/components/scroll-restore';
 import { compareCardsByRarity, isDisplayableRarity } from '@/lib/rarity';
-import { ClickableTableRow } from '@/components/clickable-table-row';
-import { RarityBadge, RegionLabel } from '@/components/ui';
-import { formatKRW } from '@/lib/data';
-import { latestPriceKrw } from '@/lib/price-calc';
+import { SetCardsPriceTable } from '@/components/set-cards-price-table';
 
 export default async function SetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -38,7 +35,7 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
     const [setResult, cardsResult] = await Promise.all([
       supabase
         .from('card_sets')
-        .select(`id, set_code, name_kr, name_jp, name_en, released_at, image_url, prices_box ( region, price_krw )`)
+        .select(`id, set_code, name_kr, name_jp, name_en, released_at, image_url, prices_box ( region, price_krw, fetched_at )`)
         .eq('id', numericId)
         .single(),
       supabase
@@ -71,6 +68,19 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
 
   const mockCards = usedMock ? MOCK_CARDS.filter(c => c.set === set.name) : [];
 
+  const tableCards = usedMock
+    ? mockCards.map(c => ({
+        id: c.id,
+        name_kr: c.name,
+        name_jp: '',
+        name_en: c.enName,
+        rarity: c.rarity,
+        card_number: c.number,
+        prices_kr: c.priceKR > 0 ? [{ price_krw: c.priceKR }] : [],
+        prices_jp: c.priceJP > 0 ? [{ price_krw: c.priceJP }] : [],
+      }))
+    : cards;
+
   return (
     <>
     <ScrollRestore />
@@ -100,59 +110,7 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
       <div>
         <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">수록 카드</h2>
         <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-sm">
-                  <th className="p-4 font-medium">카드명</th>
-                  <th className="p-4 font-medium">레어도</th>
-                  <th className="p-4 font-medium text-right">
-                    <div className="flex items-center justify-end"><RegionLabel region="KR" /></div>
-                  </th>
-                  <th className="p-4 font-medium text-right">
-                    <div className="flex items-center justify-end"><RegionLabel region="JP" /></div>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                {usedMock
-                  ? mockCards.map(card => (
-                      <ClickableTableRow key={card.id} href={`/cards/${card.id}`}>
-                        <td className="p-4 font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                          {card.name}
-                        </td>
-                        <td className="p-4"><RarityBadge rarity={card.rarity} /></td>
-                        <td className="p-4 text-right font-medium text-slate-900 dark:text-white">{formatKRW(card.priceKR)}</td>
-                        <td className="p-4 text-right font-medium text-slate-900 dark:text-white">{formatKRW(card.priceJP)}</td>
-                      </ClickableTableRow>
-                    ))
-                  : cards.map(card => {
-                      const priceKR = Array.isArray(card.prices_kr) ? latestPriceKrw(card.prices_kr) : 0;
-                      const priceJP = Array.isArray(card.prices_jp) ? latestPriceKrw(card.prices_jp) : 0;
-                      return (
-                        <ClickableTableRow key={card.id} href={`/cards/${card.id}`}>
-                          <td className="p-4 font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                            {card.name_kr || card.name_jp || card.name_en}
-                          </td>
-                          <td className="p-4"><RarityBadge rarity={card.rarity} /></td>
-                          <td className="p-4 text-right font-medium text-slate-900 dark:text-white">
-                            {priceKR > 0 ? formatKRW(priceKR) : '미등록'}
-                          </td>
-                          <td className="p-4 text-right font-medium text-slate-900 dark:text-white">
-                            {priceJP > 0 ? formatKRW(priceJP) : '미등록'}
-                          </td>
-                        </ClickableTableRow>
-                      );
-                    })
-                }
-                {!usedMock && cards.length === 0 && (
-                  <tr>
-                    <td colSpan={4} className="p-8 text-center text-slate-500">등록된 카드가 없습니다.</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
+          <SetCardsPriceTable cards={tableCards} />
         </div>
       </div>
     </div>

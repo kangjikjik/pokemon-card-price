@@ -87,9 +87,28 @@ export function calcRepresentativePrice(prices: PriceRecord[]): {
   return { price, trend, history };
 }
 
-/** 최신 스냅샷 1건의 price_krw (목록/홈용). */
+/** 최신 수집일(KST) 기준 price_krw. 해당일 스냅샷이 0이면 미등록. */
 export function latestPriceKrw(prices: { price_krw: number; fetched_at?: string }[]): number {
   if (!prices.length) return 0;
+
+  const byDate: Record<string, { price_krw: number; t: number }> = {};
+  for (const p of prices) {
+    if (!p.fetched_at) continue;
+    const key = kstDateKey(p.fetched_at);
+    const t = new Date(p.fetched_at).getTime();
+    const cur = byDate[key];
+    if (!cur || t >= cur.t) {
+      byDate[key] = { price_krw: p.price_krw, t };
+    }
+  }
+
+  const datedKeys = Object.keys(byDate).sort();
+  if (datedKeys.length > 0) {
+    const latest = byDate[datedKeys[datedKeys.length - 1]];
+    return latest.price_krw > 0 ? latest.price_krw : 0;
+  }
+
+  // fetched_at 없는 레거시 — 양수만
   let best: { price_krw: number; t: number } | null = null;
   for (const p of prices) {
     if (!(p.price_krw > 0)) continue;

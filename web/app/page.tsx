@@ -1,94 +1,35 @@
 import Link from 'next/link';
 import { ChevronRight, Flame } from 'lucide-react';
 import { SearchBox } from '@/components/search-box';
-import { getSupabaseServer } from '@/lib/supabase';
-import { MOCK_CARDS, MOCK_SETS, formatKRW, type Card, type SetData } from '@/lib/data';
+import { MOCK_CARDS, MOCK_SETS, formatKRW } from '@/lib/data';
 import { formatYen } from '@/lib/set-msrp';
-import { FEATURED_SET_CODES, EXPANSION_SET_CODES } from '@/lib/constants';
+import { FEATURED_SET_CODES } from '@/lib/constants';
 import { RarityBadge, TrendBadge, CardImage, RegionLabel } from '@/components/ui';
-import { getSetShortName } from '@/lib/set-names';
-import { mapRawSet } from '@/lib/set-map';
-import { latestPriceKrw } from '@/lib/price-calc';
+import { getHomePageData } from '@/lib/home-cards';
 
 export const dynamic = 'force-dynamic';
 
-const SET_COLORS: Record<string, string> = {
-  SV2a: 'from-green-500 to-emerald-700',
-  SV2D: 'from-purple-500 to-fuchsia-700',
-  S12a: 'from-slate-800 to-slate-950',
-  SV4a: 'from-cyan-400 to-blue-600',
-  S11:  'from-indigo-700 to-purple-900',
-  S12:  'from-blue-500 to-indigo-700',
-};
-
-async function getHomeData(): Promise<{ cards: Card[]; sets: SetData[] }> {
+async function getHomeData() {
   try {
-    const supabase = getSupabaseServer();
-
-    const { data: featuredSets } = await supabase
-      .from('card_sets')
-      .select('id')
-      .in('set_code', [...FEATURED_SET_CODES]);
-
-    const featuredSetIds = (featuredSets || []).map(s => s.id);
-    if (featuredSetIds.length === 0) throw new Error('no featured sets');
-
-    const [cardsResult, setsResult] = await Promise.all([
-      supabase
-        .from('cards')
-        .select(`id, name_kr, name_en, rarity, rarity_rank, image_url, image_color, card_number, card_sets ( id, set_code, name_kr ), prices_kr ( price_krw, fetched_at ), prices_jp ( price_krw, fetched_at )`)
-        .in('set_id', featuredSetIds)
-        .order('rarity_rank', { ascending: false })
-        .limit(5),
-      supabase
-        .from('card_sets')
-        .select(`id, set_code, name_kr, name_en, released_at, image_url, prices_box ( region, price_krw )`)
-        .in('set_code', [...EXPANSION_SET_CODES])
-        .order('released_at', { ascending: false })
-        .limit(4),
-    ]);
-
-    if (cardsResult.error || setsResult.error) throw new Error('query error');
-
-    const cards: Card[] = (cardsResult.data || []).map(raw => {
-      const pricesKR = Array.isArray(raw.prices_kr) ? raw.prices_kr as { price_krw: number; fetched_at?: string }[] : [];
-      const pricesJP = Array.isArray(raw.prices_jp) ? raw.prices_jp as { price_krw: number; fetched_at?: string }[] : [];
-      const set = (Array.isArray(raw.card_sets) ? raw.card_sets[0] : raw.card_sets) as { id: number; set_code: string; name_kr: string } | null;
-      return {
-        id: String(raw.id),
-        name: raw.name_kr || raw.name_en || '',
-        enName: raw.name_en || '',
-        set: getSetShortName(set?.set_code || '', set?.name_kr || ''),
-        setCode: set?.set_code || '',
-        setId: set?.id != null ? String(set.id) : '',
-        number: raw.card_number || '',
-        rarity: raw.rarity || '',
-        rarityRank: raw.rarity_rank || 0,
-        imageUrl: (raw.image_url as string) || '',
-        imageColor: (raw.image_color as string) || SET_COLORS[set?.set_code || ''] || 'from-slate-400 to-slate-600',
-        priceKR: latestPriceKrw(pricesKR),
-        priceJP: latestPriceKrw(pricesJP),
-        trendKR: 0, trendJP: 0, historyKR: [], historyJP: [],
-      };
-    });
-
-    const sets: SetData[] = (setsResult.data || []).map(raw => mapRawSet(raw));
-
-    if (cards.length === 0) throw new Error('no cards');
-    return { cards, sets };
-  } catch {
+    return await getHomePageData();
+  } catch (err) {
+    console.error('[home] DB error:', err);
     const featuredCodes = FEATURED_SET_CODES as readonly string[];
+    const cards = MOCK_CARDS.filter(c => featuredCodes.includes(c.setCode));
     return {
-      cards: MOCK_CARDS.filter(c => featuredCodes.includes(c.setCode)),
+      highlight: cards[0],
+      trending: cards.slice(1, 5),
       sets: MOCK_SETS.filter(s => featuredCodes.includes(s.code)),
     };
   }
 }
 
 export default async function HomePage() {
-  const { cards, sets } = await getHomeData();
-  const highlightCard = cards[0];
-  const topCards = cards.slice(1, 5);
+  const { highlight: highlightCard, trending: topCards, sets } = await getHomeData();
+
+  if (!highlightCard) {
+    return null;
+  }
 
   return (
     <div className="space-y-12 pb-12">
@@ -170,7 +111,7 @@ export default async function HomePage() {
           <section>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">인기 급상승 카드</h2>
-              <Link href="/cards" className="text-amber-600 dark:text-amber-500 hover:text-amber-500 dark:hover:text-amber-400 text-sm flex items-center font-medium">
+              <Link href="/cards?sort=popular" className="text-amber-600 dark:text-amber-500 hover:text-amber-500 dark:hover:text-amber-400 text-sm flex items-center font-medium">
                 전체보기 <ChevronRight className="w-4 h-4" />
               </Link>
             </div>

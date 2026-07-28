@@ -2,6 +2,7 @@ import type { SetData } from '@/lib/data';
 import { getSetBoxImageUrl } from '@/lib/set-images';
 import { getSetShortName } from '@/lib/set-names';
 import { getSetMsrp } from '@/lib/set-msrp';
+import { latestPriceKrw } from '@/lib/price-calc';
 
 const SET_COLORS: Record<string, string> = {
   SV2a: 'from-green-500 to-emerald-700',
@@ -20,7 +21,7 @@ export function mapRawSet(raw: {
   name_en?: string | null;
   released_at?: string | null;
   image_url?: string | null;
-  prices_box?: { region: string; price_krw: number }[] | null;
+  prices_box?: { region: string; price_krw: number; fetched_at?: string }[] | null;
 }): SetData {
   const prices = Array.isArray(raw.prices_box) ? raw.prices_box : [];
   const code = raw.set_code || '';
@@ -33,8 +34,8 @@ export function mapRawSet(raw: {
     releaseDate: raw.released_at || '',
     imageColor: SET_COLORS[code] || 'from-slate-600 to-slate-800',
     imageUrl: getSetBoxImageUrl(code, raw.image_url as string | null),
-    boxPriceKR: prices.find(p => p.region === 'KR')?.price_krw || 0,
-    boxPriceJP: prices.find(p => p.region === 'JP')?.price_krw || 0,
+    boxPriceKR: latestPriceKrw(prices.filter(p => p.region === 'KR')),
+    boxPriceJP: latestPriceKrw(prices.filter(p => p.region === 'JP')),
     msrpPackKR: msrp.packKR,
     msrpBoxKR: msrp.boxKR,
     msrpPackJP: msrp.packJP,

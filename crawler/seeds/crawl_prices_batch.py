@@ -185,6 +185,14 @@ def main() -> None:
         print(f"\n실패: {', '.join(failed)}")
         sys.exit(1)
 
+    if "--all" in sys.argv:
+        from batch_promo import run_promo_for_region
+
+        promo_failed = run_promo_for_region("KR", apply=apply, quiet=quiet)
+        if promo_failed:
+            print(f"\n프로모 KR 실패: {', '.join(promo_failed)}")
+            sys.exit(1)
+
     print("\n배치 완료.")
 
 

@@ -47,12 +47,15 @@ function CardsPageContent() {
 
   useLayoutEffect(() => {
     const saved = readSavedCardsState();
-    if (saved) {
+    const urlSort = searchParams.get("sort");
+    if (urlSort === "popular" || urlSort === "price") {
+      setSortBy(urlSort);
+    } else if (saved) {
       setActiveRarity(saved.rarity);
       setSortBy(saved.sort);
     }
     setFiltersReady(true);
-  }, []);
+  }, [searchParams]);
 
   const bumpListKey = useCallback(() => setListKey(k => k + 1), []);
   useCardsListBfcacheSync(setActiveRarity, setSortBy, bumpListKey);

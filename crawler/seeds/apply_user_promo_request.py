@@ -12,6 +12,7 @@ from dotenv import load_dotenv
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.stdout.reconfigure(encoding="utf-8")
 
+from lib.rarity_rank import rank_for_rarity
 from utils.db import get_supabase
 
 load_dotenv()
@@ -73,22 +74,25 @@ def main():
         misc_sid = misc_res[0]["id"]
         sb.table("card_sets").update({"name_kr": "기타 프로모팩"}).eq("id", misc_sid).execute()
 
-    # 잉어킹 카드 추가 (중복 확인)
+    # Pokémon MEGA Festa 2026 한국 한정 잉어킹(040/M-P)
+    # https://collectory.cc/cards/0679afcf-8444-4359-9e77-4bc1623734ba
+    magikarp_payload = {
+        "set_id": misc_sid,
+        "name_kr": "잉어킹",
+        "name_en": "Magikarp",
+        "name_jp": "コイキング",
+        "rarity": "P",
+        "rarity_rank": rank_for_rarity("P"),
+        "card_number": "040/M-P",
+        "image_url": "https://cdn.collectory.cc/cards/kr/M-P/040_M-P.webp",
+    }
     magikarp_res = sb.table("cards").select("id").eq("set_id", misc_sid).eq("name_kr", "잉어킹").execute().data
-    if not magikarp_res:
-        sb.table("cards").insert({
-            "set_id": misc_sid,
-            "name_kr": "잉어킹",
-            "name_en": "Magikarp",
-            "name_jp": "コイキング",
-            "rarity": "P",
-            "rarity_rank": 1, # P rank
-            "card_number": "PROMO",
-            "image_url": "https://cdn.collectory.cc/cards/kr/promo/magikarp.png" # Placeholder/Guess, can be updated later
-        }).execute()
-        print("Inserted Magikarp promo card into PRM-MISC.")
+    if magikarp_res:
+        sb.table("cards").update(magikarp_payload).eq("id", magikarp_res[0]["id"]).execute()
+        print("Updated Magikarp promo card in PRM-MISC.")
     else:
-        print("Magikarp promo card already exists in PRM-MISC.")
+        sb.table("cards").insert(magikarp_payload).execute()
+        print("Inserted Magikarp promo card into PRM-MISC.")
 
 if __name__ == "__main__":
     main()

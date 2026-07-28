@@ -7,6 +7,14 @@ import { Footer } from '@/components/Footer';
 export const metadata: Metadata = {
   title: 'PokéPrice — 포켓몬 카드 한/일 시세 비교',
   description: '포켓몬스터 카드 한국판·일본판 시세를 한 곳에서 비교하세요.',
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

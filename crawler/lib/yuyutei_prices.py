@@ -4,6 +4,7 @@ from __future__ import annotations
 import re
 import time
 from dataclasses import dataclass
+from urllib.parse import quote
 
 import httpx
 
@@ -189,3 +190,51 @@ def fetch_set_listings(vers: str, client: httpx.Client) -> dict[str, YuyuListing
                     price_jpy=p,
                 )
     return out
+
+
+def fetch_card_listing(
+    vers: str,
+    card_number: str,
+    name_jp: str,
+    rarity: str,
+    client: httpx.Client,
+) -> YuyuListing | None:
+    """--fallback: 미등록 카드 1장만 유유테i 검색 (세트 전체 스크랩 없음)."""
+    block_re = _card_block_re(vers)
+    r_upper = (rarity or "").upper()
+    words: list[str] = []
+    num = normalize_card_number(card_number)
+    if num:
+        words.append(num)
+    if name_jp:
+        words.append(name_jp.strip())
+    if not words:
+        return None
+
+    best: YuyuListing | None = None
+    for word in words:
+        query = f"search_word={quote(word)}&vers%5B%5D={vers}&kizu=0"
+        if r_upper in RARE_FILTERS and r_upper:
+            query += f"&rare={r_upper}"
+        url = f"https://yuyu-tei.jp/sell/poc/s/search?{query}"
+        text = _get_page(client, url)
+        if not text:
+            continue
+        for found_num, rar, name, price in block_re.findall(text):
+            if card_number and not card_numbers_match(card_number, found_num):
+                continue
+            p = int(price.replace(",", ""))
+            if p <= 0:
+                continue
+            listing = YuyuListing(
+                card_number=normalize_card_number(found_num),
+                rarity=rar.strip(),
+                name_jp=name.strip(),
+                price_jpy=p,
+            )
+            if best is None or p < best.price_jpy:
+                best = listing
+        if best:
+            return best
+        time.sleep(REQUEST_DELAY_SEC)
+    return best

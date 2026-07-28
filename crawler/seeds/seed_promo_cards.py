@@ -25,6 +25,7 @@ from promo_catalog import (  # noqa: E402
     PROMO_RARITY_RAW,
     PROMO_SOURCES,
 )
+from reseed_cel25pk_official import OFFICIAL_CARDS, main as reseed_official_25pk  # noqa: E402
 from seed_from_collectory import normalize_card_number, pick_name_ko  # noqa: E402
 from utils.db import get_supabase  # noqa: E402
 
@@ -200,6 +201,14 @@ def main() -> None:
 
     for source in PROMO_SOURCES:
         if source.code == PROMO_MISC.code:
+            continue
+        if source.code == "CEL25PK":
+            print(f"\n[{source.code}] {source.name_kr} (official checklist)")
+            if APPLY:
+                reseed_official_25pk()
+            else:
+                print(f"  [dry] would upsert official cards={len(OFFICIAL_CARDS)}")
+            total_u += len(OFFICIAL_CARDS)
             continue
         i, u, _ = seed_source(client, source)
         total_i += i

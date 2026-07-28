@@ -3,36 +3,38 @@
 import { useState } from 'react';
 import type { SetData } from '@/lib/data';
 import { SetsGrid } from '@/components/sets-grid';
+import { useSetsListRestore } from '@/lib/scroll-restore';
 
-type TabId = 'expansion' | 'special' | 'promo';
+type TabId = 'expansion' | 'commemorative';
 
 const TABS: { id: TabId; label: string; description: string }[] = [
   { id: 'expansion', label: '확장팩', description: '정규·강화 확장팩' },
-  { id: 'special', label: '스페셜 · 기념', description: '25주년 등 기념 컬렉션' },
-  { id: 'promo', label: '기타 프로모', description: '기타 프로모팩' },
+  { id: 'commemorative', label: '기념 · 프로모카드', description: '25주년 기념·프로모팩' },
 ];
 
 type Props = {
   expansionSets: SetData[];
-  specialSets: SetData[];
-  promoSets: SetData[];
+  commemorativeSets: SetData[];
 };
 
-import { useSetsListRestore } from '@/lib/scroll-restore';
+function normalizeTabId(saved: string | null): TabId {
+  if (saved === 'commemorative' || saved === 'special' || saved === 'promo') {
+    return 'commemorative';
+  }
+  return 'expansion';
+}
 
-export function SetsTabs({ expansionSets, specialSets, promoSets }: Props) {
+export function SetsTabs({ expansionSets, commemorativeSets }: Props) {
   const [tab, setTab] = useState<TabId>('expansion');
 
-  useSetsListRestore(true, setTab as any);
+  useSetsListRestore(true, (saved) => setTab(normalizeTabId(saved)));
 
   const counts: Record<TabId, number> = {
     expansion: expansionSets.length,
-    special: specialSets.length,
-    promo: promoSets.length,
+    commemorative: commemorativeSets.length,
   };
 
-  const activeSets =
-    tab === 'expansion' ? expansionSets : tab === 'special' ? specialSets : promoSets;
+  const activeSets = tab === 'expansion' ? expansionSets : commemorativeSets;
 
   return (
     <>

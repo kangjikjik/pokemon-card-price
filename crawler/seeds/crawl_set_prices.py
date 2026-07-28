@@ -201,7 +201,7 @@ def pick_search_queries(
     if r_upper == "P":
         from lib.price_search import build_promo_search_queries
 
-        return build_promo_search_queries(name_kr, card_number, set_name_kr)
+        return build_promo_search_queries(name_kr, card_number, set_name_kr, set_code)
     if fast:
         if r_upper in HIGH_TIER_RARITIES:
             return [
@@ -342,17 +342,16 @@ def crawl_card(
         return merge_collectory_primary(0, [], **merge_kwargs)
 
     extra_bj: list[int] = []
-    if not _has_bunjang_listing(listing_src):
-        if bunjang_cache is not None and card["id"] in bunjang_cache:
-            extra_bj = bunjang_cache[card["id"]]
-        elif bunjang_cache is None:
-            extra_bj = _fetch_bunjang_prices(
-                set_name_kr, name_kr, rarity, card_number, set_code, fast=fast,
-            )
-        if extra_bj:
-            merge_kwargs["listing_prices"] = list(listing_col) + extra_bj
-            merge_kwargs["listing_sources"] = list(listing_src) + ["bunjang"] * len(extra_bj)
-            _log(f"    [번개 보강] {len(extra_bj)}건 — 최저 {min(extra_bj):,}원")
+    if bunjang_cache is not None and card["id"] in bunjang_cache:
+        extra_bj = list(bunjang_cache[card["id"]])
+    elif bunjang_cache is None and not _has_bunjang_listing(listing_src):
+        extra_bj = _fetch_bunjang_prices(
+            set_name_kr, name_kr, rarity, card_number, set_code, fast=fast,
+        )
+    if extra_bj:
+        merge_kwargs["listing_prices"] = list(listing_col) + extra_bj
+        merge_kwargs["listing_sources"] = list(listing_src) + ["bunjang"] * len(extra_bj)
+        _log(f"    [번개 보강] {len(extra_bj)}건 — 최저 {min(extra_bj):,}원")
 
     return merge_collectory_primary(0, [], **merge_kwargs)
 

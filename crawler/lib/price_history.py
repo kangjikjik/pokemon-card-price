@@ -64,3 +64,41 @@ def save_daily_snapshots(
             sb.table(table).insert(chunk).execute()
             inserted += len(chunk)
     return deleted, inserted
+
+
+def save_daily_box_snapshots(
+    sb: Any,
+    set_ids: list[int],
+    region: str,
+    rows: list[dict],
+) -> tuple[int, int]:
+    """
+    set_ids 대상 세트의 오늘(KST) 박스 스냅샷만 지우고 rows를 insert.
+    region: 'KR' | 'JP'
+    """
+    if not set_ids:
+        return 0, 0
+
+    start, end = kst_day_bounds_utc()
+    deleted = 0
+    batch = 200
+    for i in range(0, len(set_ids), batch):
+        chunk = set_ids[i : i + batch]
+        res = (
+            sb.table("prices_box")
+            .delete()
+            .in_("set_id", chunk)
+            .eq("region", region)
+            .gte("fetched_at", start)
+            .lt("fetched_at", end)
+            .execute()
+        )
+        deleted += len(res.data or [])
+
+    inserted = 0
+    if rows:
+        for i in range(0, len(rows), batch):
+            chunk = rows[i : i + batch]
+            sb.table("prices_box").insert(chunk).execute()
+            inserted += len(chunk)
+    return deleted, inserted

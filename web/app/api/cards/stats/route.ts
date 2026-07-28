@@ -25,6 +25,7 @@ export async function GET() {
         .from('cards')
         .select('rarity')
         .in('set_id', featuredSetIds)
+        .order('id', { ascending: true })
         .range(offset, offset + BATCH - 1);
 
       if (error) throw error;
@@ -43,7 +44,7 @@ export async function GET() {
 
     return NextResponse.json(
       { total, byRarity: Object.fromEntries(counts), source: 'db' },
-      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } },
+      { headers: { 'Cache-Control': 'no-store' } },
     );
   } catch {
     return NextResponse.json({ total: 0, byRarity: {}, source: 'mock' });

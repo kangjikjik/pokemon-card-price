@@ -21,8 +21,8 @@ export function normalizeRarity(rarity: string): string {
   return RARITY_ALIASES[r] ?? r;
 }
 
-/** 목록·검색 노출 최소 등급 — RR(9) 이상 히트 카드 */
-export const MIN_DISPLAY_RARITY_RANK = 9;
+/** 목록·검색 노출 최소 등급 — RR 이상 히트 카드 (RARITY_RANK.RR과 동일) */
+export const MIN_DISPLAY_RARITY_RANK = 10;
 
 export function isPromoRarity(rarity: string): boolean {
   return normalizeRarity(rarity) === "P";
@@ -70,37 +70,38 @@ export const RARITY_LABELS: Record<string, string> = {
  * 히트: UR/HR/… > PR(프리즘) > SR > … > RR
  */
 export const RARITY_RANK: Record<string, number> = {
-  FUR: 30,
-  MA: 29,
-  MUR: 28,
-  BWR: 27,
-  ACE: 26,
-  UR: 25,
-  SSR: 24,
-  HR: 23,
-  SAR: 22,
-  CSR: 21,
+  FUR: 31,
+  MUR: 30,
+  UR: 29,
+  BWR: 28,
+  SAR: 27,
+  MA: 26,
+  SR: 25,
+  ACE: 24,
+  AR: 23,
+  SSR: 22,
+  HR: 21,
+  CSR: 20,
   /** 프리즘스타 — SR보다 위 */
-  PR: 20,
-  SR: 19,
-  AR: 18,
-  CHR: 17,
-  RRR: 16,
-  A: 15,
-  K: 14,
-  S: 13,
-  TR: 12,
-  SL: 11,
-  H: 10,
+  PR: 19,
+  CHR: 18,
+  RRR: 17,
+  A: 16,
+  K: 15,
+  S: 14,
+  TR: 13,
+  SL: 12,
+  H: 11,
   /** 더블레어 — 히트 중 가장 낮음 */
-  RR: 9,
+  RR: 10,
   R: 3,
   U: 2,
   C: 1,
   P: 0,
 };
 
-const CURRENT_RARITIES = ["SR", "AR", "SAR", "UR", "ACE", "BWR", "MUR", "MA", "RR"] as const;
+/** 현 등급 필터·정렬 순서: MUR → RR */
+const CURRENT_RARITIES = ["MUR", "UR", "BWR", "SAR", "MA", "SR", "ACE", "AR", "RR"] as const;
 const LEGACY_RARITIES = ["SSR", "HR", "CSR", "CHR", "RRR", "A", "K", "S", "PR", "TR", "P"] as const;
 
 function sortByRarityDesc(codes: readonly string[]): string[] {
@@ -168,7 +169,7 @@ export function compareCardsByRarity(
   const rankB = rankForRarity(b.rarity);
   if (rankB !== rankA) return rankB - rankA;
 
-  const labelCmp = rarityLabelIndex(a.rarity) - rarityLabelIndex(b.rarity);
+  const labelCmp = rarityLabelIndex(b.rarity) - rarityLabelIndex(a.rarity);
   if (labelCmp !== 0) return labelCmp;
 
   const aHasImg = a.imageUrl ? 1 : 0;

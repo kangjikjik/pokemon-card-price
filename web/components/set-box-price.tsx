@@ -17,7 +17,7 @@ export const SetBoxPriceRows = ({
   msrpPack,
   boxLabel = '박스',
 }: Props) => {
-  const formatPrice = region === 'KR' ? formatKRW : formatYen;
+  const formatMsrp = region === 'KR' ? formatKRW : formatYen;
   const hasMarket = marketPrice > 0;
 
   return (
@@ -27,7 +27,7 @@ export const SetBoxPriceRows = ({
         {hasMarket ? (
           <>
             <div className="text-lg md:text-xl font-bold text-slate-900 dark:text-white leading-tight">
-              {formatPrice(marketPrice)}
+              {formatKRW(marketPrice)}
             </div>
             <p className="text-xs text-amber-600 dark:text-amber-500 font-medium mt-0.5">거래 시세</p>
           </>
@@ -35,9 +35,9 @@ export const SetBoxPriceRows = ({
           <div className="text-sm font-medium text-slate-500 dark:text-slate-400">시세 미등록</div>
         )}
         <p className="text-[11px] text-slate-400 mt-1 leading-snug">
-          발매가 {formatPrice(msrpBox)}
+          발매가 {formatMsrp(msrpBox)}
           <span className="mx-1">·</span>
-          팩 {formatPrice(msrpPack)}
+          팩 {formatMsrp(msrpPack)}
         </p>
       </div>
     </div>

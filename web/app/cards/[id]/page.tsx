@@ -38,6 +38,8 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
       .then(json => setCard(json.data || null))
       .catch(() => setCard(null))
       .finally(() => setLoading(false));
+
+    fetch(`/api/cards/${id}/view`, { method: 'POST' }).catch(() => {});
   }, [id]);
 
   if (loading) {

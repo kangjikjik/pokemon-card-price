@@ -65,6 +65,9 @@ PROMO_SOURCES = [
 PROMO_SET_CODES = PROMO_PRICE_CODES
 PROMO_BY_CODE = {s.code: s for s in PROMO_SOURCES}
 
+# KR set_code → 유유테이 vers (일본판 프로모 — 키워드 검색 fallback)
+PROMO_YUYU_VERS: dict[str, str] = {}
+
 COLLECTORY_API = "https://collectory.cc/api"
 PROMO_RARITY_RAW = frozenset({"PROMO", "P", "프로모"})
 

@@ -15,7 +15,7 @@ $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoi
     -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 8)
 
 Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger `
-    -Settings $Settings -Description "Pokemon prices - daily KR/JP full crawl" -Force
+    -Settings $Settings -Description "Pokemon prices - daily KR/JP cards+promo+box crawl" -Force
 
 Write-Host "Registered: $TaskName at $At daily"
 Write-Host "Inspect: Get-ScheduledTask -TaskName $TaskName"
