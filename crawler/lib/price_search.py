@@ -89,6 +89,7 @@ QUANTITY_PATTERNS: list[re.Pattern[str]] = [
 MAX_SINGLE_LISTING_QTY = 20
 
 SET_CODE_ALIASES: dict[str, list[str]] = {
+    "MG7": ["MG7", "M6", "m6", "스톰에메랄다", "스톰 에메랄다"],
     "MG6": ["MG6", "M5", "m5", "어비스아이", "어비스 아이"],
     "MG5": ["MG5", "니힐제로", "니힐 제로"],
     "MG4a": ["MG4a", "MG4A", "메가드림", "메가 드림", "MEGA 드림", "드림 ex", "MEGA 드림 ex"],
@@ -119,6 +120,7 @@ BOX_MARKETPLACE_ALIASES: dict[str, list[str]] = {
     "MG5": ["무니키스 제로", "무니키스제로"],
     "MG5a": ["닌자 스피너"],
     "MG6": ["어비스 아이"],
+    "MG7": ["스톰 에메랄다", "스톰에메랄다"],
     "SV1S": ["스칼렛 ex", "스칼렛ex"],
     "SV1V": ["바이올렛 ex", "바이올렛ex"],
     "SV1a": ["트리플렛비트"],
@@ -153,14 +155,29 @@ def aliases_for_set_code(set_code: str) -> list[str]:
     return out
 
 
+# 구형(번개장터 매물 희박) 세트 코드 접두사 — slim 모드에서 쿼리 3개로 줄임
+_LEGACY_PREFIXES = ("SM", "XY", "BW", "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12")
+
+
+def is_legacy_set(set_code: str) -> bool:
+    """SM/XY 등 구형 팩 여부 — 번개장터 매물이 희박해 slim 쿼리 사용."""
+    code = set_code.strip().upper()
+    return any(code.startswith(p) for p in _LEGACY_PREFIXES)
+
+
 def build_search_queries(
     set_name_kr: str,
     name_kr: str,
     rarity: str,
     card_number: str = "",
     set_code: str = "",
+    *,
+    slim: bool = False,
 ) -> list[str]:
-    """등급·세트·카드번호·한글판을 포함한 검색어 목록."""
+    """등급·세트·카드번호·한글판을 포함한 검색어 목록.
+
+    slim=True: 구형 팩처럼 매물이 희박한 경우 핵심 쿼리 3개만 반환.
+    """
     base = name_kr.strip()
     num = card_number.strip()
     num_short = num.split("/")[0] if num else ""
@@ -173,16 +190,19 @@ def build_search_queries(
         queries.append(f"포켓몬카드 {set_name_kr} {base} {r}")
     if code and base and r:
         queries.append(f"포켓몬카드 {code} {base} {r}")
-    if set_name_kr and base and num:
-        queries.append(f"포켓몬카드 {set_name_kr} {base} {num}")
-    if base and r:
-        queries.append(f"포켓몬카드 {base} {r} {set_name_kr}".strip())
-    if set_name_kr and base:
-        queries.append(f"포켓몬카드 {set_name_kr} {base}")
-    if num_short and r and set_name_kr:
-        queries.append(f"포켓몬카드 {set_name_kr} {num_short} {r}")
-    if set_name_kr and num and r:
-        queries.append(f"포켓몬카드 {set_name_kr} {num} {r}")
+
+    if not slim:
+        # 신형 팩에서만 사용하는 보조 쿼리들
+        if set_name_kr and base and num:
+            queries.append(f"포켓몬카드 {set_name_kr} {base} {num}")
+        if base and r:
+            queries.append(f"포켓몬카드 {base} {r} {set_name_kr}".strip())
+        if set_name_kr and base:
+            queries.append(f"포켓몬카드 {set_name_kr} {base}")
+        if num_short and r and set_name_kr:
+            queries.append(f"포켓몬카드 {set_name_kr} {num_short} {r}")
+        if set_name_kr and num and r:
+            queries.append(f"포켓몬카드 {set_name_kr} {num} {r}")
 
     seen: set[str] = set()
     out: list[str] = []
