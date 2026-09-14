@@ -1,24 +1,57 @@
-# 일일 전 팩 시세 크롤 — GitHub Actions (수동 실행 전용)
-# collectory / yuyutei 가 클라우드 IP(403)를 차단하므로 cron 비활성화.
-# 일일 자동 실행: Windows 작업 PokemonCardPrice-DailyBatch (로컬 PC)
-# Secrets: SUPABASE_URL, SUPABASE_SERVICE_KEY, COLLECTORY_COOKIE (선택)
+# 일일 전팩 시세 크롤 — GitHub Actions
+# 번개장터 전용 (Collectory · 유유테이 제거 → 클라우드 IP 차단 없음)
+#
+# KST 00:00 (UTC 15:00) 매일 자동 실행 + 수동 실행(workflow_dispatch)
+# Secrets: SUPABASE_URL, SUPABASE_SERVICE_KEY, EXCHANGE_RATE_API_KEY (선택)
 
 name: Daily price batch
 
 on:
   workflow_dispatch:
-  # schedule disabled — cloud runners get 403 from collectory/yuyutei
-  # - cron: "0 15 * * *"
+  schedule:
+    - cron: "0 15 * * *"   # UTC 15:00 = KST 00:00
 
 concurrency:
   group: daily-price-crawl
   cancel-in-progress: false
 
 jobs:
-  kr:
-    name: KR all 79 sets
+
+  # ─── 1. KR 카드 시세 ─────────────────────────────────────
+  kr-cards:
+    name: KR cards (79 sets)
     runs-on: ubuntu-latest
     timeout-minutes: 360
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install -r crawler/requirements.txt
+
+      - name: Validate Supabase env
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: python crawler/scripts/sync_github_secrets.py --check-only
+
+      - name: Crawl KR cards (all 79 sets)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        working-directory: crawler/seeds
+        run: python crawl_prices_batch.py --apply --daily --all
+
+  # ─── 2. JP 카드 시세 ─────────────────────────────────────
+  jp-cards:
+    name: JP cards (79 sets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
     steps:
       - uses: actions/checkout@v4
 
@@ -35,18 +68,21 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python crawler/scripts/sync_github_secrets.py --check-only
 
-      - name: Crawl KR all sets
+      - name: Crawl JP cards (all 79 sets)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-          COLLECTORY_COOKIE: ${{ secrets.COLLECTORY_COOKIE }}
+          EXCHANGE_RATE_API_KEY: ${{ secrets.EXCHANGE_RATE_API_KEY }}
         working-directory: crawler/seeds
-        run: python crawl_prices_batch.py --apply --daily --all
+        run: python crawl_prices_batch_jp.py --apply --all
 
-  jp:
-    name: JP all 79 sets
+  # ─── 3. KR 박스 시세 ─────────────────────────────────────
+  kr-boxes:
+    name: KR box prices (79 sets)
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 180
+    needs: kr-cards
+
     steps:
       - uses: actions/checkout@v4
 
@@ -57,15 +93,33 @@ jobs:
       - name: Install deps
         run: pip install -r crawler/requirements.txt
 
-      - name: Validate Supabase env
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
-        run: python crawler/scripts/sync_github_secrets.py --check-only
-
-      - name: Crawl JP all sets in groups of five
+      - name: Crawl KR boxes
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         working-directory: crawler/seeds
-        run: python crawl_prices_batch_jp.py --apply --all --size 5 --pause 60
+        run: python crawl_box_prices_batch.py --apply --all
+
+  # ─── 4. JP 박스 시세 ─────────────────────────────────────
+  jp-boxes:
+    name: JP box prices (79 sets)
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    needs: jp-cards
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install -r crawler/requirements.txt
+
+      - name: Crawl JP boxes
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        working-directory: crawler/seeds
+        run: python crawl_box_prices_batch.py --apply --all --region JP
