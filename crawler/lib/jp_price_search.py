@@ -38,8 +38,13 @@ def build_jp_search_queries(
     rarity: str,
     card_number: str = "",
     set_code: str = "",
+    *,
+    slim: bool = False,
 ) -> list[str]:
-    """번개장터 일본판 검색어."""
+    """번개장터 일본판 검색어.
+
+    slim=True: 구형/희박 팩은 핵심 쿼리 3개만 사용.
+    """
     r = (rarity or "").upper()
     num = (card_number or "").strip()
     num_short = num.split("/")[0] if num else ""
@@ -53,20 +58,23 @@ def build_jp_search_queries(
         queries.append(f"포켓몬카드 {jp} {r} 일판")
     if kr and r:
         queries.append(f"포켓몬카드 {kr} {r} 일판")
-        queries.append(f"포켓몬카드 {kr} {r} 일본")
-    if code and jp and r:
-        queries.append(f"포켓몬카드 {code} {jp} {r}")
-    if code and kr and r:
-        queries.append(f"포켓몬카드 {code} {kr} {r} 일판")
-    if num and jp and r:
-        queries.append(f"포켓몬카드 {num} {jp} {r}")
-    if num and kr and r:
-        queries.append(f"포켓몬카드 {num} {kr} {r} 일판")
-    if set_name_kr and jp:
-        queries.append(f"포켓몬카드 {set_name_kr} {jp} {r}".strip())
-    for alias in SET_CODE_ALIASES.get(code, []):
-        if jp:
-            queries.append(f"포켓몬카드 {alias} {jp} {r}")
+
+    if not slim:
+        if kr and r:
+            queries.append(f"포켓몬카드 {kr} {r} 일본")
+        if code and jp and r:
+            queries.append(f"포켓몬카드 {code} {jp} {r}")
+        if code and kr and r:
+            queries.append(f"포켓몬카드 {code} {kr} {r} 일판")
+        if num and jp and r:
+            queries.append(f"포켓몬카드 {num} {jp} {r}")
+        if num and kr and r:
+            queries.append(f"포켓몬카드 {num} {kr} {r} 일판")
+        if set_name_kr and jp:
+            queries.append(f"포켓몬카드 {set_name_kr} {jp} {r}".strip())
+        for alias in SET_CODE_ALIASES.get(code, []):
+            if jp:
+                queries.append(f"포켓몬카드 {alias} {jp} {r}")
 
     seen: set[str] = set()
     out: list[str] = []
