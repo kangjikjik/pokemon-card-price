@@ -401,12 +401,6 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
 
     if APPLY:
 
-        # 개별 거래 rows — 거래내역용(완화 필터) 우선, 없으면 시세용 strict
-        trade_source = sorted(
-            sold_trades if sold_trades else sold_quotes,
-            key=lambda q: q.updated_at,
-            reverse=True,
-        )
         rows: list[dict] = []
         if price > 0:
             # 카드와 동일하게 대표 시세 요약 행과 개별 거래 행을 함께 저장한다.
@@ -417,18 +411,19 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
                 "price_krw": price,
                 "source": source,
             })
-        for q in trade_source[:10]:
+        # 대표 요약 행과 별도로 상세 행을 구성한다.
+        # 판매중 호가를 사용하는 경우에도 상품 PID·갱신 시각을 보존한다.
+        detail_quotes = (
+            sold_trades
+            if sold_trades
+            else (sold_quotes if tier == "sold" else listing_quotes)
+        )
+        detail_tier = "sold" if sold_trades or tier == "sold" else "listing"
+        for q in sorted(detail_quotes, key=lambda x: x.updated_at, reverse=True)[:10]:
             if not q.pid:
                 continue
-            src = f"{source_prefix}:sold:{q.pid}:{q.updated_at}"
+            src = f"{source_prefix}:{detail_tier}:{q.pid}:{q.updated_at}"
             rows.append({"set_id": set_id, "region": region, "price_krw": q.price, "source": src})
-        # sold가 없을 때만 listing 저장 (URL 필수)
-        if not rows:
-            for q in listing_quotes[:10]:
-                if not q.pid:
-                    continue
-                src = f"{source_prefix}:listing:{q.pid}:{q.updated_at}"
-                rows.append({"set_id": set_id, "region": region, "price_krw": q.price, "source": src})
         # 아무것도 없으면 미등록 row
         if not rows:
             rows.append({"set_id": set_id, "region": region, "price_krw": 0, "source": f"{source_prefix}:none"})
