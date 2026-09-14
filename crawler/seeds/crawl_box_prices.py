@@ -163,7 +163,7 @@ def fetch_bunjang(keyword: str) -> list[dict]:
 
     encoded = urllib.parse.quote(keyword)
 
-    url = f"https://api.bunjang.co.kr/api/1/find_v2.json?q={encoded}&n=50"
+    url = f"https://api.bunjang.co.kr/api/1/find_v2.json?q={encoded}&n=100"
 
     try:
 
@@ -205,6 +205,10 @@ def _merge_quotes(
 
     verifier: BoxImageVerifier,
 
+    *,
+    sold_trades_out: list[VerifiedBoxQuote] | None = None,
+    seen_trade_pids: set[str] | None = None,
+
 ) -> None:
 
     for item in items:
@@ -232,6 +236,21 @@ def _merge_quotes(
         sold_out.extend(sold)
 
         listing_out.extend(listings)
+
+        # 거래내역용 — 이미지 검증·개봉 필터 완화, 미개봉 표기 없어도 포함
+        if sold_trades_out is not None:
+            trade_sold, _ = filter_fn(
+                [item], set_name, set_code, msrp, pack_msrp, None,
+                allow_opened=True,
+            )
+            trade_pids = seen_trade_pids if seen_trade_pids is not None else seen_pids
+            for q in trade_sold:
+                tp = q.pid or ""
+                if tp and tp in trade_pids:
+                    continue
+                if tp:
+                    trade_pids.add(tp)
+                sold_trades_out.append(q)
 
 
 
@@ -309,7 +328,11 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
 
     listing_quotes: list[VerifiedBoxQuote] = []
 
+    sold_trades: list[VerifiedBoxQuote] = []
+
     seen_pids: set[str] = set()
+
+    seen_trade_pids: set[str] = set()
 
     used_queries: list[str] = []
 
@@ -351,6 +374,10 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
 
                 verifier,
 
+                sold_trades_out=sold_trades,
+
+                seen_trade_pids=seen_trade_pids,
+
             )
 
             if len(sold_quotes) + len(listing_quotes) > before:
@@ -361,7 +388,8 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
 
 
 
-    price, count, tier = resolve_bunjang_box_price(sold_quotes, listing_quotes)
+    effective_sold = sold_trades if sold_trades else sold_quotes
+    price, count, tier = resolve_bunjang_box_price(effective_sold, listing_quotes)
 
     source = f"{source_prefix}:{tier}" if count > 0 else ""
 
@@ -373,6 +401,38 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
 
     if APPLY:
 
+        # 개별 거래 rows — 거래내역용(완화 필터) 우선, 없으면 시세용 strict
+        trade_source = sorted(
+            sold_trades if sold_trades else sold_quotes,
+            key=lambda q: q.updated_at,
+            reverse=True,
+        )
+        rows: list[dict] = []
+        if price > 0:
+            # 카드와 동일하게 대표 시세 요약 행과 개별 거래 행을 함께 저장한다.
+            # 요약 행은 시세 추이, 개별 행은 링크·실제 거래일 표시에 사용한다.
+            rows.append({
+                "set_id": set_id,
+                "region": region,
+                "price_krw": price,
+                "source": source,
+            })
+        for q in trade_source[:10]:
+            if not q.pid:
+                continue
+            src = f"{source_prefix}:sold:{q.pid}:{q.updated_at}"
+            rows.append({"set_id": set_id, "region": region, "price_krw": q.price, "source": src})
+        # sold가 없을 때만 listing 저장 (URL 필수)
+        if not rows:
+            for q in listing_quotes[:10]:
+                if not q.pid:
+                    continue
+                src = f"{source_prefix}:listing:{q.pid}:{q.updated_at}"
+                rows.append({"set_id": set_id, "region": region, "price_krw": q.price, "source": src})
+        # 아무것도 없으면 미등록 row
+        if not rows:
+            rows.append({"set_id": set_id, "region": region, "price_krw": 0, "source": f"{source_prefix}:none"})
+
         deleted, inserted = save_daily_box_snapshots(
 
             sb,
@@ -381,17 +441,7 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
 
             region,
 
-            [{
-
-                "set_id": set_id,
-
-                "region": region,
-
-                "price_krw": price if price > 0 else 0,
-
-                "source": source or (source_prefix if price > 0 else f"{source_prefix}:none"),
-
-            }],
+            rows,
 
         )
 

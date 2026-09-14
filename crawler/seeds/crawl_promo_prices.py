@@ -120,6 +120,13 @@ def crawl_promo_kr(set_code: str, set_name: str, cards: list[dict]) -> int:
         else:
             _log("  => 미등록")
         if APPLY and price > 0:
+            # 일반 확장팩과 동일하게 대표 시세 요약 행을 먼저 저장한다.
+            # 개별 거래 행은 상세 링크·실제 거래일 표시용으로 함께 저장한다.
+            priced_rows.append({
+                "card_id": card["id"],
+                "price_krw": price,
+                "source": source,
+            })
             if source.startswith("sold") and sold_items:
                 for it in sort_sold_items_by_time(sold_items)[:10]:
                     pid = it.get("pid", "")
@@ -173,8 +180,14 @@ def crawl_promo_jp(set_code: str, set_name: str, cards: list[dict]) -> int:
                 f"  JP [{card.get('card_number')}] {card.get('name_jp') or card.get('name_kr')}"
                 f" => ₩{price_krw:,} / ¥{price_jpy:,} ({count}건, {source})"
             )
+            # 일반 JP 확장팩과 동일하게 대표 시세 요약 행을 저장한다.
+            rows.append({
+                "card_id": card["id"],
+                "price_krw": price_krw,
+                "price_jpy": price_jpy,
+                "source": source,
+            })
             if source.startswith("sold:"):
-                n_before = len(rows)
                 for it in sort_sold_items_by_time(b_sold_items)[:10]:
                     pid = it.get("pid", "")
                     ts = it.get("update_time", 0)
@@ -187,20 +200,6 @@ def crawl_promo_jp(set_code: str, set_name: str, cards: list[dict]) -> int:
                         "price_krw": it["price"],
                         "source": src,
                     })
-                if len(rows) == n_before:
-                    rows.append({
-                        "card_id": card["id"],
-                        "price_jpy": price_jpy,
-                        "price_krw": price_krw,
-                        "source": source,
-                    })
-            else:
-                rows.append({
-                    "card_id": card["id"],
-                    "price_jpy": price_jpy,
-                    "price_krw": price_krw,
-                    "source": source,
-                })
             ok += 1
         else:
             _log(f"  JP [{card.get('card_number')}] {card.get('name_jp') or card.get('name_kr')} => 미등록")
