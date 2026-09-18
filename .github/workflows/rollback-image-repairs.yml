@@ -1,0 +1,38 @@
+name: Rollback bad image repairs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  rollback:
+    name: Restore pre-repair card identities
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r crawler/requirements.txt
+
+      - name: Download latest repair report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download 35320765713 --repo "${{ github.repository }}" --name official-card-image-repair-report --dir rollback/latest
+
+      - name: Download previous repair report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download 35316632099 --repo "${{ github.repository }}" --name official-card-image-repair-report --dir rollback/previous
+
+      - name: Restore pre-repair values
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          python crawler/seeds/rollback_image_repairs.py \
+            --report rollback/latest/official_identity_apply_latest.json \
+            --report rollback/previous/official_identity_apply_latest.json
