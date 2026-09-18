@@ -74,14 +74,14 @@ def main() -> None:
             continue
         for card in _load(sb, sets[meta.code]["id"]):
             if card.get("rarity") in TARGET_RARITIES and card.get("rarity") not in EXCLUDED_RARITIES:
-            targets.append(
-                {
-                    **card,
-                    "set_code": meta.code,
-                    "collectory_set": meta.bs_code,
-                    "set": sets[meta.code]["name_kr"],
-                }
-            )
+                targets.append(
+                    {
+                        **card,
+                        "set_code": meta.code,
+                        "collectory_set": meta.bs_code,
+                        "set": sets[meta.code]["name_kr"],
+                    }
+                )
 
     report = {"checked": len(targets), "unchanged": 0, "changed": [], "unresolved": []}
 
