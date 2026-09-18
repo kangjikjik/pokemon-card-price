@@ -15,7 +15,8 @@ HEADERS = {
 }
 
 COMPARE_SIZE = 64
-MIN_CARD_SIMILARITY = 0.42
+# 사진 촬영 각도·배경·보호용품 차이를 감안해 명백한 오매칭만 차단한다.
+MIN_CARD_SIMILARITY = 0.25
 
 
 def bunjang_listing_image_url(item: dict) -> str:
@@ -84,7 +85,8 @@ class CardImageVerifier:
             return self._cache[cache_key]
 
         reference = self._load_reference()
-        matched = False
+        # 이미지가 없거나 다운로드할 수 없으면 기존 제목·등급 검증 결과를 유지한다.
+        matched = True
         if reference is not None and url.startswith("http"):
             try:
                 response = self._client.get(url)
@@ -97,7 +99,7 @@ class CardImageVerifier:
                             >= MIN_CARD_SIMILARITY
                         )
             except Exception:
-                matched = False
+                matched = True
 
         self._cache[cache_key] = matched
         return matched
