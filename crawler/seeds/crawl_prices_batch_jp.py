@@ -1,10 +1,10 @@
 """
-일본판 시세 배치 — Collectory JP + 번개 (유유테i는 --fallback 시 미등록만).
+일본판 시세 배치 — 번개장터 전용 (Collectory JP · 유유테이 제거).
 
-  python crawl_prices_batch_jp.py --apply --all --fallback
-  python crawl_prices_batch_jp.py --apply --set MG6 --fallback
+  python crawl_prices_batch_jp.py --apply --all
+  python crawl_prices_batch_jp.py --apply --set MG6
 
-일일 자동: crawler/scripts/run_daily_price_batch.ps1
+일일 자동: crawler/scripts/run_daily_price_batch.ps1 / GitHub Actions
 """
 from __future__ import annotations
 
@@ -20,7 +20,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.stdout.reconfigure(encoding="utf-8")
 
 from kr_sets import KR_SETS  # noqa: E402
-from lib.yuyutei_prices import YUYU_VERS  # noqa: E402
 
 SEEDS_DIR = Path(__file__).resolve().parent
 STATE_PATH = SEEDS_DIR / "_batch_state_jp.json"
@@ -46,20 +45,18 @@ def save_state(state: dict) -> None:
 
 
 def target_codes() -> list[str]:
-    """유유테이 vers 매핑된 featured 팩 (발매 최신순)."""
-    return [s.code for s in KR_SETS if s.code in YUYU_VERS]
+    """모든 featured 팩 (발매 최신순) — 번개장터 전용이므로 유유테이 vers 무관."""
+    return [s.code for s in KR_SETS]
 
 
 def batch_sets(codes: list[str], batch_size: int) -> list[list[str]]:
     return [codes[i : i + batch_size] for i in range(0, len(codes), batch_size)]
 
 
-def run_set(set_code: str, apply: bool, quiet: bool = True, fallback: bool = False) -> int:
+def run_set(set_code: str, apply: bool, quiet: bool = True) -> int:
     cmd = [sys.executable, str(CRAWLER), "--set", set_code]
     if apply:
         cmd.append("--apply")
-    if fallback:
-        cmd.append("--fallback")
     if quiet:
         cmd.append("--quiet")
     print(f"\n{'=' * 60}\n>>> JP {set_code}\n{'=' * 60}")
@@ -72,7 +69,6 @@ def main() -> None:
     list_only = "--list" in sys.argv
     batch_size = int(get_arg("--size", "5") or "5")
     pause_seconds = int(get_arg("--pause", "0") or "0")
-    use_fallback = "--fallback" in sys.argv
     single_set = get_arg("--set", "")
     run_all = "--all" in sys.argv
 
@@ -107,11 +103,12 @@ def main() -> None:
     failed: list[str] = []
 
     for index, code in enumerate(targets):
-        rc = run_set(code, apply=apply, quiet=quiet, fallback=use_fallback)
+        rc = run_set(code, apply=apply, quiet=quiet)
         if rc != 0:
             failed.append(code)
             if run_all:
-                print("\n전체 크롤 중단 — 첫 실패 원인을 해결한 뒤 다시 실행합니다.")
+                print(f"\n[경고] JP {code} 실패 — 다음 세트 계속 진행")
+            else:
                 break
         if run_all and pause_seconds > 0 and (index + 1) % batch_size == 0 and index + 1 < len(targets):
             print(f"\n배치 휴식: {batch_size}팩 완료, {pause_seconds}초")

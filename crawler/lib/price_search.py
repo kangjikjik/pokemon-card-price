@@ -3,6 +3,16 @@ from __future__ import annotations
 
 import re
 
+_LATIN_MEGA = re.compile(r"メga|메ga")  # Latin/Mix ga → 한글 가
+
+
+def normalize_mega_spelling(text: str) -> str:
+    """メga·메ga → 메가 — DB·검색·제목매칭 공통."""
+    if not text:
+        return text
+    return _LATIN_MEGA.sub("메가", text)
+
+
 # 검색 시 상위 등급 오염 방지 (SR 검색 시 SAR/MUR 제외)
 RARITY_BLOCK_ABOVE: dict[str, list[str]] = {
     "RR": ["AR", "SR", "SAR", "MUR", "UR", "HR", "SSR", "CSR", "CHR", "ACE", "RRR", "PR", "TR"],
@@ -43,6 +53,33 @@ RARITY_TOKENS: dict[str, list[str]] = {
 
 CARD_NUMBER_RE = re.compile(r"\b(\d{1,3}/\d{1,3})\b")
 
+# 체결 N건 미만이면 호가 우선 (번개 표본 부족)
+MIN_SOLD_FOR_AGGREGATE = 10
+
+
+def normalize_card_number(num: str) -> str:
+    """015/081 → 15/081 (번개 제목·DB 번호 형식 통일)."""
+    n = (num or "").strip()
+    if "/" not in n:
+        return n
+    left, right = n.split("/", 1)
+    try:
+        return f"{int(left)}/{right}"
+    except ValueError:
+        return n
+
+
+def card_number_in_title(title: str, card_number: str) -> bool:
+    """제목에 카드번호가 있으면 정규화 후 비교, 없으면 통과."""
+    num = normalize_card_number(card_number)
+    if not num:
+        return True
+    matches = CARD_NUMBER_RE.findall(title)
+    if not matches:
+        return True
+    norm_matches = {normalize_card_number(m) for m in matches}
+    return num in norm_matches
+
 # PSA·BGS·BRG 등 등급(슬랩) 카드 제외
 GRADED_KEYWORDS = [
     "PSA", "BGS", "CGC", "SGC", "ARS", "GRAAD", "PCG", "HGA", "KSA", "BRG",
@@ -60,6 +97,12 @@ JP_KEYWORDS = [
 KR_KEYWORDS = [
     "한글", "한국", "국내", "한글판", "한판", "KR", "kr", "Korean", "코리안",
     "한국)", "한국판",
+]
+
+# 한국 크롤에서 제외 — 일판·북미 등 (제목에 일판 미표기 일본 고가 매물 방지)
+FOREIGN_FOR_KR = [
+    "일본판", "일판", "일본", "일어", "JP", "jp", "日本", "japanese", "영문판", "영판", "미판",
+    "Japanese", "English", "EN ", " EN", "海外", "북미", "미국판", "북미판",
 ]
 
 BUNDLE_KEYWORDS = [
@@ -82,14 +125,15 @@ QUANTITY_PATTERNS: list[re.Pattern[str]] = [
     re.compile(r"(\d{1,2})\s*장(?!\s*(?:세트|판|팝|식))"),
     re.compile(r"(\d{1,2})\s*매"),
     re.compile(r"(\d{1,2})\s*개"),
-    re.compile(r"[xX×]\s*(\d{1,2})"),
+    # "EX 112/081"의 X를 수량 x11로 오인하지 않도록 앞에 글자가 없을 때만
+    re.compile(r"(?<![A-Za-z가-힣])[xX×]\s*(\d{1,2})\b"),
     re.compile(r"(\d{1,2})\s*[xX×](?!\d)"),
 ]
 
 MAX_SINGLE_LISTING_QTY = 20
 
 SET_CODE_ALIASES: dict[str, list[str]] = {
-    "MG7": ["MG7", "M6", "m6", "스톰에메랄다", "스톰 에메랄다"],
+    "MG7": ["MG7", "M6", "m6", "스톰에메랄다", "스톰 에메랄다", "스톰에메랄드", "스톰 에메랄드", "스토에메랄da", "스토 에메랄da", "에메랄da"],
     "MG6": ["MG6", "M5", "m5", "어비스아이", "어비스 아이"],
     "MG5": ["MG5", "니힐제로", "니힐 제로"],
     "MG4a": ["MG4a", "MG4A", "메가드림", "메가 드림", "MEGA 드림", "드림 ex", "MEGA 드림 ex"],
@@ -120,7 +164,7 @@ BOX_MARKETPLACE_ALIASES: dict[str, list[str]] = {
     "MG5": ["무니키스 제로", "무니키스제로"],
     "MG5a": ["닌자 스피너"],
     "MG6": ["어비스 아이"],
-    "MG7": ["스톰 에메랄다", "스톰에메랄다"],
+    "MG7": ["스톰 에메랄다", "스톰에메랄다", "스톰에메랄드", "스톰 에메랄드", "스토에메랄da", "스토 에메랄da", "에메랄da"],
     "SV1S": ["스칼렛 ex", "스칼렛ex"],
     "SV1V": ["바이올렛 ex", "바이올렛ex"],
     "SV1a": ["트리플렛비트"],
@@ -174,35 +218,60 @@ def build_search_queries(
     *,
     slim: bool = False,
 ) -> list[str]:
-    """등급·세트·카드번호·한글판을 포함한 검색어 목록.
+    """번개 검색어 — **카드명 + 등급** 우선 (M5·MG6·팩번호 검색 금지).
 
-    slim=True: 구형 팩처럼 매물이 희박한 경우 핵심 쿼리 3개만 반환.
+    slim=True: 구형 팩처럼 매물이 희박한 경우 핵심 쿼리만 반환.
     """
-    base = name_kr.strip()
-    num = card_number.strip()
-    num_short = num.split("/")[0] if num else ""
+    base = normalize_mega_spelling(name_kr.strip())
     r = rarity.upper()
-    code = set_code.strip().upper()
+    compact = re.sub(r"\s+", "", base)
+    # Collectory 공식명(그로우 풀에너지) ↔ 번개 검색(그로우 풀 에너지)
+    name_variants = [base]
+    spaced_energy = re.sub(r"(풀|불꽃|물)(에너지)", r"\1 \2", base)
+    if spaced_energy != base:
+        name_variants.append(spaced_energy)
 
     queries: list[str] = []
-    if set_name_kr and base and r:
-        queries.append(f"포켓몬카드 {set_name_kr} {base} {r} 한글")
-        queries.append(f"포켓몬카드 {set_name_kr} {base} {r}")
-    if code and base and r:
-        queries.append(f"포켓몬카드 {code} {base} {r}")
+    # 1순위: 사람들이 실제로 치는 형태
+    is_energy = bool(re.search(r"(풀|불꽃|물)\s*에너지", base))
+    for nm in name_variants:
+        c = re.sub(r"\s+", "", nm)
+        if nm and r:
+            queries.append(f"{nm} {r}")
+            queries.append(f"{nm}{r}")
+        if c and c != nm and r:
+            queries.append(f"{c} {r}")
+            queries.append(f"{c}{r}")
+        # 에너지 SR — 번개 검색에 SR 없이 올리는 경우 많음
+        if is_energy and nm:
+            queries.append(nm)
+            if c != nm:
+                queries.append(c)
+    if compact and compact != base and r:
+        queries.append(f"{compact} {r}")
+        queries.append(f"{compact}{r}")
 
     if not slim:
-        # 신형 팩에서만 사용하는 보조 쿼리들
-        if set_name_kr and base and num:
-            queries.append(f"포켓몬카드 {set_name_kr} {base} {num}")
-        if base and r:
-            queries.append(f"포켓몬카드 {base} {r} {set_name_kr}".strip())
-        if set_name_kr and base:
-            queries.append(f"포켓몬카드 {set_name_kr} {base}")
-        if num_short and r and set_name_kr:
-            queries.append(f"포켓몬카드 {set_name_kr} {num_short} {r}")
-        if set_name_kr and num and r:
-            queries.append(f"포켓몬카드 {set_name_kr} {num} {r}")
+        for nm in name_variants:
+            if set_name_kr and nm and r:
+                queries.append(f"포켓몬카드 {set_name_kr} {nm} {r} 한글")
+                queries.append(f"포켓몬카드 {set_name_kr} {nm} {r}")
+                queries.append(f"{set_name_kr} {nm} {r}")
+            if nm and r:
+                queries.append(f"포켓몬카드 {nm} {r}")
+        short_name = base
+        for prefix in ("메가", "Mega ", "mega "):
+            if short_name.startswith(prefix):
+                short_name = short_name[len(prefix) :].strip()
+                break
+        if short_name and short_name != base and r:
+            queries.append(f"{short_name} {r}")
+            queries.append(f"포켓몬카드 {short_name} {r}")
+        if compact.startswith("메가") and len(compact) > len("메가"):
+            rest = compact[len("메가") :].strip()
+            if rest and r:
+                queries.append(f"메가 {rest} {r}")
+                queries.append(f"메가{rest}{r}")
 
     seen: set[str] = set()
     out: list[str] = []
@@ -282,9 +351,9 @@ def _title_matches_rarity(title: str, rarity: str) -> bool:
     if r == "RR":
         for block in RARITY_BLOCK_ABOVE.get("RR", []):
             for bt in RARITY_TOKENS.get(block, [block]):
-                if bt.upper() in t and not has_rarity_token:
+                if bt.upper() in t:
                     return False
-        return True
+        return has_rarity_token or " RR" in f" {title.upper()} " or title.upper().startswith("RR ")
 
     if not has_rarity_token:
         if r in ("SR", "SAR", "AR", "MUR", "UR", "ACE"):
@@ -297,8 +366,12 @@ def _title_matches_rarity(title: str, rarity: str) -> bool:
     return True
 
 
+def _compact_match_text(text: str) -> str:
+    return re.sub(r"\s+", "", text).lower()
+
+
 def _title_matches_name(title: str, name_kr: str) -> bool:
-    name = name_kr.strip()
+    name = normalize_mega_spelling(name_kr.strip())
     if not name:
         return True
     core = name
@@ -310,6 +383,15 @@ def _title_matches_name(title: str, name_kr: str) -> bool:
         return True
     if name in title:
         return True
+    # "메가 제라오라"처럼 띄어쓰기·대소문자만 다른 경우
+    if len(core) >= 2 and _compact_match_text(core) in _compact_match_text(title):
+        return True
+    if core.startswith("메가") and len(core) > 2:
+        short = core[len("메가") :].strip()
+        if len(short) >= 2 and (
+            short in title or _compact_match_text(short) in _compact_match_text(title)
+        ):
+            return True
     return False
 
 
@@ -317,7 +399,60 @@ def _is_japanese_listing(title: str) -> bool:
     t = title
     if any(k in t for k in KR_KEYWORDS):
         return False
-    return any(k in t for k in JP_KEYWORDS)
+    return any(k in t for k in JP_KEYWORDS + FOREIGN_FOR_KR)
+
+
+def _is_multi_card_sale(title: str, name_kr: str) -> bool:
+    """다른 카드와 묶음·일괄 판매 (단품 아님)."""
+    if any(k in title for k in ("일괄", "묶음", "세트", "SET", "set", "통판", "종세트")):
+        return True
+    nums = {normalize_card_number(n) for n in CARD_NUMBER_RE.findall(title)}
+    if len(nums) >= 2:
+        return True
+    if re.search(r"[,+&]", title):
+        parts = re.split(r"[,+&]", title)
+        graded_parts = 0
+        for p in parts:
+            pu = f" {p.upper()} "
+            if any(g in pu for g in (" SR ", " SAR ", " RR ", " AR ", " EX ", " MUR ", "BRG", "PSA")):
+                graded_parts += 1
+        if graded_parts >= 2:
+            return True
+        other_named = sum(
+            1 for p in parts
+            if len(p.strip()) >= 3 and name_kr not in p and not _title_matches_name(p, name_kr)
+        )
+        if graded_parts >= 1 and other_named >= 1:
+            return True
+    if "+" in title:
+        left, _, right = title.partition("+")
+        if (
+            len(left.strip()) >= 3
+            and len(right.strip()) >= 3
+            and not _title_matches_name(right, name_kr)
+        ):
+            return True
+    return False
+
+
+def filter_median_outliers(
+    prices: list[int],
+    *,
+    max_ratio: float = 2.2,
+    min_ratio: float = 0.35,
+    min_samples: int = 4,
+) -> list[int]:
+    """중앙값 대비 비정상 고가·저가 제거 (일판 오매칭·묶음 잔여)."""
+    clean = [p for p in prices if p > 0]
+    if len(clean) < min_samples:
+        return clean
+    med = sorted(clean)[len(clean) // 2]
+    if med <= 0:
+        return clean
+    lo = max(int(med * min_ratio), 300)
+    hi = int(med * max_ratio)
+    filtered = [p for p in clean if lo <= p <= hi]
+    return filtered if len(filtered) >= max(2, len(clean) // 4) else clean
 
 
 def _is_graded_listing(title: str) -> bool:
@@ -327,9 +462,10 @@ def _is_graded_listing(title: str) -> bool:
 
 def parse_listing_quantity(title: str) -> int:
     """제목에서 동일 카드 매수 추정 (2장·3매·x3 등). 없으면 1."""
+    scrubbed = CARD_NUMBER_RE.sub(" ", title)
     qty = 1
     for pat in QUANTITY_PATTERNS:
-        m = pat.search(title)
+        m = pat.search(scrubbed)
         if not m:
             continue
         n = int(m.group(1))
@@ -376,9 +512,10 @@ def _is_bundle_listing(title: str, name_kr: str) -> bool:
         return True
     if re.search(r"\d{3}/\d{3}.*\d{3}/\d{3}", title):
         return True
-    # 콤마/플러스로 여러 카드명 나열 (단품 아님)
-    if re.search(r"[,+·/]", title):
-        parts = re.split(r"[,+·]", title)
+    # 콤마/플러스로 여러 카드명 나열 (단품 아님) — 015/081 슬래시는 제외
+    scrubbed = CARD_NUMBER_RE.sub(" ", title)
+    if re.search(r"[,+·/]", scrubbed):
+        parts = re.split(r"[,+·/]", scrubbed)
         name_hits = sum(1 for p in parts if name_kr[:2] in p or (len(name_kr) >= 3 and name_kr in p))
         if len(parts) >= 2 and name_hits <= 1:
             other_names = sum(
@@ -428,18 +565,34 @@ def is_raw_kr_listing(
         return False
     if _is_bundle_listing(title, name_kr):
         return False
+    if _is_multi_card_sale(title, name_kr):
+        return False
     if not _title_matches_name(title, name_kr):
         return False
     if not _title_matches_rarity(title, rarity):
-        return False
+        from lib.trainer_item_cards import skip_card_number_in_title  # noqa: PLC0415
+
+        # MEGA 트레이너·에너지 SR — 번개 제목에 SR 미표기인 경우가 많음
+        if (
+            set_code.upper().startswith("MG")
+            and (rarity or "").upper() == "SR"
+            and skip_card_number_in_title(set_code, card_number, "")
+            and _title_matches_name(title, name_kr)
+        ):
+            tu = title.upper()
+            if any(tok in tu for tok in ("SAR", " AR ", " ACE ", " MUR ", " UR ")):
+                return False
+        else:
+            return False
     if not _promo_listing_valid(title, card_number):
         return False
 
+    from lib.trainer_item_cards import skip_card_number_in_title  # noqa: PLC0415
+
     num = card_number.strip()
-    if num:
-        matches = CARD_NUMBER_RE.findall(title)
-        promo_matches = PROMO_MP_NUMBER_RE.findall(title)
-        if matches and num not in matches:
+    if num and not skip_card_number_in_title(set_code, card_number):
+        if not card_number_in_title(title, num):
+            promo_matches = PROMO_MP_NUMBER_RE.findall(title)
             if not promo_matches or num.upper() not in [m.upper() for m in promo_matches]:
                 return False
 
@@ -485,6 +638,12 @@ def filter_bunjang_listings(
             continue
         prices.append(unit)
     return prices
+
+
+def filter_prices_pipeline(prices: list[int], rarity: str) -> list[int]:
+    """등급 밴드 → 중앙값 이상치 순 필터."""
+    banded = filter_prices_by_rarity_band(prices, rarity)
+    return filter_median_outliers(banded)
 
 
 def filter_prices_by_rarity_band(prices: list[int], rarity: str) -> list[int]:

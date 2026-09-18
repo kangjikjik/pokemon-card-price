@@ -22,8 +22,11 @@ class KrSet:
     pokemoncard_page: int = 0
 
 
-# featured 79 — 한국 발매일 최신순 (pokemoncard.co.kr 검증)
+# featured 80 — 한국 발매일 최신순 (pokemoncard.co.kr 검증)
 KR_SETS: list[KrSet] = [
+    KrSet("MG7", "스톰에메랄다", "2026-08-21",
+          "https://data1.pokemonkorea.co.kr/2026/08/2026-08-11_14-11-21-60448-1786425081.png",
+          "BS2026005", "4b9ecd94-4ac4-4fb0-a93a-d7d8b0771ed1", 1500, 45000, 938),
     KrSet("MG6", "어비스아이", "2026-06-26",
           "https://data1.pokemonkorea.co.kr/2026/06/2026-06-04_13-37-18-11403-1780547838.png",
           "BS2026004", "111a2e55-8991-414b-a5da-009b3553e6cd", 1500, 45000, 907),

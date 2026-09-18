@@ -100,6 +100,8 @@ class PriceQuote:
     tier: str  # sold | listing
     source: str
     title: str = ""
+    url: str = ""           # SNKRDUNK·메ルカリ 등 원본 링크
+    trade_date: str = ""    # Collectory 표시일 → ISO YYYY-MM-DD
 
 
 def is_damaged_grade(grade: str) -> bool:

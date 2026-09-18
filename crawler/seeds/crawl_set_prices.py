@@ -25,16 +25,19 @@ from lib.bunjang_card_price import (  # noqa: E402
     collect_bunjang_items,
     prefetch_bunjang_kr,
     resolve_card_price,
+    sort_sold_items_by_time,
     split_by_status_kr,
 )
 from lib.price_history import save_daily_snapshots  # noqa: E402
 from lib.price_search import (  # noqa: E402
+    MIN_SOLD_FOR_AGGREGATE,
     build_search_queries,
-    filter_prices_by_rarity_band,
+    filter_prices_pipeline,
     is_legacy_set,
 )
 from kr_sets import KR_BY_CODE  # noqa: E402
 from lib.rarity_rank import is_displayable_rarity  # noqa: E402
+from lib.trainer_item_cards import is_trainer_or_item_card  # noqa: E402
 from utils.db import get_supabase  # noqa: E402
 
 load_dotenv()
@@ -43,7 +46,25 @@ sb = get_supabase()
 APPLY = "--apply" in sys.argv
 QUIET = "--quiet" in sys.argv
 MISSING_ONLY = "--missing-only" in sys.argv
+TRAINER_ITEM_ONLY = "--trainer-item-only" in sys.argv
 WORKERS = 16
+MAX_SOLD_ROWS = 100
+
+
+def _append_bunjang_rows(
+    out: list[dict],
+    items: list[dict],
+    tier: str,
+    card_id: int,
+) -> None:
+    """tier: sold | listing — sold:bunjang:PID:TS 또는 listing:bunjang:PID:TS"""
+    for it in sort_sold_items_by_time(items)[:MAX_SOLD_ROWS]:
+        pid = it.get("pid", "")
+        if not pid:
+            continue
+        ts = it.get("update_time", 0)
+        src = f"{tier}:bunjang:{pid}:{ts}" if ts else f"{tier}:bunjang:{pid}"
+        out.append({"card_id": card_id, "price_krw": it["price"], "source": src})
 
 
 def get_arg(flag: str, default: str = "") -> str:
@@ -87,27 +108,37 @@ def crawl_card(
     set_name_kr: str,
     set_code: str,
     *,
-    prefetched: tuple[list[int], list[int]] | None = None,
-) -> tuple[int, int, str]:
-    """(price, count, source) — 번개장터 거래완료 평균 → 호가최저 순."""
+    prefetched: tuple[list[int], list[int], list[dict], list[dict]] | None = None,
+) -> tuple[int, int, str, list[dict], list[dict]]:
+    """(price, count, source, sold_items, listing_items)"""
     name_kr = card.get("name_kr") or ""
     rarity = card.get("rarity") or ""
     card_number = card.get("card_number") or ""
 
     if prefetched is not None:
-        sold, listing = prefetched
+        sold, listing, sold_items, listing_items = prefetched
     else:
+        from lib.bunjang_card_price import split_by_status_kr_with_items  # noqa: PLC0415
         queries = _build_queries(set_name_kr, name_kr, rarity, card_number, set_code)
         all_items = collect_bunjang_items(queries)
-        sold, listing = split_by_status_kr(
+        sold_items_raw, listing_items_raw = split_by_status_kr_with_items(
             all_items, name_kr, rarity, card_number, set_code, set_name_kr
         )
+        sold = [it["price"] for it in sold_items_raw]
+        listing = [it["price"] for it in listing_items_raw]
+        sold_items = sold_items_raw
+        listing_items = listing_items_raw
 
     # 등급별 이상치 필터
-    sold = filter_prices_by_rarity_band(sold, rarity)
-    listing = filter_prices_by_rarity_band(listing, rarity)
+    sold_filtered = filter_prices_pipeline(sold, rarity)
+    listing_filtered = filter_prices_pipeline(listing, rarity)
 
-    return resolve_card_price(sold, listing)
+    filtered_prices = set(sold_filtered)
+    sold_items = [it for it in sold_items if it["price"] in filtered_prices]
+    listing_items = [it for it in listing_items if it["price"] in set(listing_filtered)]
+
+    price, count, source = resolve_card_price(sold_filtered, listing_filtered)
+    return price, count, source, sold_items, listing_items
 
 
 def main() -> None:
@@ -133,6 +164,11 @@ def main() -> None:
         or []
     )
     cards = [c for c in cards if is_displayable_rarity(c.get("rarity"))]
+    if TRAINER_ITEM_ONLY:
+        cards = [
+            c for c in cards
+            if is_trainer_or_item_card(set_code, c.get("card_number") or "")
+        ]
     if ONLY_RARITY:
         cards = [c for c in cards if (c.get("rarity") or "").upper() == ONLY_RARITY]
     if MISSING_ONLY:
@@ -177,8 +213,10 @@ def main() -> None:
 
     for card in cards:
         _log(f"\n[{card['card_number']}] {card['name_kr']} ({card['rarity']})")
-        pair = prefetch.get(card["id"])
-        price, count, source = crawl_card(card, set_name, set_code, prefetched=pair)
+        quad = prefetch.get(card["id"])
+        price, count, source, sold_items, listing_items = crawl_card(
+            card, set_name, set_code, prefetched=quad,
+        )
 
         if count > 0:
             tier = "거래완료" if source.startswith("sold") else "호가최저"
@@ -187,12 +225,16 @@ def main() -> None:
             _log("  => 미등록")
 
         if APPLY and price > 0:
-            priced_rows.append({
-                "card_id": card["id"],
-                "price_krw": price,
-                "source": source,
-            })
-            ok += 1
+            card_rows: list[dict] = []
+            # 목록·상세 대표가 (개별 거래 row와 분리)
+            card_rows.append({"card_id": card["id"], "price_krw": price, "source": source})
+            if sold_items:
+                _append_bunjang_rows(card_rows, sold_items, "sold", card["id"])
+            if listing_items and len(sold_items) < MIN_SOLD_FOR_AGGREGATE:
+                _append_bunjang_rows(card_rows, listing_items, "listing", card["id"])
+            if card_rows:
+                priced_rows.extend(card_rows)
+                ok += 1
 
     if APPLY:
         all_ids = [c["id"] for c in cards]
