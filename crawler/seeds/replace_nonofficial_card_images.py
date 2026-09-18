@@ -36,29 +36,43 @@ def _feature_image(row: dict) -> str:
     return f"https://{OFFICIAL_HOST}/data/{feature.split('?')[0]}"
 
 
-def _image_number(image_url: str) -> int | None:
-    match = re.search(r"_(\d+)\.(?:png|jpe?g|webp)$", image_url.split("?", 1)[0], re.I)
-    return int(match.group(1)) if match else None
-
-
-def _is_number_match(image_url: str, number: int) -> bool:
-    image_number = _image_number(image_url)
-    return image_number is None or image_number == number
-
-
 def _row_matches(row: dict, meta, number: int) -> bool:
     card_num = str(row.get("CardNum") or row.get("card_number") or "").strip()
     return (
-        card_num.startswith(meta.bs_code)
+        any(card_num.startswith(code) for code in _official_set_codes(meta))
         and card_num.rstrip().endswith(f"{number:03d}")
-        and _is_number_match(_feature_image(row), number)
         and bool(_feature_image(row))
     )
 
 
 def _row_set_matches(row: dict, meta) -> bool:
     card_num = str(row.get("CardNum") or row.get("card_number") or "").strip()
-    return card_num.startswith(meta.bs_code) and bool(_feature_image(row))
+    return any(card_num.startswith(code) for code in _official_set_codes(meta)) and bool(
+        _feature_image(row)
+    )
+
+
+def _official_set_codes(meta) -> list[str]:
+    codes = [meta.bs_code]
+    if meta.bs_code.endswith("-kr"):
+        codes.append(meta.bs_code.removesuffix("-kr"))
+    return codes
+
+
+def _exact_candidates(meta, number: int) -> list[dict]:
+    candidates: list[dict] = []
+    for code in _official_set_codes(meta):
+        rows = _search_rows(f"{code}{number:03d}")
+        candidates.extend(
+            row
+            for row in rows
+            if str(row.get("CardNum") or "").strip() == f"{code}{number:03d}"
+            and _feature_image(row)
+        )
+    unique: dict[str, dict] = {
+        str(row.get("CardNum")): row for row in candidates
+    }
+    return list(unique.values())
 
 
 def _search_rows(query: str) -> list[dict]:
@@ -124,18 +138,21 @@ def _fetch_official(meta, card: dict) -> dict:
         return {"status": "unresolved", "reason": "missing_card_number"}
     url = f"{BASE}/cards/detail/{meta.bs_code}{number:03d}"
     try:
+        exact = _exact_candidates(meta, number)
+        if len(exact) == 1:
+            return {"status": "matched", "image_url": _feature_image(exact[0]), "url": url}
+    except Exception as exc:
+        exact_error = type(exc).__name__
+    else:
+        exact_error = ""
+    try:
         response = httpx.get(url, headers=HEADERS, timeout=25, follow_redirects=True)
         if response.status_code != 200:
             detail = None
         else:
             response.encoding = "utf-8"
             detail = parse_detail(response.text)
-        if (
-            detail
-            and detail["number"] == number
-            and OFFICIAL_HOST in detail["image_url"]
-            and _is_number_match(detail["image_url"], number)
-        ):
+        if detail and detail["number"] == number and OFFICIAL_HOST in detail["image_url"]:
             return {"status": "matched", "image_url": detail["image_url"], "url": url}
     except Exception as exc:
         detail = None
@@ -150,7 +167,10 @@ def _fetch_official(meta, card: dict) -> dict:
     if len(candidates) == 1:
         return {"status": "matched", "image_url": _feature_image(candidates[0]), "url": url}
 
-    return {"status": "unresolved", "reason": "official_search_no_unique_match"}
+    return {
+        "status": "unresolved",
+        "reason": f"official_search_no_unique_match{('_' + exact_error) if exact_error else ''}",
+    }
 
 
 def main() -> None:
