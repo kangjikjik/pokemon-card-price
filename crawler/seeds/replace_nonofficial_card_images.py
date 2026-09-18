@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -33,6 +34,31 @@ def _feature_image(row: dict) -> str:
     if not feature.startswith("wmimages/"):
         return ""
     return f"https://{OFFICIAL_HOST}/data/{feature.split('?')[0]}"
+
+
+def _image_number(image_url: str) -> int | None:
+    match = re.search(r"_(\d+)\.(?:png|jpe?g|webp)$", image_url.split("?", 1)[0], re.I)
+    return int(match.group(1)) if match else None
+
+
+def _is_number_match(image_url: str, number: int) -> bool:
+    image_number = _image_number(image_url)
+    return image_number is None or image_number == number
+
+
+def _row_matches(row: dict, meta, number: int) -> bool:
+    card_num = str(row.get("CardNum") or row.get("card_number") or "").strip()
+    return (
+        card_num.startswith(meta.bs_code)
+        and card_num.rstrip().endswith(f"{number:03d}")
+        and _is_number_match(_feature_image(row), number)
+        and bool(_feature_image(row))
+    )
+
+
+def _row_set_matches(row: dict, meta) -> bool:
+    card_num = str(row.get("CardNum") or row.get("card_number") or "").strip()
+    return card_num.startswith(meta.bs_code) and bool(_feature_image(row))
 
 
 def _search_rows(query: str) -> list[dict]:
@@ -91,8 +117,7 @@ def _fetch_official(meta, card: dict) -> dict:
             candidates = [
                 row
                 for row in _search_rows(name)
-                if str(row.get("CardNum") or "").strip().startswith(meta.bs_code)
-                and _feature_image(row)
+                if _row_set_matches(row, meta)
             ]
             if len(candidates) == 1:
                 return {"status": "matched", "image_url": _feature_image(candidates[0]), "url": ""}
@@ -105,7 +130,12 @@ def _fetch_official(meta, card: dict) -> dict:
         else:
             response.encoding = "utf-8"
             detail = parse_detail(response.text)
-        if detail and detail["number"] == number and OFFICIAL_HOST in detail["image_url"]:
+        if (
+            detail
+            and detail["number"] == number
+            and OFFICIAL_HOST in detail["image_url"]
+            and _is_number_match(detail["image_url"], number)
+        ):
             return {"status": "matched", "image_url": detail["image_url"], "url": url}
     except Exception as exc:
         detail = None
@@ -113,11 +143,7 @@ def _fetch_official(meta, card: dict) -> dict:
     # 상세 HTML 파싱 실패 시에도 공식 검색 결과의 세트·번호·이미지를 사용한다.
     try:
         candidates = [
-            row
-            for row in _search_rows(str(number))
-            if str(row.get("CardNum") or "").strip().startswith(meta.bs_code)
-            and str(row.get("CardNum") or "").strip().rstrip().endswith(f"{number:03d}")
-            and _feature_image(row)
+            row for row in _search_rows(str(number)) if _row_matches(row, meta, number)
         ]
     except Exception as exc:
         return {"status": "unresolved", "reason": f"official_search_{type(exc).__name__}"}
