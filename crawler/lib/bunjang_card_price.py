@@ -29,16 +29,25 @@ _HEADERS = {
 # API 조회
 # ──────────────────────────────────────────────────
 
-def fetch_bunjang_items(keyword: str, n: int = 100, *, timeout: int = 5) -> list[dict]:
+def fetch_bunjang_items(
+    keyword: str,
+    n: int = 100,
+    *,
+    page: int = 0,
+    timeout: int = 5,
+) -> list[dict]:
     """번개장터 검색 결과 (판매중 + 거래완료 모두 포함)."""
     encoded = urllib.parse.quote(keyword)
-    url = f"https://api.bunjang.co.kr/api/1/find_v2.json?q={encoded}&n={n}"
+    url = (
+        f"https://api.bunjang.co.kr/api/1/find_v2.json"
+        f"?q={encoded}&n={n}&page={page}&order=date"
+    )
     try:
         req = urllib.request.Request(url, headers=_HEADERS)
         res = urllib.request.urlopen(req, timeout=timeout).read().decode("utf-8")
         return json.loads(res).get("list", [])
     except Exception as e:
-        print(f"[번개] {keyword[:30]!r} 오류: {e}")
+        print(f"[번개] {keyword[:30]!r} p{page} 오류: {e}")
         return []
 
 
@@ -71,10 +80,28 @@ def split_by_status_kr(
       - sold : status=3, 90일 이내
       - listing : status=0
     """
+    sold_items, listing_items = split_by_status_kr_with_items(
+        items, name_kr, rarity, card_number, set_code, set_name_kr
+    )
+    return [it["price"] for it in sold_items], [it["price"] for it in listing_items]
+
+
+def split_by_status_kr_with_items(
+    items: list[dict],
+    name_kr: str,
+    rarity: str,
+    card_number: str,
+    set_code: str,
+    set_name_kr: str,
+) -> tuple[list[dict], list[dict]]:
+    """
+    KR 매물 → (sold_items, listing_items).
+    각 item: {"price": int, "pid": str}
+    """
     from lib.price_search import is_raw_kr_listing, parse_listing_quantity  # noqa: PLC0415
 
-    sold: list[int] = []
-    listing: list[int] = []
+    sold: list[dict] = []
+    listing: list[dict] = []
 
     for item in items:
         title = str(item.get("name", ""))
@@ -92,11 +119,12 @@ def split_by_status_kr(
 
         status = str(item.get("status", ""))
         update_time = int(item.get("update_time", 0) or 0)
+        pid = str(item.get("pid", ""))
 
         if status == "3" and _is_recent_sold(update_time):
-            sold.append(price)
+            sold.append({"price": price, "pid": pid, "update_time": update_time})
         elif status == "0":
-            listing.append(price)
+            listing.append({"price": price, "pid": pid, "update_time": update_time})
 
     return sold, listing
 
@@ -112,20 +140,32 @@ def split_by_status_jp(
     rarity: str,
     card_number: str,
 ) -> tuple[list[int], list[int]]:
-    """
-    JP 매물 → (sold_prices, listing_prices).
+    """JP 매물 → (sold_prices, listing_prices). 가격만 반환 (레거시 호환)."""
+    sold_items, listing_items = split_by_status_jp_with_items(
+        items, name_jp, name_kr, rarity, card_number
+    )
+    return [it["price"] for it in sold_items], [it["price"] for it in listing_items]
 
-    통과 기준:
-      - is_raw_jp_listing (일본판 미등급 단품)
-      - qty == 1
-      - sold : status=3, 90일 이내
-      - listing : status=0
+
+def split_by_status_jp_with_items(
+    items: list[dict],
+    name_jp: str,
+    name_kr: str,
+    rarity: str,
+    card_number: str,
+    *,
+    set_code: str = "",
+    name_en: str = "",
+) -> tuple[list[dict], list[dict]]:
+    """
+    JP 매물 → (sold_items, listing_items).
+    각 item: {"price": int, "pid": str, "update_time": int}
     """
     from lib.jp_price_search import is_raw_jp_listing  # noqa: PLC0415
     from lib.price_search import parse_listing_quantity  # noqa: PLC0415
 
-    sold: list[int] = []
-    listing: list[int] = []
+    sold: list[dict] = []
+    listing: list[dict] = []
 
     for item in items:
         title = str(item.get("name", ""))
@@ -135,20 +175,29 @@ def split_by_status_jp(
             continue
         if price < 300 or price > 10_000_000:
             continue
-        if not is_raw_jp_listing(title, name_jp, name_kr, rarity, card_number):
+        if not is_raw_jp_listing(
+            title, name_jp, name_kr, rarity, card_number,
+            name_en=name_en, set_code=set_code,
+        ):
             continue
         if parse_listing_quantity(title) > 1:
             continue
 
         status = str(item.get("status", ""))
         update_time = int(item.get("update_time", 0) or 0)
+        pid = str(item.get("pid", ""))
 
         if status == "3" and _is_recent_sold(update_time):
-            sold.append(price)
+            sold.append({"price": price, "pid": pid, "update_time": update_time})
         elif status == "0":
-            listing.append(price)
+            listing.append({"price": price, "pid": pid, "update_time": update_time})
 
     return sold, listing
+
+
+def sort_sold_items_by_time(items: list[dict]) -> list[dict]:
+    """거래완료 항목을 update_time 내림차순 정렬."""
+    return sorted(items, key=lambda x: int(x.get("update_time") or 0), reverse=True)
 
 
 # ──────────────────────────────────────────────────
@@ -159,29 +208,36 @@ def collect_bunjang_items(
     queries: list[str],
     *,
     n: int = 100,
-    early_stop_sold: int = 3,
+    early_stop_sold: int = 0,
 ) -> list[dict]:
     """검색어를 순서대로 실행 후 pid 기준 중복 제거.
 
     early_stop_sold: 이 수 이상의 거래완료(status=3) 매물이 모이면
-    나머지 쿼리를 스킵한다 (0이면 항상 전부 실행).
+    나머지 쿼리를 스킵한다 (0이면 항상 전부 실행, 거래내역 10건 수집용).
     """
     all_items: list[dict] = []
     seen_pids: set[str] = set()
     sold_count = 0
 
+    max_pages = 3
     for q in queries:
         if not q:
             continue
-        for it in fetch_bunjang_items(q, n=n):
-            pid = str(it.get("pid", ""))
-            if pid and pid in seen_pids:
-                continue
-            if pid:
-                seen_pids.add(pid)
-            all_items.append(it)
-            if str(it.get("status", "")) == "3":
-                sold_count += 1
+        for page in range(max_pages):
+            batch = fetch_bunjang_items(q, n=n, page=page)
+            if not batch:
+                break
+            for it in batch:
+                pid = str(it.get("pid", ""))
+                if pid and pid in seen_pids:
+                    continue
+                if pid:
+                    seen_pids.add(pid)
+                all_items.append(it)
+                if str(it.get("status", "")) == "3":
+                    sold_count += 1
+            if len(batch) < n:
+                break
 
         # 충분한 거래완료가 모이면 나머지 쿼리 스킵
         if early_stop_sold > 0 and sold_count >= early_stop_sold:
@@ -194,14 +250,23 @@ def resolve_card_price(
     sold: list[int],
     listing: list[int],
     source_suffix: str = "bunjang",
+    *,
+    min_sold_for_aggregate: int | None = None,
 ) -> tuple[int, int, str]:
     """
     (price, count, source).
 
-    - sold 있으면: 평균(average)
+    - sold 10건 이상: 평균(average)
+    - sold 10건 미만 + 호가 있음: 판매중 최저가 (표본 부족)
+    - sold만 있음: 그 sold 평균
     - sold 없으면: 판매중 최저가(min)
-    - 둘 다 없으면: (0, 0, "none")
     """
+    from lib.price_search import MIN_SOLD_FOR_AGGREGATE  # noqa: PLC0415
+
+    if min_sold_for_aggregate is None:
+        min_sold_for_aggregate = MIN_SOLD_FOR_AGGREGATE
+    sold = [p for p in sold if p > 0]
+    listing = [p for p in listing if p > 0]
     if sold:
         avg = round(sum(sold) / len(sold))
         return avg, len(sold), f"sold:{source_suffix}"
@@ -221,12 +286,15 @@ def prefetch_bunjang_kr(
     *,
     build_queries_fn: Callable[[str, str, str, str, str], list[str]],
     workers: int = 8,
-) -> dict[int, tuple[list[int], list[int]]]:
-    """카드 목록을 병렬로 번개장터 조회 → {card_id: (sold_prices, listing_prices)}."""
+) -> dict[int, tuple[list[int], list[int], list[dict], list[dict]]]:
+    """카드 목록을 병렬로 번개장터 조회.
+
+    Returns: {card_id: (sold_prices, listing_prices, sold_items, listing_items)}
+    """
     if not cards:
         return {}
 
-    def _one(card: dict) -> tuple[int, tuple[list[int], list[int]]]:
+    def _one(card: dict) -> tuple[int, tuple[list[int], list[int], list[dict], list[dict]]]:
         queries = build_queries_fn(
             set_name_kr,
             card.get("name_kr") or "",
@@ -235,7 +303,7 @@ def prefetch_bunjang_kr(
             set_code,
         )
         all_items = collect_bunjang_items(queries)
-        sold, listing = split_by_status_kr(
+        sold_items, listing_items = split_by_status_kr_with_items(
             all_items,
             card.get("name_kr") or "",
             card.get("rarity") or "",
@@ -243,15 +311,17 @@ def prefetch_bunjang_kr(
             set_code,
             set_name_kr,
         )
-        return card["id"], (sold, listing)
+        sold = [it["price"] for it in sold_items]
+        listing = [it["price"] for it in listing_items]
+        return card["id"], (sold, listing, sold_items, listing_items)
 
-    results: dict[int, tuple[list[int], list[int]]] = {}
+    results: dict[int, tuple[list[int], list[int], list[dict], list[dict]]] = {}
     with ThreadPoolExecutor(max_workers=min(workers, len(cards))) as pool:
         futures = [pool.submit(_one, c) for c in cards]
         for fut in as_completed(futures):
-            cid, pair = fut.result()
-            if pair[0] or pair[1]:
-                results[cid] = pair
+            cid, triple = fut.result()
+            if triple[0] or triple[1]:
+                results[cid] = triple
     return results
 
 
@@ -265,8 +335,8 @@ def prefetch_bunjang_jp(
     set_code: str,
     *,
     workers: int = 8,
-) -> dict[int, tuple[list[int], list[int]]]:
-    """JP 카드 목록을 병렬로 번개장터 조회 → {card_id: (sold_prices, listing_prices)}."""
+) -> dict[int, tuple[list[int], list[int], list[dict], list[dict]]]:
+    """JP 카드 목록 → {card_id: (sold_prices, listing_prices, sold_items, listing_items)}."""
     from lib.jp_price_search import build_jp_search_queries  # noqa: PLC0415
     from lib.price_search import is_legacy_set  # noqa: PLC0415
 
@@ -275,31 +345,36 @@ def prefetch_bunjang_jp(
 
     _slim = is_legacy_set(set_code)
 
-    def _one(card: dict) -> tuple[int, tuple[list[int], list[int]]]:
+    def _one(card: dict) -> tuple[int, tuple[list[int], list[int], list[dict], list[dict]]]:
         queries = build_jp_search_queries(
             set_name_kr,
-            card.get("name_jp") or card.get("name_kr") or "",
+            card.get("name_jp") or "",
             card.get("name_kr") or "",
             card.get("rarity") or "",
             card.get("card_number") or "",
             set_code,
             slim=_slim,
+            name_en=card.get("name_en") or "",
         )
         all_items = collect_bunjang_items(queries)
-        sold, listing = split_by_status_jp(
+        sold_items, listing_items = split_by_status_jp_with_items(
             all_items,
             card.get("name_jp") or "",
             card.get("name_kr") or "",
             card.get("rarity") or "",
             card.get("card_number") or "",
+            set_code=set_code,
+            name_en=card.get("name_en") or "",
         )
-        return card["id"], (sold, listing)
+        sold = [it["price"] for it in sold_items]
+        listing = [it["price"] for it in listing_items]
+        return card["id"], (sold, listing, sold_items, listing_items)
 
-    results: dict[int, tuple[list[int], list[int]]] = {}
+    results: dict[int, tuple[list[int], list[int], list[dict], list[dict]]] = {}
     with ThreadPoolExecutor(max_workers=min(workers, len(cards))) as pool:
         futures = [pool.submit(_one, c) for c in cards]
         for fut in as_completed(futures):
-            cid, pair = fut.result()
-            if pair[0] or pair[1]:
-                results[cid] = pair
+            cid, quad = fut.result()
+            if quad[0] or quad[1]:
+                results[cid] = quad
     return results
