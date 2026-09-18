@@ -99,7 +99,10 @@ def build_box_search_queries(set_name_kr: str, set_code: str) -> list[str]:
 def _norm(text: str) -> str:
     t = unicodedata.normalize("NFKD", text)
     t = "".join(c for c in t if not unicodedata.combining(c))
-    return re.sub(r"\s+", "", t.lower())
+    t = re.sub(r"\s+", "", t.lower())
+    # 번개 표기: 에메랄드 / 스토에메랄다 → 공식 스톰에메랄da
+    t = t.replace("에메랄드", "에메랄da").replace("스토에메랄da", "스톰에메랄da")
+    return t
 
 
 def _set_name_variants(set_name_kr: str, set_code: str) -> list[str]:
@@ -312,12 +315,24 @@ def _collect_verified_box_quotes(
     msrp_pack_kr: int,
     is_jp: bool,
     verifier: BoxImageVerifier | None,
+    *,
+    allow_opened: bool = False,
 ) -> tuple[list[VerifiedBoxQuote], list[VerifiedBoxQuote]]:
     """제목·가격·이미지 검증 통과 매물 → (거래완료, 판매중)."""
     lo, hi = box_price_bounds(msrp_box_kr, msrp_pack_kr)
     sold: list[VerifiedBoxQuote] = []
     listings: list[VerifiedBoxQuote] = []
-    listing_fn = is_jp_box_listing if is_jp else is_kr_box_listing
+    base_fn = is_jp_box_listing if is_jp else is_kr_box_listing
+
+    def listing_fn(
+        title: str,
+        set_name: str,
+        code: str,
+        msrp_box: int,
+        unit: int,
+        msrp_pack: int,
+    ) -> bool:
+        return base_fn(title, set_name, code, msrp_box, unit, msrp_pack, allow_opened=allow_opened)
 
     for item in items:
         title = str(item.get("name", ""))
@@ -351,9 +366,12 @@ def filter_bunjang_kr_box_quotes(
     msrp_box_kr: int,
     msrp_pack_kr: int = 0,
     verifier: BoxImageVerifier | None = None,
+    *,
+    allow_opened: bool = False,
 ) -> tuple[list[VerifiedBoxQuote], list[VerifiedBoxQuote]]:
     return _collect_verified_box_quotes(
-        items, set_name_kr, set_code, msrp_box_kr, msrp_pack_kr, False, verifier
+        items, set_name_kr, set_code, msrp_box_kr, msrp_pack_kr, False, verifier,
+        allow_opened=allow_opened,
     )
 
 
@@ -364,9 +382,12 @@ def filter_bunjang_jp_box_quotes(
     msrp_box_krw: int,
     msrp_pack_krw: int = 0,
     verifier: BoxImageVerifier | None = None,
+    *,
+    allow_opened: bool = False,
 ) -> tuple[list[VerifiedBoxQuote], list[VerifiedBoxQuote]]:
     return _collect_verified_box_quotes(
-        items, set_name_kr, set_code, msrp_box_krw, msrp_pack_krw, True, verifier
+        items, set_name_kr, set_code, msrp_box_krw, msrp_pack_krw, True, verifier,
+        allow_opened=allow_opened,
     )
 
 
@@ -377,6 +398,8 @@ def is_kr_box_listing(
     msrp_box_kr: int,
     unit_price: int = 0,
     msrp_pack_kr: int = 0,
+    *,
+    allow_opened: bool = False,
 ) -> bool:
     if not title.strip():
         return False
@@ -390,9 +413,16 @@ def is_kr_box_listing(
         return False
     if _looks_like_single_card(title, unit_price, msrp_box_kr, msrp_pack_kr):
         return False
-    if _is_opened_box(title):
+    if not allow_opened and _is_opened_box(title):
         return False
     if _is_bundle_box_listing(title, set_name_kr, set_code):
+        return False
+    # 한글 표기 없고 MSRP 2.5배 초과 → 일본판 의심 (일판 키워드 생략한 경우)
+    if (
+        msrp_box_kr > 0
+        and unit_price > msrp_box_kr * 2.5
+        and not any(k in title for k in KR_KEYWORDS)
+    ):
         return False
     return True
 
@@ -577,6 +607,8 @@ def is_jp_box_listing(
     msrp_box_krw: int,
     unit_price: int = 0,
     msrp_pack_krw: int = 0,
+    *,
+    allow_opened: bool = False,
 ) -> bool:
     if not title.strip():
         return False
@@ -591,7 +623,7 @@ def is_jp_box_listing(
             return False
     if _looks_like_single_card(title, unit_price, msrp_box_krw, msrp_pack_krw):
         return False
-    if _is_opened_box(title):
+    if not allow_opened and _is_opened_box(title):
         return False
     if _is_bundle_box_listing(title, set_name_kr, set_code):
         return False

@@ -1,10 +1,29 @@
 """일별 시세 스냅샷 저장 — 과거 이력 유지, 같은 날(KST)은 교체."""
 from __future__ import annotations
 
+import time
 from datetime import datetime, timedelta, timezone
-from typing import Any
+from typing import Any, Callable
 
 KST = timezone(timedelta(hours=9))
+
+_MAX_RETRIES = 5
+_RETRY_DELAY_SEC = 3
+
+
+def _execute_with_retry(fn: Callable[[], Any]) -> Any:
+    """Supabase 일시 네트워크 오류 시 재시도."""
+    last_exc: Exception | None = None
+    for attempt in range(_MAX_RETRIES):
+        try:
+            return fn()
+        except Exception as exc:
+            last_exc = exc
+            if attempt + 1 >= _MAX_RETRIES:
+                break
+            time.sleep(_RETRY_DELAY_SEC * (attempt + 1))
+    assert last_exc is not None
+    raise last_exc
 
 
 def kst_day_bounds_utc(
@@ -47,10 +66,10 @@ def save_daily_snapshots(
     batch = 200
     for i in range(0, len(card_ids), batch):
         chunk = card_ids[i : i + batch]
-        res = (
-            sb.table(table)
+        res = _execute_with_retry(
+            lambda c=chunk: sb.table(table)
             .delete()
-            .in_("card_id", chunk)
+            .in_("card_id", c)
             .gte("fetched_at", start)
             .lt("fetched_at", end)
             .execute()
@@ -61,7 +80,9 @@ def save_daily_snapshots(
     if rows:
         for i in range(0, len(rows), batch):
             chunk = rows[i : i + batch]
-            sb.table(table).insert(chunk).execute()
+            _execute_with_retry(
+                lambda c=chunk: sb.table(table).insert(c).execute()
+            )
             inserted += len(chunk)
     return deleted, inserted
 
@@ -84,10 +105,10 @@ def save_daily_box_snapshots(
     batch = 200
     for i in range(0, len(set_ids), batch):
         chunk = set_ids[i : i + batch]
-        res = (
-            sb.table("prices_box")
+        res = _execute_with_retry(
+            lambda c=chunk: sb.table("prices_box")
             .delete()
-            .in_("set_id", chunk)
+            .in_("set_id", c)
             .eq("region", region)
             .gte("fetched_at", start)
             .lt("fetched_at", end)
@@ -99,6 +120,8 @@ def save_daily_box_snapshots(
     if rows:
         for i in range(0, len(rows), batch):
             chunk = rows[i : i + batch]
-            sb.table("prices_box").insert(chunk).execute()
+            _execute_with_retry(
+                lambda c=chunk: sb.table("prices_box").insert(c).execute()
+            )
             inserted += len(chunk)
     return deleted, inserted

@@ -1,5 +1,6 @@
 """
-확장팩(KR) 시세를 N팩씩 배치로 수집. 상태 파일로 다음 배치 위치를 기억한다.
+확장팩(KR) 시세를 N팩씩 배치로 수집 — 번개장터 전용.
+상태 파일로 다음 배치 위치를 기억한다.
 
   python crawl_prices_batch.py --apply --daily      # 전 팩 순환(일일 권장)
   python crawl_prices_batch.py --apply              # RECrawl_FROM 이후 재수집 모드
@@ -7,7 +8,7 @@
   python crawl_prices_batch.py --apply --set MG4
   python crawl_prices_batch.py --list --daily
 
-일일 자동 실행: crawler/scripts/run_daily_price_batch.ps1
+일일 자동 실행: crawler/scripts/run_daily_price_batch.ps1 / GitHub Actions
 """
 from __future__ import annotations
 
@@ -60,7 +61,7 @@ def save_state(state: dict) -> None:
 def sets_needing_prices(*, daily: bool = False) -> list[tuple[str, str, int, int]]:
     """(code, name_kr, card_count, priced_count).
 
-    daily=True: featured 전체(collectory 있는 팩) 순환.
+    daily=True: featured 전체 순환.
     daily=False: RECrawl_FROM 이후, SKIP_SETS 제외(일회성 재수집).
     """
     out: list[tuple[str, str, int, int]] = []
@@ -73,8 +74,7 @@ def sets_needing_prices(*, daily: bool = False) -> list[tuple[str, str, int, int
                 started = True
             else:
                 continue
-        if not s.collectory_id:
-            continue
+        # 번개장터 전용 — collectory_id 유무와 무관하게 모든 세트 수집
         row = sb.table("card_sets").select("id").eq("set_code", s.code).execute().data
         if not row:
             continue
