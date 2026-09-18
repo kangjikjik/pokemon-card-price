@@ -74,6 +74,49 @@ def _fetch_official(goods_name: str) -> list[dict]:
         return candidates
 
 
+def _search_official_name(name_kr: str, bs_code: str) -> list[dict]:
+    with httpx.Client(headers=HEADERS, timeout=30, follow_redirects=True) as client:
+        response = client.post(
+            AJAX,
+            data={
+                "action": "search_text_cards",
+                "search_text": name_kr,
+                "search_params": "cardname",
+                "limit": "0",
+            },
+        )
+        response.raise_for_status()
+        try:
+            payload = response.json()
+        except ValueError:
+            match = re.search(r"(\{[\s\S]*\})", response.text)
+            payload = json.loads(match.group(1)) if match else {}
+
+        result = payload.get("result") or {}
+        rows = list(result.values()) if isinstance(result, dict) else list(result)
+        candidates: list[dict] = []
+        for row in rows:
+            card_id = str(row.get("CardNum") or "").strip()
+            if not card_id.startswith(bs_code):
+                continue
+            detail_response = client.get(f"{BASE}/cards/detail/{card_id}")
+            if detail_response.status_code != 200:
+                continue
+            detail_response.encoding = "utf-8"
+            detail = parse_detail(detail_response.text)
+            if detail:
+                candidates.append(
+                    {
+                        "card_number": detail["printed"],
+                        "name_kr": detail["name_kr"],
+                        "rarity": detail["rarity"],
+                        "image_url": detail["image_url"],
+                    }
+                )
+            time.sleep(0.04)
+        return candidates
+
+
 def _load_blank_cards(sb, set_id: int) -> list[dict]:
     return (
         sb.table("cards")
@@ -113,6 +156,8 @@ def main() -> None:
             report["checked"] += 1
             name_key = _norm(card.get("name_kr") or "")
             matches = [x for x in official if _norm(x["name_kr"]) == name_key]
+            if not matches and card.get("name_kr"):
+                matches = _search_official_name(card["name_kr"], meta.bs_code or "")
             rarity = (card.get("rarity") or "").upper()
             rarity_matches = [x for x in matches if x["rarity"].upper() == rarity]
             if len(rarity_matches) == 1:
