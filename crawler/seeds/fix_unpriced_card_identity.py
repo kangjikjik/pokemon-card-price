@@ -43,6 +43,13 @@ def _norm_name(value: str) -> str:
     return re.sub(r"[\s·・\-_.]", "", (value or "").casefold())
 
 
+def _feature_image(row: dict) -> str:
+    feature = str(row.get("feature_image") or "").strip().lstrip("/")
+    if not feature.startswith("wmimages/"):
+        return ""
+    return f"https://cards.image.pokemonkorea.co.kr/data/{feature.split('?')[0]}"
+
+
 def _same_printed(db_number: str, official_number: str) -> bool:
     db = _number(db_number)
     off = _number(official_number)
@@ -126,10 +133,35 @@ def _fetch_one(bs_code: str, card: dict) -> dict:
                 continue
             candidate_url = f"{BASE}/cards/detail/{candidate_id}"
             candidate = httpx.get(candidate_url, headers=HEADERS, timeout=25, follow_redirects=True)
+            image_url = _feature_image(row)
+            if image_url and candidate.status_code != 200:
+                return {
+                    "card": card,
+                    "status": "matched",
+                    "official": {
+                        "name_kr": card.get("name_kr") or "",
+                        "printed": card.get("card_number") or "",
+                        "image_url": image_url,
+                    },
+                    "detail_id": candidate_id,
+                    "detail_url": candidate_url,
+                }
             if candidate.status_code != 200:
                 continue
             candidate.encoding = "utf-8"
             detail = parse_detail(candidate.text)
+            if not detail and image_url:
+                return {
+                    "card": card,
+                    "status": "matched",
+                    "official": {
+                        "name_kr": card.get("name_kr") or "",
+                        "printed": card.get("card_number") or "",
+                        "image_url": image_url,
+                    },
+                    "detail_id": candidate_id,
+                    "detail_url": candidate_url,
+                }
             if detail and _same_printed(card.get("card_number") or "", detail["printed"]):
                 return {
                     "card": card,
@@ -206,7 +238,8 @@ def _load_cards(sb, set_id: int) -> list[dict]:
         )
         out.extend(rows)
         if len(rows) < 1000:
-            return out
+            # 1단계에서 별도로 남긴 번호 공백 6장은 이번 번호 기반 대조에서 제외한다.
+            return [card for card in out if (card.get("card_number") or "").strip()]
         start += 1000
 
 
