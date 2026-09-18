@@ -105,7 +105,17 @@ def split_by_status_kr_with_items(
     sold: list[dict] = []
     listing: list[dict] = []
 
-    with CardImageVerifier(image_url) as verifier:
+    referer = ""
+    try:
+        from kr_sets import KR_BY_CODE  # noqa: PLC0415
+        meta = KR_BY_CODE.get(set_code)
+        number = str(card_number).split("/", 1)[0].strip()
+        if meta and meta.bs_code and number.isdigit():
+            referer = f"https://pokemoncard.co.kr/cards/detail/{meta.bs_code}{int(number):03d}"
+    except Exception:
+        pass
+
+    with CardImageVerifier(image_url, referer) as verifier:
         for item in items:
             title = str(item.get("name", ""))
             try:
