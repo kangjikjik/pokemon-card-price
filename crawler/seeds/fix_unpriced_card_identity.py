@@ -24,7 +24,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 load_dotenv()
 
 from kr_sets import KR_SETS
-from lib.pokemoncard_kr import BASE, HEADERS, parse_detail
+from lib.pokemoncard_kr import AJAX, BASE, HEADERS, parse_detail
 from utils.db import get_supabase
 
 OUT_DIR = Path("_audit_out")
@@ -37,6 +37,10 @@ def _number(card_number: str) -> tuple[int, int | None] | None:
     if not m:
         return None
     return int(m.group(1)), int(m.group(2)) if m.group(2) else None
+
+
+def _norm_name(value: str) -> str:
+    return re.sub(r"[\s·・\-_.]", "", (value or "").casefold())
 
 
 def _same_printed(db_number: str, official_number: str) -> bool:
@@ -88,6 +92,102 @@ def _fetch_one(bs_code: str, card: dict) -> dict:
             "detail_id": detail_id,
             "detail_url": url,
         }
+    # 일부 시크릿 카드는 번호 기반 상세 URL이 빈 HTML을 반환한다.
+    # 공식 검색 API에서 같은 세트 코드와 카드번호를 다시 찾는다.
+    try:
+        rows: list[dict] = []
+        page = "0"
+        seen_pages: set[str] = set()
+        for _ in range(20):
+            if page in seen_pages:
+                break
+            seen_pages.add(page)
+            r = httpx.post(
+                AJAX,
+                headers=HEADERS,
+                data={
+                    "action": "search_text_cards",
+                    "search_text": str(num),
+                    "search_params": "all",
+                    "limit": page,
+                },
+                timeout=25,
+            )
+            obj = r.json()
+            result = obj.get("result") or {}
+            rows.extend(list(result.values()) if isinstance(result, dict) else list(result))
+            next_page = str(obj.get("limit") or "")
+            if not next_page or next_page == page or not result:
+                break
+            page = next_page
+        for row in rows:
+            candidate_id = str(row.get("CardNum") or "").strip()
+            if not candidate_id.startswith(bs_code) or not candidate_id.rstrip().endswith(f"{num:03d}"):
+                continue
+            candidate_url = f"{BASE}/cards/detail/{candidate_id}"
+            candidate = httpx.get(candidate_url, headers=HEADERS, timeout=25, follow_redirects=True)
+            if candidate.status_code != 200:
+                continue
+            candidate.encoding = "utf-8"
+            detail = parse_detail(candidate.text)
+            if detail and _same_printed(card.get("card_number") or "", detail["printed"]):
+                return {
+                    "card": card,
+                    "status": "matched",
+                    "official": detail,
+                    "detail_id": candidate_id,
+                    "detail_url": candidate_url,
+                }
+    except Exception:
+        pass
+    # 카드번호 자체가 잘못된 경우에는 DB 이름으로 공식 후보를 찾는다.
+    name = (card.get("name_kr") or "").strip()
+    if name:
+        try:
+            page = "0"
+            seen_pages: set[str] = set()
+            while page not in seen_pages and len(seen_pages) < 20:
+                seen_pages.add(page)
+                r = httpx.post(
+                    AJAX,
+                    headers=HEADERS,
+                    data={
+                        "action": "search_text_cards",
+                        "search_text": name,
+                        "search_params": "all",
+                        "limit": page,
+                    },
+                    timeout=25,
+                )
+                obj = r.json()
+                result = obj.get("result") or {}
+                rows = list(result.values()) if isinstance(result, dict) else list(result)
+                for row in rows:
+                    candidate_id = str(row.get("CardNum") or "").strip()
+                    if not candidate_id.startswith(bs_code):
+                        continue
+                    candidate_url = f"{BASE}/cards/detail/{candidate_id}"
+                    candidate = httpx.get(
+                        candidate_url, headers=HEADERS, timeout=25, follow_redirects=True
+                    )
+                    if candidate.status_code != 200:
+                        continue
+                    candidate.encoding = "utf-8"
+                    detail = parse_detail(candidate.text)
+                    if detail and _norm_name(detail["name_kr"]) == _norm_name(name):
+                        return {
+                            "card": card,
+                            "status": "matched",
+                            "official": detail,
+                            "detail_id": candidate_id,
+                            "detail_url": candidate_url,
+                        }
+                next_page = str(obj.get("limit") or "")
+                if not next_page or next_page == page or not result:
+                    break
+                page = next_page
+        except Exception:
+            pass
     return {"card": card, "status": "not_found", "reason": locals().get("last", "")}
 
 
