@@ -1,0 +1,32 @@
+name: Audit card trade images
+
+on:
+  workflow_dispatch:
+
+jobs:
+  audit:
+    name: Read-only card image audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r crawler/requirements.txt
+
+      - name: Run read-only audit
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        working-directory: crawler/seeds
+        run: python audit_card_trade_images.py
+
+      - name: Upload audit report
+        uses: actions/upload-artifact@v4
+        with:
+          name: card-trade-image-audit
+          path: crawler/seeds/_audit_out/card_trade_image_audit.json
