@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 load_dotenv()
 
 from kr_sets import KR_SETS
-from lib.pokemoncard_kr import BASE, HEADERS, parse_detail
+from lib.pokemoncard_kr import AJAX, BASE, HEADERS, parse_detail
 from utils.db import get_supabase
 
 OUT = Path("_audit_out/nonofficial_card_image_replacement.json")
@@ -26,6 +26,42 @@ def _number(value: str) -> int | None:
         return int((value or "").split("/", 1)[0].strip())
     except (TypeError, ValueError):
         return None
+
+
+def _feature_image(row: dict) -> str:
+    feature = str(row.get("feature_image") or "").strip().lstrip("/")
+    if not feature.startswith("wmimages/"):
+        return ""
+    return f"https://{OFFICIAL_HOST}/data/{feature.split('?')[0]}"
+
+
+def _search_rows(query: str) -> list[dict]:
+    rows: list[dict] = []
+    page = "0"
+    seen: set[str] = set()
+    with httpx.Client(headers=HEADERS, timeout=25, follow_redirects=True) as client:
+        for _ in range(20):
+            if page in seen:
+                break
+            seen.add(page)
+            response = client.post(
+                AJAX,
+                data={
+                    "action": "search_text_cards",
+                    "search_text": query,
+                    "search_params": "all",
+                    "limit": page,
+                },
+            )
+            payload = response.json()
+            result = payload.get("result") or {}
+            batch = list(result.values()) if isinstance(result, dict) else list(result)
+            rows.extend(batch)
+            next_page = str(payload.get("limit") or "")
+            if not batch or not next_page or next_page == page:
+                break
+            page = next_page
+    return rows
 
 
 def _load_cards(sb, set_id: int) -> list[dict]:
@@ -50,23 +86,42 @@ def _load_cards(sb, set_id: int) -> list[dict]:
 def _fetch_official(meta, card: dict) -> dict:
     number = _number(card.get("card_number") or "")
     if number is None or not meta.bs_code:
+        name = (card.get("name_kr") or "").strip()
+        if name and meta.bs_code:
+            candidates = [
+                row
+                for row in _search_rows(name)
+                if str(row.get("CardNum") or "").strip().startswith(meta.bs_code)
+                and _feature_image(row)
+            ]
+            if len(candidates) == 1:
+                return {"status": "matched", "image_url": _feature_image(candidates[0]), "url": ""}
         return {"status": "unresolved", "reason": "missing_card_number"}
     url = f"{BASE}/cards/detail/{meta.bs_code}{number:03d}"
     try:
         response = httpx.get(url, headers=HEADERS, timeout=25, follow_redirects=True)
         if response.status_code != 200:
-            return {"status": "unresolved", "reason": f"http_{response.status_code}"}
-        response.encoding = "utf-8"
-        detail = parse_detail(response.text)
-        if not detail:
-            return {"status": "unresolved", "reason": "official_detail_parse_failed"}
-        if detail["number"] != number:
-            return {"status": "unresolved", "reason": f"number_mismatch:{detail['printed']}"}
-        if OFFICIAL_HOST not in detail["image_url"]:
-            return {"status": "unresolved", "reason": "non_official_result"}
-        return {"status": "matched", "image_url": detail["image_url"], "url": url}
+            detail = None
+        else:
+            response.encoding = "utf-8"
+            detail = parse_detail(response.text)
+        if detail and detail["number"] == number and OFFICIAL_HOST in detail["image_url"]:
+            return {"status": "matched", "image_url": detail["image_url"], "url": url}
     except Exception as exc:
-        return {"status": "unresolved", "reason": type(exc).__name__}
+        detail = None
+
+    # 상세 HTML 파싱 실패 시에도 공식 검색 결과의 세트·번호·이미지를 사용한다.
+    candidates = [
+        row
+        for row in _search_rows(str(number))
+        if str(row.get("CardNum") or "").strip().startswith(meta.bs_code)
+        and str(row.get("CardNum") or "").strip().rstrip().endswith(f"{number:03d}")
+        and _feature_image(row)
+    ]
+    if len(candidates) == 1:
+        return {"status": "matched", "image_url": _feature_image(candidates[0]), "url": url}
+
+    return {"status": "unresolved", "reason": "official_search_no_unique_match"}
 
 
 def main() -> None:
