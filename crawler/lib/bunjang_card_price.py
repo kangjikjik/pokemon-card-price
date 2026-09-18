@@ -93,38 +93,41 @@ def split_by_status_kr_with_items(
     card_number: str,
     set_code: str,
     set_name_kr: str,
+    image_url: str = "",
 ) -> tuple[list[dict], list[dict]]:
     """
     KR 매물 → (sold_items, listing_items).
     각 item: {"price": int, "pid": str}
     """
+    from lib.card_image_verify import CardImageVerifier  # noqa: PLC0415
     from lib.price_search import is_raw_kr_listing, parse_listing_quantity  # noqa: PLC0415
 
     sold: list[dict] = []
     listing: list[dict] = []
 
-    for item in items:
-        title = str(item.get("name", ""))
-        try:
-            price = int(item.get("price", 0) or 0)
-        except (TypeError, ValueError):
-            continue
-        if price < 300 or price > 5_000_000:
-            continue
-        if not is_raw_kr_listing(title, name_kr, rarity, card_number, set_code, set_name_kr):
-            continue
-        # 다장 매물 제외 — qty > 1 은 스킵 (단가 환산하지 않음)
-        if parse_listing_quantity(title) > 1:
-            continue
+    with CardImageVerifier(image_url) as verifier:
+        for item in items:
+            title = str(item.get("name", ""))
+            try:
+                price = int(item.get("price", 0) or 0)
+            except (TypeError, ValueError):
+                continue
+            if price < 300 or price > 5_000_000:
+                continue
+            if not is_raw_kr_listing(title, name_kr, rarity, card_number, set_code, set_name_kr):
+                continue
+            if parse_listing_quantity(title) > 1 or not verifier.matches(item):
+                continue
 
-        status = str(item.get("status", ""))
-        update_time = int(item.get("update_time", 0) or 0)
-        pid = str(item.get("pid", ""))
+            status = str(item.get("status", ""))
+            update_time = int(item.get("update_time", 0) or 0)
+            pid = str(item.get("pid", ""))
+            detail = {"price": price, "pid": pid, "update_time": update_time}
 
-        if status == "3" and _is_recent_sold(update_time):
-            sold.append({"price": price, "pid": pid, "update_time": update_time})
-        elif status == "0":
-            listing.append({"price": price, "pid": pid, "update_time": update_time})
+            if status == "3" and _is_recent_sold(update_time):
+                sold.append(detail)
+            elif status == "0":
+                listing.append(detail)
 
     return sold, listing
 
@@ -156,41 +159,45 @@ def split_by_status_jp_with_items(
     *,
     set_code: str = "",
     name_en: str = "",
+    image_url: str = "",
 ) -> tuple[list[dict], list[dict]]:
     """
     JP 매물 → (sold_items, listing_items).
     각 item: {"price": int, "pid": str, "update_time": int}
     """
+    from lib.card_image_verify import CardImageVerifier  # noqa: PLC0415
     from lib.jp_price_search import is_raw_jp_listing  # noqa: PLC0415
     from lib.price_search import parse_listing_quantity  # noqa: PLC0415
 
     sold: list[dict] = []
     listing: list[dict] = []
 
-    for item in items:
-        title = str(item.get("name", ""))
-        try:
-            price = int(item.get("price", 0) or 0)
-        except (TypeError, ValueError):
-            continue
-        if price < 300 or price > 10_000_000:
-            continue
-        if not is_raw_jp_listing(
-            title, name_jp, name_kr, rarity, card_number,
-            name_en=name_en, set_code=set_code,
-        ):
-            continue
-        if parse_listing_quantity(title) > 1:
-            continue
+    with CardImageVerifier(image_url) as verifier:
+        for item in items:
+            title = str(item.get("name", ""))
+            try:
+                price = int(item.get("price", 0) or 0)
+            except (TypeError, ValueError):
+                continue
+            if price < 300 or price > 10_000_000:
+                continue
+            if not is_raw_jp_listing(
+                title, name_jp, name_kr, rarity, card_number,
+                name_en=name_en, set_code=set_code,
+            ):
+                continue
+            if parse_listing_quantity(title) > 1 or not verifier.matches(item):
+                continue
 
-        status = str(item.get("status", ""))
-        update_time = int(item.get("update_time", 0) or 0)
-        pid = str(item.get("pid", ""))
+            status = str(item.get("status", ""))
+            update_time = int(item.get("update_time", 0) or 0)
+            pid = str(item.get("pid", ""))
+            detail = {"price": price, "pid": pid, "update_time": update_time}
 
-        if status == "3" and _is_recent_sold(update_time):
-            sold.append({"price": price, "pid": pid, "update_time": update_time})
-        elif status == "0":
-            listing.append({"price": price, "pid": pid, "update_time": update_time})
+            if status == "3" and _is_recent_sold(update_time):
+                sold.append(detail)
+            elif status == "0":
+                listing.append(detail)
 
     return sold, listing
 
@@ -310,6 +317,7 @@ def prefetch_bunjang_kr(
             card.get("card_number") or "",
             set_code,
             set_name_kr,
+            card.get("image_url") or "",
         )
         sold = [it["price"] for it in sold_items]
         listing = [it["price"] for it in listing_items]
@@ -365,6 +373,7 @@ def prefetch_bunjang_jp(
             card.get("card_number") or "",
             set_code=set_code,
             name_en=card.get("name_en") or "",
+            image_url=card.get("image_url") or "",
         )
         sold = [it["price"] for it in sold_items]
         listing = [it["price"] for it in listing_items]
