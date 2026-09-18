@@ -15,6 +15,7 @@ HEADERS = {
 }
 
 COMPARE_SIZE = 64
+# 사진 촬영 각도·배경·보호용품 차이를 감안해 명백한 오매칭만 차단한다.
 MIN_CARD_SIMILARITY = 0.42
 
 
@@ -43,8 +44,9 @@ def _similarity(left: tuple[float, ...], right: tuple[float, ...]) -> float:
 class CardImageVerifier:
     """공식 이미지와 매물 사진을 보수적으로 비교한다."""
 
-    def __init__(self, official_image_url: str = ""):
+    def __init__(self, official_image_url: str = "", official_referer_url: str = ""):
         self._official_image_url = (official_image_url or "").strip()
+        self._official_referer_url = (official_referer_url or "").strip()
         self._client = httpx.Client(timeout=15, follow_redirects=True, headers=HEADERS)
         self._reference: Image.Image | None = None
         self._loaded = False
@@ -69,7 +71,8 @@ class CardImageVerifier:
             url = self._official_image_url
             if OFFICIAL_CARD_IMAGE_HOST in url and "w=" not in url:
                 url = f"{url}&w=512" if "?" in url else f"{url}?w=512"
-            response = self._client.get(url)
+            headers = {"Referer": self._official_referer_url} if self._official_referer_url else None
+            response = self._client.get(url, headers=headers)
             if response.status_code >= 400 or len(response.content) < 200:
                 return None
             self._reference = Image.open(io.BytesIO(response.content)).convert("RGB")
