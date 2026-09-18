@@ -111,13 +111,16 @@ def _fetch_official(meta, card: dict) -> dict:
         detail = None
 
     # 상세 HTML 파싱 실패 시에도 공식 검색 결과의 세트·번호·이미지를 사용한다.
-    candidates = [
-        row
-        for row in _search_rows(str(number))
-        if str(row.get("CardNum") or "").strip().startswith(meta.bs_code)
-        and str(row.get("CardNum") or "").strip().rstrip().endswith(f"{number:03d}")
-        and _feature_image(row)
-    ]
+    try:
+        candidates = [
+            row
+            for row in _search_rows(str(number))
+            if str(row.get("CardNum") or "").strip().startswith(meta.bs_code)
+            and str(row.get("CardNum") or "").strip().rstrip().endswith(f"{number:03d}")
+            and _feature_image(row)
+        ]
+    except Exception as exc:
+        return {"status": "unresolved", "reason": f"official_search_{type(exc).__name__}"}
     if len(candidates) == 1:
         return {"status": "matched", "image_url": _feature_image(candidates[0]), "url": url}
 
@@ -141,7 +144,10 @@ def main() -> None:
         meta, card = target
         if OFFICIAL_HOST in (card.get("image_url") or ""):
             return meta, card, {"status": "already_official"}
-        return meta, card, _fetch_official(meta, card)
+        try:
+            return meta, card, _fetch_official(meta, card)
+        except Exception as exc:
+            return meta, card, {"status": "unresolved", "reason": type(exc).__name__}
 
     with ThreadPoolExecutor(max_workers=12) as pool:
         futures = [pool.submit(one, target) for target in targets]
