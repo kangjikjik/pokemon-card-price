@@ -81,7 +81,7 @@ def _search_official_name(name_kr: str, bs_code: str) -> list[dict]:
             data={
                 "action": "search_text_cards",
                 "search_text": name_kr,
-                "search_params": "cardname",
+                "search_params": "all",
                 "limit": "0",
             },
         )
