@@ -18,6 +18,13 @@ jobs:
       - name: Install dependencies
         run: pip install -r crawler/requirements.txt
 
+      - name: Restore missing card numbers from official set lists
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        working-directory: crawler/seeds
+        run: python repair_missing_card_numbers.py
+
       - name: Apply official image and name corrections
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -30,5 +37,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: official-card-image-repair-report
-          path: crawler/seeds/_audit_out/official_identity_apply_latest.json
+          path: |
+            crawler/seeds/_audit_out/missing_card_numbers_apply.json
+            crawler/seeds/_audit_out/official_identity_apply_latest.json
           if-no-files-found: ignore
