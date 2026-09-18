@@ -44,8 +44,8 @@ def _same_printed(db_number: str, official_number: str) -> bool:
     off = _number(official_number)
     if not db or not off or db[0] != off[0]:
         return False
-    if db[1] is not None and off[1] is not None and db[1] != off[1]:
-        return False
+    # 공식 사이트의 재수록·시크릿 카드 표기는 분모가 DB와 다를 수 있다.
+    # 카드 식별과 이미지 검증에는 앞번호가 기준이므로 분모 차이는 허용한다.
     return True
 
 
