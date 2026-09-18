@@ -167,10 +167,10 @@ def parse_detail(html: str) -> dict | None:
     kind_m = KIND_RE.search(html)
     p_m = PNUM_RE.search(html)
     img_m = IMG_RE.search(html)
-    if not name_m or not kind_m or not p_m or not img_m:
+    if not name_m or not p_m or not img_m:
         return None
     name = name_m.group(1).strip()
-    kind = kind_m.group(1).strip()
+    kind = kind_m.group(1).strip() if kind_m else ""
     num = int(p_m.group(1))
     printed = f"{int(p_m.group(1)):03d}/{int(p_m.group(2)):03d}"
     rarity = (p_m.group(3) or "").strip().upper()
