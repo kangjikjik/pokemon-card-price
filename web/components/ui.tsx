@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { normalizeCardImageUrl } from '@/lib/card-image-url';
 import { normalizeRarity } from '@/lib/rarity';
 
 export const RarityBadge = ({ rarity }: { rarity: string }) => {
@@ -99,7 +100,7 @@ export const CardImage = ({
     return (
       <div className={cn('w-full h-full relative rounded-lg overflow-hidden', className)}>
         <Image
-          src={imageUrl}
+          src={normalizeCardImageUrl(imageUrl)}
           alt={altText}
           fill
           sizes="(max-width: 768px) 50vw, 25vw"
