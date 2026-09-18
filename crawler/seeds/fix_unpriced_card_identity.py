@@ -6,6 +6,7 @@
 """
 from __future__ import annotations
 
+import io
 import json
 import os
 import re
@@ -16,7 +17,9 @@ from datetime import datetime
 from pathlib import Path
 
 import httpx
+import pytesseract
 from dotenv import load_dotenv
+from PIL import Image
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "."))
@@ -48,6 +51,21 @@ def _feature_image(row: dict) -> str:
     if not feature.startswith("wmimages/"):
         return ""
     return f"https://cards.image.pokemonkorea.co.kr/data/{feature.split('?')[0]}"
+
+
+def _ocr_card_number(image_url: str) -> int | None:
+    if not image_url or not image_url.startswith("http"):
+        return None
+    try:
+        response = httpx.get(image_url, headers=HEADERS, timeout=25, follow_redirects=True)
+        if response.status_code >= 400:
+            return None
+        image = Image.open(io.BytesIO(response.content)).convert("RGB")
+        text = pytesseract.image_to_string(image, lang="kor+eng", config="--psm 6")
+        numbers = re.findall(r"(?<!\d)(\d{1,3})\s*/\s*\d{1,3}(?!\d)", text)
+        return int(numbers[-1]) if numbers else None
+    except Exception:
+        return None
 
 
 def _same_printed(db_number: str, official_number: str) -> bool:
@@ -220,6 +238,10 @@ def _fetch_one(bs_code: str, card: dict) -> dict:
                 page = next_page
         except Exception:
             pass
+    # 최후 fallback: 현재 카드 이미지에서 인쇄번호를 OCR로 읽는다.
+    ocr_number = _ocr_card_number(card.get("image_url") or "")
+    if ocr_number and ocr_number != num:
+        return _fetch_one(bs_code, {**card, "card_number": f"{ocr_number}/{ocr_number}"})
     return {"card": card, "status": "not_found", "reason": locals().get("last", "")}
 
 
