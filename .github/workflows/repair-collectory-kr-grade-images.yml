@@ -2,6 +2,11 @@ name: Repair Korean card grade images from Collectory
 
 on:
   workflow_dispatch:
+    inputs:
+      rarity:
+        description: "Target rarity (leave blank for all eligible rarities)"
+        required: false
+        default: "UR"
 
 jobs:
   repair:
@@ -22,6 +27,7 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          TARGET_RARITY: ${{ inputs.rarity }}
         working-directory: crawler/seeds
         run: python repair_collectory_kr_grade_images.py
       - name: Upload repair report
