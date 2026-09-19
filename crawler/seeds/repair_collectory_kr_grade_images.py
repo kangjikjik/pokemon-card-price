@@ -23,6 +23,7 @@ from utils.db import get_supabase
 OUT = Path("_audit_out/collectory_kr_grade_repair.json")
 EXCLUDED_RARITIES = {"C", "U", "R"}
 TARGET_RARITIES = {"RR", "RRR", "AR", "CHR", "PR", "SR", "SAR", "HR", "UR", "MUR", "P"}
+REQUESTED_RARITY = os.getenv("TARGET_RARITY", "").strip().upper()
 NUM_RE = re.compile(r"\b(\d{1,3})\s*/\s*(\d{1,3})\b")
 RARITY_RE = re.compile(r"\b(RRR|MUR|SAR|CHR|PR|RR|SR|HR|UR|AR|P)\b", re.I)
 
@@ -81,7 +82,11 @@ def main() -> None:
         if meta.code not in sets:
             continue
         for card in _load(sb, sets[meta.code]["id"]):
-            if card.get("rarity") in TARGET_RARITIES and card.get("rarity") not in EXCLUDED_RARITIES:
+            if (
+                card.get("rarity") in TARGET_RARITIES
+                and card.get("rarity") not in EXCLUDED_RARITIES
+                and (not REQUESTED_RARITY or card.get("rarity") == REQUESTED_RARITY)
+            ):
                 targets.append(
                     {
                         **card,
