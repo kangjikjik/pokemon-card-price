@@ -40,9 +40,10 @@ def _ocr(url: str) -> tuple[str, str]:
 
 
 def _candidates(set_code: str, card_number: str, rarity: str) -> list[str]:
-    if not card_number or "/" not in card_number:
+    normalized = _canonical_number(card_number)
+    if not normalized or "/" not in normalized:
         return []
-    number, total = card_number.replace(" ", "").split("/", 1)
+    number, total = normalized.split("/", 1)
     base = set_code.removesuffix("-kr")
     stem = f"{int(number):03d}_{int(total):03d}"
     return [
@@ -51,6 +52,13 @@ def _candidates(set_code: str, card_number: str, rarity: str) -> list[str]:
         f"https://cdn.collectory.cc/cards/kr/{base}/{stem}.webp",
         f"https://cdn.collectory.cc/cards/kr/{base}/{stem}.jpg",
     ]
+
+
+def _canonical_number(value: str) -> str:
+    match = re.search(r"(\d+)\s*/\s*(\d+)", value or "")
+    if not match:
+        return ""
+    return f"{int(match.group(1)):03d}/{int(match.group(2)):03d}"
 
 
 def _load(sb, set_id: int) -> list[dict]:
@@ -86,7 +94,7 @@ def main() -> None:
     report = {"checked": len(targets), "unchanged": 0, "changed": [], "unresolved": []}
 
     def one(card: dict) -> tuple[dict, dict]:
-        expected_number = (card.get("card_number") or "").replace(" ", "")
+        expected_number = _canonical_number(card.get("card_number") or "")
         expected_rarity = (card.get("rarity") or "").upper()
         try:
             current_number, current_rarity = _ocr(card.get("image_url") or "")
@@ -111,7 +119,11 @@ def main() -> None:
     with ThreadPoolExecutor(max_workers=12) as pool:
         futures = [pool.submit(one, card) for card in targets]
         for future in as_completed(futures):
-            card, result = future.result()
+            try:
+                card, result = future.result()
+            except Exception as exc:
+                report["unresolved"].append({"status": "unresolved", "reason": type(exc).__name__})
+                continue
             if result["status"] == "unchanged":
                 report["unchanged"] += 1
             elif result["status"] == "matched":
