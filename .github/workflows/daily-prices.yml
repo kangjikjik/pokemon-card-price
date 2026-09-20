@@ -8,6 +8,8 @@ name: Daily price batch
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 15 * * *"   # UTC 15:00 = KST 00:00
 
 concurrency:
   group: daily-price-crawl
@@ -42,7 +44,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         working-directory: crawler/seeds
-        run: python crawl_prices_batch.py --apply --daily --all
+        run: python crawl_prices_batch.py --apply --daily --all --previous-day
 
   # ─── 2. JP 카드 시세 ─────────────────────────────────────
   jp-cards:
@@ -72,7 +74,7 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           EXCHANGE_RATE_API_KEY: ${{ secrets.EXCHANGE_RATE_API_KEY }}
         working-directory: crawler/seeds
-        run: python crawl_prices_batch_jp.py --apply --all
+        run: python crawl_prices_batch_jp.py --apply --all --previous-day
 
   # ─── 3. KR 박스 시세 ─────────────────────────────────────
   kr-boxes:
@@ -96,7 +98,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         working-directory: crawler/seeds
-        run: python crawl_box_prices_batch.py --apply --all
+        run: python crawl_box_prices_batch.py --apply --all --previous-day
 
   # ─── 4. JP 박스 시세 ─────────────────────────────────────
   jp-boxes:
@@ -120,4 +122,4 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         working-directory: crawler/seeds
-        run: python crawl_box_prices_batch.py --apply --all --region JP
+        run: python crawl_box_prices_batch.py --apply --all --region JP --previous-day

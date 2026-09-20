@@ -38,6 +38,7 @@ sb = get_supabase()
 APPLY = "--apply" in sys.argv
 QUIET = "--quiet" in sys.argv
 TRAINER_ITEM_ONLY = "--trainer-item-only" in sys.argv
+DAILY_INCREMENTAL = "--previous-day" in sys.argv
 WORKERS = 16          # 번개장터 병렬
 MAX_SOLD_ROWS = 100
 
@@ -127,28 +128,65 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
     print(f"=== {set_name}({set_code}) JP 시세 [번개장터 전용] ===")
     print(f"대상: {len(cards)}장")
 
-    bunjang_prefetch = prefetch_bunjang_jp(cards, set_name, set_code, workers=WORKERS)
+    bunjang_prefetch = prefetch_bunjang_jp(
+        cards,
+        set_name,
+        set_code,
+        workers=WORKERS,
+        previous_day_only=DAILY_INCREMENTAL,
+    )
     print(f"번개 조회 완료: {len(bunjang_prefetch)}/{len(cards)}장 매칭")
+
+    historical_by_card: dict[int, tuple[list[int], list[int]]] = {}
+    if DAILY_INCREMENTAL:
+        history_rows = (
+            sb.table("prices_jp")
+            .select("card_id,price_krw,source")
+            .in_("card_id", [c["id"] for c in cards])
+            .gt("price_krw", 0)
+            .execute()
+            .data
+            or []
+        )
+        for row in history_rows:
+            source = str(row.get("source") or "")
+            if not (source.startswith("sold:bunjang:") or source.startswith("listing:bunjang:")):
+                continue
+            cid = int(row["card_id"])
+            sold_history, listing_history = historical_by_card.setdefault(cid, ([], []))
+            if source.startswith("sold:"):
+                sold_history.append(int(row["price_krw"]))
+            else:
+                listing_history.append(int(row["price_krw"]))
 
     rows: list[dict] = []
     ok = 0
 
     for card in cards:
         cid = card["id"]
+        if DAILY_INCREMENTAL and cid not in bunjang_prefetch:
+            continue
         if cid in bunjang_prefetch:
             b_sold, b_listing, b_sold_items, b_listing_items = bunjang_prefetch[cid]
         else:
             b_sold, b_listing, b_sold_items, b_listing_items = [], [], [], []
 
         rarity = card.get("rarity") or ""
-        b_sold = filter_prices_pipeline(b_sold, rarity)
-        b_listing = filter_prices_pipeline(b_listing, rarity)
-        sold_ok = set(b_sold)
-        list_ok = set(b_listing)
+        historical_sold, historical_listing = historical_by_card.get(cid, ([], []))
+        allowed = filter_prices_pipeline(
+            historical_sold + historical_listing + b_sold + b_listing,
+            rarity,
+        )
+        sold_ok = set(allowed)
+        list_ok = set(allowed)
         b_sold_items = [it for it in b_sold_items if it["price"] in sold_ok]
         b_listing_items = [it for it in b_listing_items if it["price"] in list_ok]
+        b_sold = historical_sold + [it["price"] for it in b_sold_items]
+        b_listing = historical_listing + [it["price"] for it in b_listing_items]
 
         price_krw, count, source = resolve_card_price(b_sold, b_listing)
+        if price_krw > 0 and not b_sold_items and not b_listing_items:
+            price_krw, count, source = 0, 0, "none"
 
         if count > 0:
             price_jpy = round(price_krw / rate) if rate else 0
@@ -170,19 +208,37 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
             })
             if b_sold_items:
                 _append_bunjang_jp_rows(card_rows, b_sold_items, "sold", card["id"], rate)
-            if b_listing_items and len(b_sold_items) < MIN_SOLD_FOR_AGGREGATE:
+            if b_listing_items:
                 _append_bunjang_jp_rows(card_rows, b_listing_items, "listing", card["id"], rate)
+            if not card_rows:
+                card_rows.append({
+                    "card_id": card["id"],
+                    "price_krw": 0,
+                    "price_jpy": 0,
+                    "source": "bunjang:none",
+                })
             if card_rows:
                 rows.extend(card_rows)
                 ok += 1
         else:
+            if APPLY:
+                rows.append({
+                    "card_id": card["id"],
+                    "price_krw": 0,
+                    "price_jpy": 0,
+                    "source": "bunjang:none",
+                })
             _log(
                 f"  [{card.get('card_number')}] {card.get('name_jp') or card.get('name_kr')}"
                 f" ({rarity}) => 미등록"
             )
 
     if APPLY:
-        ids = [c["id"] for c in cards]
+        ids = (
+            [c["id"] for c in cards if c["id"] in bunjang_prefetch]
+            if DAILY_INCREMENTAL
+            else [c["id"] for c in cards]
+        )
         deleted, inserted = save_daily_snapshots(sb, "prices_jp", ids, rows)
         print(f"완료: {ok}/{len(cards)}장 저장 (교체 {deleted}→{inserted})")
     else:

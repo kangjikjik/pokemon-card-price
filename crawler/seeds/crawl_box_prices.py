@@ -32,6 +32,8 @@ import json
 
 import os
 
+import re
+
 import sys
 
 import urllib.parse
@@ -39,6 +41,7 @@ import urllib.parse
 import urllib.request
 
 from time import sleep
+from typing import Any
 
 
 
@@ -52,7 +55,6 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 
 
-from lib.box_image_verify import BoxImageVerifier  # noqa: E402
 
 from lib.box_price_search import (  # noqa: E402
 
@@ -70,9 +72,12 @@ from lib.box_price_search import (  # noqa: E402
 
     jp_pack_msrp_krw,
 
+    filter_median_outliers,
+
     resolve_bunjang_box_price,
 
 )
+from lib.bunjang_card_price import is_previous_kst_day  # noqa: E402
 
 from lib.price_history import save_daily_box_snapshots  # noqa: E402
 
@@ -105,8 +110,34 @@ HEADERS = {
 
 
 APPLY = "--apply" in sys.argv
+DAILY_INCREMENTAL = "--previous-day" in sys.argv
 
 QUIET = "--quiet" in sys.argv
+
+CURRENT_CARD_NAMES: set[str] = set()
+
+
+def _compact_title(value: str) -> str:
+    return re.sub(r"[\s\W_]+", "", value.lower(), flags=re.UNICODE)
+
+
+def _card_name_variants(name: str) -> set[str]:
+    compact = _compact_title(name)
+    variants = {compact}
+    for suffix in ("vmax", "vstar", "gx", "ex", "v"):
+        if compact.endswith(suffix) and len(compact) > len(suffix) + 1:
+            variants.add(compact[: -len(suffix)])
+    return variants
+
+
+def _contains_known_card_name(title: str, ignored_text: str = "") -> bool:
+    compact = _compact_title(title)
+    ignored = _compact_title(ignored_text)
+    return any(
+        len(variant) >= 2 and variant in compact and variant not in ignored
+        for name in CURRENT_CARD_NAMES
+        for variant in _card_name_variants(name)
+    )
 
 
 
@@ -159,11 +190,14 @@ def _log(msg: str) -> None:
 
 
 
-def fetch_bunjang(keyword: str) -> list[dict]:
+def fetch_bunjang(keyword: str, page: int = 0) -> list[dict]:
 
     encoded = urllib.parse.quote(keyword)
 
-    url = f"https://api.bunjang.co.kr/api/1/find_v2.json?q={encoded}&n=100"
+    url = (
+        f"https://api.bunjang.co.kr/api/1/find_v2.json"
+        f"?q={encoded}&n=100&page={page}&order=date"
+    )
 
     try:
 
@@ -203,7 +237,7 @@ def _merge_quotes(
 
     pack_msrp: int,
 
-    verifier: BoxImageVerifier,
+    verifier: Any,
 
     *,
     sold_trades_out: list[VerifiedBoxQuote] | None = None,
@@ -212,11 +246,17 @@ def _merge_quotes(
 ) -> None:
 
     for item in items:
+        if DAILY_INCREMENTAL and not is_previous_kst_day(
+            int(item.get("update_time", 0) or 0)
+        ):
+            continue
 
         pid = str(item.get("pid", "") or "")
 
         if pid and pid in seen_pids:
 
+            continue
+        if _contains_known_card_name(str(item.get("name", "")), set_name):
             continue
 
         sold, listings = filter_fn(
@@ -256,6 +296,29 @@ def _merge_quotes(
 
 
 
+def _filter_quote_details(
+    sold_quotes: list[VerifiedBoxQuote],
+    listing_quotes: list[VerifiedBoxQuote],
+) -> tuple[list[VerifiedBoxQuote], list[VerifiedBoxQuote]]:
+    """거래완료·호가를 합친 가격으로 필터링하고 원래 구분을 보존한다."""
+    all_quotes = sold_quotes + listing_quotes
+    prices = filter_median_outliers([q.price for q in all_quotes])
+    remaining: dict[int, int] = {}
+    for price in prices:
+        remaining[price] = remaining.get(price, 0) + 1
+    filtered_sold: list[VerifiedBoxQuote] = []
+    filtered_listing: list[VerifiedBoxQuote] = []
+    for quote in sold_quotes:
+        if remaining.get(quote.price, 0) > 0:
+            filtered_sold.append(quote)
+            remaining[quote.price] -= 1
+    for quote in listing_quotes:
+        if remaining.get(quote.price, 0) > 0:
+            filtered_listing.append(quote)
+            remaining[quote.price] -= 1
+    return filtered_sold, filtered_listing
+
+
 def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, int, str]:
 
     """Returns (price, count, source)."""
@@ -283,6 +346,26 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
     set_id = row[0]["id"]
 
     set_name = row[0].get("name_kr") or meta.name_kr
+    global CURRENT_CARD_NAMES
+    card_rows: list[dict] = []
+    for offset in range(0, 10000, 1000):
+        page = (
+            sb.table("cards")
+            .select("name_kr,name_jp")
+            .range(offset, offset + 999)
+            .execute()
+            .data
+            or []
+        )
+        card_rows.extend(page)
+        if len(page) < 1000:
+            break
+    CURRENT_CARD_NAMES = {
+        name
+        for card in card_rows
+        for name in (card.get("name_kr"), card.get("name_jp"))
+        if name
+    }
 
     jp_name = ""
 
@@ -338,58 +421,69 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
 
 
 
-    with BoxImageVerifier(set_code, ref_url) as verifier:
-
-        if not verifier.has_reference():
-
-            _log(f"  [경고] 기준 박스 이미지 없음 — {set_code}")
-
-
-
-        for q in queries:
-
-            items = fetch_bunjang(q)
-
-            before = len(sold_quotes) + len(listing_quotes)
-
+    # 이미지 비교 없이 제목·언어·가격·수량 기준만 적용한다.
+    verifier = None
+    for q in queries:
+        before = len(sold_quotes) + len(listing_quotes)
+        for page in range(3):
+            items = fetch_bunjang(q, page)
+            if not items:
+                break
             _merge_quotes(
-
                 seen_pids,
-
                 items,
-
                 sold_quotes,
-
                 listing_quotes,
-
                 filter_fn,
-
                 set_name,
-
                 set_code,
-
                 msrp,
-
                 pack_msrp,
-
                 verifier,
-
                 sold_trades_out=sold_trades,
-
                 seen_trade_pids=seen_trade_pids,
-
             )
-
-            if len(sold_quotes) + len(listing_quotes) > before:
-
-                used_queries.append(q)
-
-            sleep(0.3)
-
+            if len(items) < 100:
+                break
+        if len(sold_quotes) + len(listing_quotes) > before:
+            used_queries.append(q)
+        sleep(0.3)
 
 
-    effective_sold = sold_trades if sold_trades else sold_quotes
+
+    historical_sold: list[VerifiedBoxQuote] = []
+    historical_listing: list[VerifiedBoxQuote] = []
+    if DAILY_INCREMENTAL:
+        source_prefix = "bunjang-jp" if region == "JP" else "bunjang"
+        history_rows = (
+            sb.table("prices_box")
+            .select("price_krw,source")
+            .eq("set_id", set_id)
+            .eq("region", region)
+            .gt("price_krw", 0)
+            .execute()
+            .data
+            or []
+        )
+        historical_sold = [
+            VerifiedBoxQuote(price=int(row["price_krw"]), updated_at=0, pid="")
+            for row in history_rows
+            if str(row.get("source") or "").startswith(f"{source_prefix}:sold:")
+        ]
+        historical_listing = [
+            VerifiedBoxQuote(price=int(row["price_krw"]), updated_at=0, pid="")
+            for row in history_rows
+            if str(row.get("source") or "").startswith(f"{source_prefix}:listing:")
+        ]
+    current_sold = sold_trades if sold_trades else sold_quotes
+    if DAILY_INCREMENTAL and not current_sold and not listing_quotes:
+        _log("  전날 신규 거래 없음 — 기존 박스 내역·평균 유지")
+        return 0, 0, ""
+    effective_sold = historical_sold + current_sold
+    listing_quotes = historical_listing + listing_quotes
     price, count, tier = resolve_bunjang_box_price(effective_sold, listing_quotes)
+    if price > 0 and not effective_sold and not listing_quotes:
+        price, count, tier = 0, 0, ""
 
     source = f"{source_prefix}:{tier}" if count > 0 else ""
 
@@ -413,13 +507,17 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
             })
         # 대표 요약 행과 별도로 상세 행을 구성한다.
         # 판매중 호가를 사용하는 경우에도 상품 PID·갱신 시각을 보존한다.
-        detail_quotes = (
-            sold_trades
-            if sold_trades
-            else (sold_quotes if tier == "sold" else listing_quotes)
+        filtered_sold, filtered_listings = _filter_quote_details(
+            sold_trades or sold_quotes,
+            listing_quotes,
         )
-        detail_tier = "sold" if sold_trades or tier == "sold" else "listing"
-        for q in sorted(detail_quotes, key=lambda x: x.updated_at, reverse=True)[:10]:
+        detail_quotes = (
+            [(q, "sold") for q in filtered_sold]
+            + [(q, "listing") for q in filtered_listings]
+        )
+        for q, detail_tier in sorted(
+            detail_quotes, key=lambda item: item[0].updated_at, reverse=True
+        )[:30]:
             if not q.pid:
                 continue
             src = f"{source_prefix}:{detail_tier}:{q.pid}:{q.updated_at}"

@@ -29,7 +29,17 @@ from lib.price_search import (  # noqa: E402
     filter_prices_by_rarity_band,
 )
 from lib.rarity_rank import is_promo_rarity  # noqa: E402
-from crawl_set_prices import APPLY, MISSING_ONLY, QUIET, WORKERS, _log, crawl_card, get_arg  # noqa: E402
+from crawl_set_prices import (  # noqa: E402
+    APPLY,
+    DAILY_INCREMENTAL,
+    MISSING_ONLY,
+    QUIET,
+    WORKERS,
+    _append_bunjang_rows,
+    _log,
+    crawl_card,
+    get_arg,
+)
 from crawl_set_prices_jp import get_exchange_rate  # noqa: E402
 from promo_catalog import PROMO_BY_CODE, PROMO_SET_CODES  # noqa: E402
 from utils.db import get_supabase  # noqa: E402
@@ -94,12 +104,35 @@ def crawl_promo_kr(set_code: str, set_name: str, cards: list[dict]) -> int:
         return 0
 
     print(f"  KR: 번개장터 전용 (workers={WORKERS})")
+    historical_by_card: dict[int, tuple[list[int], list[int]]] = {}
+    if DAILY_INCREMENTAL:
+        history_rows = (
+            sb.table("prices_kr")
+            .select("card_id,price_krw,source")
+            .in_("card_id", [c["id"] for c in cards])
+            .gt("price_krw", 0)
+            .execute()
+            .data
+            or []
+        )
+        for row in history_rows:
+            source = str(row.get("source") or "")
+            if not (source.startswith("sold:bunjang:") or source.startswith("listing:bunjang:")):
+                continue
+            cid = int(row["card_id"])
+            sold_history, listing_history = historical_by_card.setdefault(cid, ([], []))
+            if source.startswith("sold:"):
+                sold_history.append(int(row["price_krw"]))
+            else:
+                listing_history.append(int(row["price_krw"]))
+
     prefetch = prefetch_bunjang_kr(
         cards,
         set_name,
         set_code,
         build_queries_fn=_build_promo_queries,
         workers=WORKERS,
+        previous_day_only=DAILY_INCREMENTAL,
     )
     print(f"  번개 조회: {len(prefetch)}/{len(cards)}장 매칭")
 
@@ -108,11 +141,14 @@ def crawl_promo_kr(set_code: str, set_name: str, cards: list[dict]) -> int:
     for card in cards:
         _log(f"\n[{card['card_number']}] {card['name_kr']} (P)")
         pair = prefetch.get(card["id"])
-        price, count, source, sold_items, _listing_items = crawl_card(
+        if DAILY_INCREMENTAL and pair is None:
+            continue
+        price, count, source, sold_items, listing_items = crawl_card(
             card,
             set_name,
             set_code,
             prefetched=pair,
+            historical=historical_by_card.get(card["id"]),
         )
         if count > 0:
             tier = "거래완료" if source.startswith("sold") else "호가최저"
@@ -127,23 +163,16 @@ def crawl_promo_kr(set_code: str, set_name: str, cards: list[dict]) -> int:
                 "price_krw": price,
                 "source": source,
             })
-            if source.startswith("sold") and sold_items:
-                for it in sort_sold_items_by_time(sold_items)[:10]:
-                    pid = it.get("pid", "")
-                    ts = it.get("update_time", 0)
-                    if pid and ts:
-                        src = f"sold:bunjang:{pid}:{ts}"
-                    elif pid:
-                        src = f"sold:bunjang:{pid}"
-                    else:
-                        continue
-                    priced_rows.append({"card_id": card["id"], "price_krw": it["price"], "source": src})
-            else:
-                priced_rows.append({"card_id": card["id"], "price_krw": price, "source": source})
+            _append_bunjang_rows(priced_rows, sold_items, "sold", card["id"])
+            _append_bunjang_rows(priced_rows, listing_items, "listing", card["id"])
             ok += 1
 
     if APPLY and cards:
-        all_ids = [c["id"] for c in cards]
+        all_ids = (
+            [c["id"] for c in cards if c["id"] in prefetch]
+            if DAILY_INCREMENTAL
+            else [c["id"] for c in cards]
+        )
         deleted, inserted = save_daily_snapshots(sb, "prices_kr", all_ids, priced_rows)
         print(f"\n{set_code} KR 완료: {ok}/{len(cards)}장 (오늘 교체 {deleted}→{inserted})")
     else:

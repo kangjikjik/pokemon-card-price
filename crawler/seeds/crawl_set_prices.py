@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import os
 import sys
+from collections import Counter
 
 from dotenv import load_dotenv
 
@@ -47,6 +48,7 @@ APPLY = "--apply" in sys.argv
 QUIET = "--quiet" in sys.argv
 MISSING_ONLY = "--missing-only" in sys.argv
 TRAINER_ITEM_ONLY = "--trainer-item-only" in sys.argv
+DAILY_INCREMENTAL = "--previous-day" in sys.argv
 WORKERS = 16
 MAX_SOLD_ROWS = 100
 
@@ -109,6 +111,7 @@ def crawl_card(
     set_code: str,
     *,
     prefetched: tuple[list[int], list[int], list[dict], list[dict]] | None = None,
+    historical: tuple[list[int], list[int]] | None = None,
 ) -> tuple[int, int, str, list[dict], list[dict]]:
     """(price, count, source, sold_items, listing_items)"""
     name_kr = card.get("name_kr") or ""
@@ -129,15 +132,35 @@ def crawl_card(
         sold_items = sold_items_raw
         listing_items = listing_items_raw
 
-    # 등급별 이상치 필터
-    sold_filtered = filter_prices_pipeline(sold, rarity)
-    listing_filtered = filter_prices_pipeline(listing, rarity)
+    historical_sold, historical_listing = historical or ([], [])
+    # 기존 상세 내역과 새 내역을 합친 전체 가격에서 이상치를 필터링한다.
+    filtered_prices = filter_prices_pipeline(
+        historical_sold + historical_listing + sold + listing,
+        rarity,
+    )
+    remaining = Counter(filtered_prices)
 
-    filtered_prices = set(sold_filtered)
-    sold_items = [it for it in sold_items if it["price"] in filtered_prices]
-    listing_items = [it for it in listing_items if it["price"] in set(listing_filtered)]
+    def take_filtered(items: list[dict]) -> list[dict]:
+        kept: list[dict] = []
+        for item in items:
+            price_value = int(item["price"])
+            if remaining[price_value] > 0:
+                kept.append(item)
+                remaining[price_value] -= 1
+        return kept
+
+    # 기존 내역을 먼저 소비해 새 상세 행의 중복 가격도 판정한다.
+    for old_price in historical_sold + historical_listing:
+        if remaining[old_price] > 0:
+            remaining[old_price] -= 1
+    sold_items = take_filtered(sold_items)
+    listing_items = take_filtered(listing_items)
+    sold_filtered = historical_sold + [it["price"] for it in sold_items]
+    listing_filtered = historical_listing + [it["price"] for it in listing_items]
 
     price, count, source = resolve_card_price(sold_filtered, listing_filtered)
+    if price > 0 and not sold_items and not listing_items:
+        price, count, source = 0, 0, "none"
     return price, count, source, sold_items, listing_items
 
 
@@ -199,12 +222,35 @@ def main() -> None:
 
     # 병렬 번개장터 조회
     print(f"번개장터 병렬 조회 중 (workers={WORKERS})...")
+    historical_by_card: dict[int, tuple[list[int], list[int]]] = {}
+    if DAILY_INCREMENTAL:
+        history_rows = (
+            sb.table("prices_kr")
+            .select("card_id,price_krw,source")
+            .in_("card_id", [c["id"] for c in cards])
+            .gt("price_krw", 0)
+            .execute()
+            .data
+            or []
+        )
+        for row in history_rows:
+            source = str(row.get("source") or "")
+            if not (source.startswith("sold:bunjang:") or source.startswith("listing:bunjang:")):
+                continue
+            cid = int(row["card_id"])
+            sold_history, listing_history = historical_by_card.setdefault(cid, ([], []))
+            if source.startswith("sold:"):
+                sold_history.append(int(row["price_krw"]))
+            else:
+                listing_history.append(int(row["price_krw"]))
+
     prefetch = prefetch_bunjang_kr(
         cards,
         set_name,
         set_code,
         build_queries_fn=_build_queries,
         workers=WORKERS,
+        previous_day_only=DAILY_INCREMENTAL,
     )
     print(f"조회 완료: {len(prefetch)}/{len(cards)}장 매칭")
 
@@ -212,32 +258,47 @@ def main() -> None:
     priced_rows: list[dict] = []
 
     for card in cards:
-        _log(f"\n[{card['card_number']}] {card['name_kr']} ({card['rarity']})")
         quad = prefetch.get(card["id"])
+        if DAILY_INCREMENTAL and quad is None:
+            continue
+        _log(f"\n[{card['card_number']}] {card['name_kr']} ({card['rarity']})")
         price, count, source, sold_items, listing_items = crawl_card(
             card, set_name, set_code, prefetched=quad,
+            historical=historical_by_card.get(card["id"]),
         )
 
         if count > 0:
-            tier = "거래완료" if source.startswith("sold") else "호가최저"
+            tier = "거래완료+호가" if source.startswith("sold+listing") else (
+                "거래완료" if source.startswith("sold") else "호가"
+            )
             _log(f"  => {price:,}원 ({count}건, {tier})")
         else:
             _log("  => 미등록")
 
-        if APPLY and price > 0:
+        if APPLY:
             card_rows: list[dict] = []
-            # 목록·상세 대표가 (개별 거래 row와 분리)
-            card_rows.append({"card_id": card["id"], "price_krw": price, "source": source})
-            if sold_items:
-                _append_bunjang_rows(card_rows, sold_items, "sold", card["id"])
-            if listing_items and len(sold_items) < MIN_SOLD_FOR_AGGREGATE:
-                _append_bunjang_rows(card_rows, listing_items, "listing", card["id"])
-            if card_rows:
-                priced_rows.extend(card_rows)
+            if price > 0:
+                # 목록·상세 대표가 (개별 거래 row와 분리)
+                card_rows.append({"card_id": card["id"], "price_krw": price, "source": source})
+                if sold_items:
+                    _append_bunjang_rows(card_rows, sold_items, "sold", card["id"])
+                if listing_items:
+                    _append_bunjang_rows(card_rows, listing_items, "listing", card["id"])
                 ok += 1
+            else:
+                card_rows.append({
+                    "card_id": card["id"],
+                    "price_krw": 0,
+                    "source": "bunjang:none",
+                })
+            priced_rows.extend(card_rows)
 
     if APPLY:
-        all_ids = [c["id"] for c in cards]
+        all_ids = (
+            [c["id"] for c in cards if c["id"] in prefetch]
+            if DAILY_INCREMENTAL
+            else [c["id"] for c in cards]
+        )
         deleted, inserted = save_daily_snapshots(sb, "prices_kr", all_ids, priced_rows)
         unpriced = len(cards) - ok
         print(
