@@ -10,10 +10,12 @@ from lib.box_image_verify import BoxImageVerifier
 from lib.price_search import (
     BUY_KEYWORDS,
     CARD_NUMBER_RE,
+    FOREIGN_FOR_KR,
     JP_KEYWORDS,
     KR_KEYWORDS,
     aliases_for_set_code,
     calculate_median_price,
+    filter_median_outliers,
 )
 
 BOX_MARKERS = ["박스", "BOX", "box", "Box", "고대박스"]
@@ -25,6 +27,7 @@ MULTI_PACK_RE = re.compile(r"(?:\d+\s*팩|팩\s*\d+|단팩|1팩|한\s*팩)", re.
 RARITY_MARKERS = [
     "SAR", "SR ", " SR", " AR ", " AR", "MUR", "RR ", " RR", "UR ", " ACE",
     "CSR", "CHR", "PR ", " PR", "SSR", "HR ", " HR",
+    "BRG", "BGS", "CGC", "PSA",
 ]
 BUNDLE_BOX_KEYWORDS = ["일괄", "묶음", "통판", "대량", "2종", "3종", "4종", "5종", "6종", "7종", "8종"]
 MULTI_SET_BOX_RE = re.compile(r"(\d{1,2})\s*(?:박스|box|BOX)", re.I)
@@ -57,10 +60,14 @@ def _box_search_name_candidates(set_name_kr: str, set_code: str) -> list[str]:
         if nospace != raw:
             cands.append(nospace)
     for alias in aliases_for_set_code(set_code):
+        if re.fullmatch(r"[A-Za-z]{1,4}\d{1,3}[A-Za-z]?", alias.strip()):
+            continue
         cands.append(alias)
         nospace = alias.replace(" ", "")
         if nospace != alias:
             cands.append(nospace)
+    if set_code.upper() == "SV2A":
+        cands.extend(["포켓몬카드 151", "포켓몬 카드 151"])
     seen: set[str] = set()
     out: list[str] = []
     for c in cands:
@@ -72,7 +79,6 @@ def _box_search_name_candidates(set_name_kr: str, set_code: str) -> list[str]:
 
 
 def build_box_search_queries(set_name_kr: str, set_code: str) -> list[str]:
-    code = set_code.strip().upper()
     queries: list[str] = []
     for n in _box_search_name_candidates(set_name_kr, set_code):
         queries.extend([
@@ -84,8 +90,12 @@ def build_box_search_queries(set_name_kr: str, set_code: str) -> list[str]:
             f"포켓몬카드 {n} 고대박스",
             f"포켓몬카드 {n} 한글판 박스",
         ])
-    # 세트코드(SV2P 등)는 번개 검색에 거의 안 통함 — 보조만
-    queries.append(f"포켓몬카드 {code} 박스")
+        if set_code.upper() == "SV2A":
+            queries.extend([
+                f"{n} 미개봉",
+                f"{n} 확장팩",
+                f"{n} 강화 확장팩",
+            ])
     seen: set[str] = set()
     out: list[str] = []
     for q in queries:
@@ -98,7 +108,9 @@ def build_box_search_queries(set_name_kr: str, set_code: str) -> list[str]:
 
 def _norm(text: str) -> str:
     t = unicodedata.normalize("NFKD", text)
-    t = "".join(c for c in t if not unicodedata.combining(c))
+    t = unicodedata.normalize(
+        "NFC", "".join(c for c in t if not unicodedata.combining(c))
+    )
     t = re.sub(r"\s+", "", t.lower())
     # 번개 표기: 에메랄드 / 스토에메랄다 → 공식 스톰에메랄da
     t = t.replace("에메랄드", "에메랄da").replace("스토에메랄da", "스톰에메랄da")
@@ -128,14 +140,22 @@ def _matches_set_token(t: str, variant: str) -> bool:
         return False
     if v.isdigit():
         # 151 세트명 — 카드번호 151/165 와 구분
-        return bool(re.search(rf"(?:^|[^\d]){re.escape(v)}(?:[^\d/]|$)", t))
+        # 세트명은 "포켓몬카드 151"로 검색·판별한다.
+        if v == "151" and "포켓몬카드151" not in t:
+            return False
+        # BC151KR 같은 상품 코드·휴대폰 모델명에 포함된 숫자는 세트명으로 보지 않는다.
+        return bool(re.search(rf"(?<![0-9A-Za-z]){re.escape(v)}(?![0-9A-Za-z/])", t))
     return v in t
 
 
 def _title_matches_set(title: str, set_name_kr: str, set_code: str) -> bool:
     t = _norm(title)
-    if set_code and _norm(set_code) in t:
-        return True
+    if set_code.upper() == "SV2A" and "포켓몬카드151" not in t:
+        return False
+    if set_code:
+        code = _norm(set_code)
+        if code and re.search(rf"(?<![a-z0-9]){re.escape(code)}(?![a-z0-9])", t):
+            return True
     for variant in _set_name_variants(set_name_kr, set_code):
         if _matches_set_token(t, variant):
             return True
@@ -217,7 +237,9 @@ def _looks_like_single_card(
         return True
     if CARD_NUMBER_RE.search(title):
         return True
-    if any(k in title for k in SINGLE_KEYWORDS):
+    if any(k in title for k in SINGLE_KEYWORDS if k != "카드 1") or re.search(
+        r"카드\s+1(?!\d)", title
+    ):
         return True
     upper = title.upper()
     if any(m in upper for m in RARITY_MARKERS) and not _has_box_marker(title):
@@ -231,11 +253,15 @@ def _is_box_listing(
     msrp_box_kr: int = 0,
     msrp_pack_kr: int = 0,
 ) -> bool:
+    if "박스폰" in title:
+        return False
     if _has_box_marker(title):
         return True
     if "확장팩" in title and "팩" not in title.replace("확장팩", ""):
         return True
     if unit_price and _is_mislabeled_sealed_box(title, unit_price, msrp_box_kr, msrp_pack_kr):
+        return True
+    if unit_price and _price_suggests_box(unit_price, msrp_box_kr, msrp_pack_kr):
         return True
     return False
 
@@ -281,8 +307,8 @@ def _box_unit_price(total_price: int, title: str) -> int | None:
 
 def box_price_bounds(msrp_box_kr: int, msrp_pack_kr: int = 0) -> tuple[int, int]:
     msrp = max(msrp_box_kr, 5000)
-    pack_floor = int(max(msrp_pack_kr, 500) * 20) if msrp_pack_kr else 0
-    lo = max(3000, int(msrp * 0.25), pack_floor)
+    # 박스 시세가 발매가보다 낮은 거래·호가는 모두 제외한다.
+    lo = msrp
     # 구세대 고가 박스 — 상한은 비현실적 outlier만 제외
     hi = 50_000_000
     return lo, hi
@@ -353,6 +379,11 @@ def _collect_verified_box_quotes(
         pid = str(item.get("pid", "") or "")
         quote = VerifiedBoxQuote(price=unit, updated_at=_bunjang_update_time(item), pid=pid)
         if _is_bunjang_sold(item):
+            if quote.updated_at > 0:
+                cutoff = datetime.now(timezone.utc) - timedelta(days=SOLD_MAX_AGE_DAYS)
+                occurred = datetime.fromtimestamp(quote.updated_at, tz=timezone.utc)
+                if occurred < cutoff:
+                    continue
             sold.append(quote)
         elif _is_bunjang_listing(item):
             listings.append(quote)
@@ -407,6 +438,8 @@ def is_kr_box_listing(
         return False
     if _is_japanese_box(title):
         return False
+    if any(k in title for k in FOREIGN_FOR_KR):
+        return False
     if not _title_matches_set(title, set_name_kr, set_code):
         return False
     if not _is_box_listing(title, unit_price, msrp_box_kr, msrp_pack_kr):
@@ -416,13 +449,6 @@ def is_kr_box_listing(
     if not allow_opened and _is_opened_box(title):
         return False
     if _is_bundle_box_listing(title, set_name_kr, set_code):
-        return False
-    # 한글 표기 없고 MSRP 2.5배 초과 → 일본판 의심 (일판 키워드 생략한 경우)
-    if (
-        msrp_box_kr > 0
-        and unit_price > msrp_box_kr * 2.5
-        and not any(k in title for k in KR_KEYWORDS)
-    ):
         return False
     return True
 
@@ -442,20 +468,17 @@ def filter_bunjang_box_listings(
 
 
 def resolve_box_price(prices: list[int]) -> tuple[int, int]:
-    """(median, count)."""
+    """(average, count)."""
     if not prices:
         return 0, 0
-    return calculate_median_price(prices), len(prices)
+    return round(sum(prices) / len(prices)), len(prices)
 
 
 def _resolve_tier_prices(prices: list[int], tier: str) -> tuple[int, int, str]:
     uniq = sorted({p for p in prices if p > 0})
     if not uniq:
         return 0, 0, ""
-    if len(uniq) == 1:
-        return uniq[0], 1, tier
-    med, cnt = resolve_box_price(uniq)
-    return med, cnt, tier
+    return round(sum(uniq) / len(uniq)), len(uniq), tier
 
 
 def _jp_box_by_price(
@@ -479,7 +502,7 @@ def resolve_bunjang_box_price(
     listing_prices: list[int] | None = None,
     max_sold_age_days: int = SOLD_MAX_AGE_DAYS,
 ) -> tuple[int, int, str]:
-    """최근 거래완료 우선 → 오래됐거나 없으면 판매중 호가."""
+    """최근 거래완료와 판매중 호가를 함께 평균한다."""
     if listing_quotes is None:
         listing_quotes = [
             VerifiedBoxQuote(price=p, updated_at=0, pid="")
@@ -498,20 +521,29 @@ def resolve_bunjang_box_price(
         if ts >= cutoff:
             recent_sold.append(q.price)
 
-    if recent_sold:
-        listing_vals = sorted({q.price for q in listing_quotes if q.price > 0})
-        if listing_vals:
-            list_ref = listing_vals[len(listing_vals) // 2]
-            # 거래완료 1건이 호가 대비 비정상적으로 높으면(대량·오표기) 호가 사용
-            if len(recent_sold) == 1 and recent_sold[0] > list_ref * 3:
-                recent_sold = []
-            else:
-                recent_sold = [p for p in recent_sold if p <= list_ref * 4]
-        if recent_sold:
-            return _resolve_tier_prices(recent_sold, "sold")
-
     listing_vals = [q.price for q in listing_quotes if q.price > 0]
-    return _resolve_tier_prices(listing_vals, "listing")
+    filtered_values = filter_median_outliers(recent_sold + listing_vals)
+    remaining: dict[int, int] = {}
+    for price in filtered_values:
+        remaining[price] = remaining.get(price, 0) + 1
+    recent_sold_values = recent_sold
+    recent_sold = []
+    for price in recent_sold_values:
+        if remaining.get(price, 0) > 0:
+            recent_sold.append(price)
+            remaining[price] -= 1
+    listing_vals = []
+    for price in [q.price for q in listing_quotes if q.price > 0]:
+        if remaining.get(price, 0) > 0:
+            listing_vals.append(price)
+            remaining[price] -= 1
+    values = recent_sold + listing_vals
+    if not values:
+        return 0, 0, ""
+    tier = "sold+listing" if recent_sold and listing_vals else (
+        "sold" if recent_sold else "listing"
+    )
+    return round(sum(values) / len(values)), len(values), tier
 
 
 # ── 일본판 박스 ──────────────────────────────────────────────
@@ -562,7 +594,6 @@ def build_jp_box_search_queries(
     set_code: str,
     jp_name: str = "",
 ) -> list[str]:
-    code = set_code.strip().upper()
     queries: list[str] = []
     for n in _box_search_name_candidates(set_name_kr, set_code):
         base = re.sub(r"\s*ex\s*$", "", n, flags=re.I).strip()
@@ -584,8 +615,6 @@ def build_jp_box_search_queries(
     if jp_name:
         queries.append(f"포켓몬카드 {jp_name} ボックス")
         queries.append(f"포켓몬 {jp_name} BOX")
-    queries.append(f"포켓몬카드 {code} 일본판 박스")
-    queries.append(f"포켓몬카드 {code} 일판 박스")
     seen: set[str] = set()
     out: list[str] = []
     for q in queries:

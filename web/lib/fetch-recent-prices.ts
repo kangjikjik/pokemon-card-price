@@ -22,9 +22,17 @@ export async function fetchRecentPricesByCard(
   since.setDate(since.getDate() - daysBack);
   const sinceIso = since.toISOString();
 
-  /** summary 우선 — 개별 row는 800건 한도에 밀리므로 제외 (calc에서 summary 사용) */
-  const summaryFilter =
-    'source.eq.sold:bunjang,source.eq.listing:bunjang,source.eq.sold:bunjang+snkrdunk,source.eq.listing:bunjang+kream,source.eq.sold:snkrdunk';
+  /** 양수 요약 우선. 미등록 요약만 있는 경우 최근 상세 거래를 fallback으로 사용한다. */
+  const summaryFilter = [
+    'source.eq.bunjang:sold',
+    'source.eq.bunjang:listing',
+    'source.eq.bunjang:sold+listing',
+    'source.eq.sold:bunjang',
+    'source.eq.listing:bunjang',
+    'source.eq.sold+listing:bunjang',
+    'source.like.sold:bunjang:*',
+    'source.like.listing:bunjang:*',
+  ].join(',');
 
   const [krRes, jpRes] = await Promise.all([
     supabase

@@ -13,6 +13,14 @@ export type SetMsrp = {
 
 /** featured 79 — JP box는 공식·포켓몬센터 검증 */
 export const SET_MSRP: Record<string, SetMsrp> = {
+  MG7: {
+    packKR: 1500,
+    boxKR: 45000,
+    packJP: 180,
+    boxJP: 5400,
+    sourceKR: 'https://pokemoncard.co.kr/card/938',
+    sourceJP: 'https://www.pokemon-card.com/ex/m6/',
+  },
   MG6: {
     packKR: 1500,
     boxKR: 45000,
@@ -654,5 +662,5 @@ export function getSetMsrp(code: string): SetMsrp {
 }
 
 export function formatYen(amount: number): string {
-  return new Intl.NumberFormat('ja-JP').format(amount) + '円';
+  return new Intl.NumberFormat('ja-JP').format(amount) + ' 円';
 }

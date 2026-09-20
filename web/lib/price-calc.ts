@@ -37,7 +37,13 @@ export function isListingSummarySource(source?: string | null): boolean {
 export function isSoldSummarySource(source?: string | null): boolean {
   if (!source) return false;
   if (isTradeDetailSource(source) || isListingSummarySource(source)) return false;
-  return source.startsWith('sold:') || source === 'bunjang-jp:sold' || source === 'bunjang:sold';
+  return (
+    source.startsWith('sold:') ||
+    source === 'bunjang-jp:sold' ||
+    source === 'bunjang:sold' ||
+    source === 'bunjang:sold+listing' ||
+    source === 'sold+listing:bunjang'
+  );
 }
 
 /** 박스 개별 거래 row (bunjang(-jp):sold:PID:TS) */

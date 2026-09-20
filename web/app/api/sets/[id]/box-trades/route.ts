@@ -103,11 +103,11 @@ export async function GET(
 
     const sold = parsed.filter((r) => r.label === '거래완료');
     const listing = parsed.filter((r) => r.label === '호가');
-    const pool = sold.length > 0 ? sold : listing;
+    const pool = [...sold, ...listing];
 
     const trades = pool
       .sort((a, b) => new Date(b.traded_at).getTime() - new Date(a.traded_at).getTime())
-      .slice(0, 10);
+      .slice(0, 30);
 
     return NextResponse.json({ trades });
   } catch {

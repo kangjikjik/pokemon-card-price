@@ -90,7 +90,11 @@ async function fetchWeeklyHotCard(supabase: ReturnType<typeof getSupabaseServer>
     .maybeSingle();
 
   if (error || !data) return null;
-  const priceMap = await fetchRecentPricesByCard(supabase, [WEEKLY_HOT_CARD.cardId]);
+  const priceMap = await fetchRecentPricesByCard(
+    supabase,
+    [WEEKLY_HOT_CARD.cardId],
+    { daysBack: 90 },
+  );
   return mapRawToCard(data as Record<string, unknown>, priceMap);
 }
 
