@@ -23,7 +23,10 @@ from lib.bunjang_card_price import (  # noqa: E402
     resolve_card_price,
     sort_sold_items_by_time,
 )
-from lib.price_history import save_daily_snapshots  # noqa: E402
+from lib.price_history import (  # noqa: E402
+    save_daily_snapshots,
+    save_incremental_snapshots,
+)
 from lib.price_search import (  # noqa: E402
     build_promo_search_queries,
     filter_prices_by_rarity_band,
@@ -173,7 +176,8 @@ def crawl_promo_kr(set_code: str, set_name: str, cards: list[dict]) -> int:
             if DAILY_INCREMENTAL
             else [c["id"] for c in cards]
         )
-        deleted, inserted = save_daily_snapshots(sb, "prices_kr", all_ids, priced_rows)
+        save_fn = save_incremental_snapshots if DAILY_INCREMENTAL else save_daily_snapshots
+        deleted, inserted = save_fn(sb, "prices_kr", all_ids, priced_rows)
         print(f"\n{set_code} KR 완료: {ok}/{len(cards)}장 (오늘 교체 {deleted}→{inserted})")
     else:
         print(f"\n{set_code} KR 드라이런: {ok}/{len(cards)}장 매칭")

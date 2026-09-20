@@ -125,3 +125,143 @@ def save_daily_box_snapshots(
             )
             inserted += len(chunk)
     return deleted, inserted
+
+
+def save_incremental_snapshots(
+    sb: Any,
+    table: str,
+    card_ids: list[int],
+    rows: list[dict],
+) -> tuple[int, int]:
+    """Update today's summaries while preserving every existing detail row."""
+    if not card_ids:
+        return 0, 0
+
+    start, end = kst_day_bounds_utc()
+    batch = 200
+    existing = (
+        sb.table(table)
+        .select("id,card_id,source")
+        .in_("card_id", card_ids)
+        .execute()
+        .data
+        or []
+    )
+    existing_sources = {
+        (int(row["card_id"]), str(row.get("source") or ""))
+        for row in existing
+    }
+    today = (
+        sb.table(table)
+        .select("id,source")
+        .in_("card_id", card_ids)
+        .gte("fetched_at", start)
+        .lt("fetched_at", end)
+        .execute()
+        .data
+        or []
+    )
+    summary_ids = [
+        row["id"]
+        for row in today
+        if not str(row.get("source") or "").startswith(
+            ("sold:bunjang:", "listing:bunjang:")
+        )
+    ]
+    deleted = 0
+    for i in range(0, len(summary_ids), batch):
+        result = _execute_with_retry(
+            lambda chunk=summary_ids[i : i + batch]: sb.table(table)
+            .delete()
+            .in_("id", chunk)
+            .execute()
+        )
+        deleted += len(result.data or [])
+
+    new_rows = [
+        row for row in rows
+        if (
+            not str(row.get("source") or "").startswith(("sold:bunjang:", "listing:bunjang:"))
+            or (int(row["card_id"]), str(row.get("source") or "")) not in existing_sources
+        )
+    ]
+    inserted = 0
+    for i in range(0, len(new_rows), batch):
+        chunk = new_rows[i : i + batch]
+        _execute_with_retry(lambda c=chunk: sb.table(table).insert(c).execute())
+        inserted += len(chunk)
+    return deleted, inserted
+
+
+def save_incremental_box_snapshots(
+    sb: Any,
+    set_ids: list[int],
+    region: str,
+    rows: list[dict],
+) -> tuple[int, int]:
+    """Box equivalent of save_incremental_snapshots."""
+    if not set_ids:
+        return 0, 0
+
+    start, end = kst_day_bounds_utc()
+    batch = 200
+    existing = (
+        sb.table("prices_box")
+        .select("id,set_id,region,source")
+        .in_("set_id", set_ids)
+        .eq("region", region)
+        .execute()
+        .data
+        or []
+    )
+    existing_sources = {
+        (int(row["set_id"]), str(row.get("region") or ""), str(row.get("source") or ""))
+        for row in existing
+    }
+    today = (
+        sb.table("prices_box")
+        .select("id,source")
+        .in_("set_id", set_ids)
+        .eq("region", region)
+        .gte("fetched_at", start)
+        .lt("fetched_at", end)
+        .execute()
+        .data
+        or []
+    )
+    summary_ids = [
+        row["id"]
+        for row in today
+        if not str(row.get("source") or "").startswith(
+            ("bunjang:sold:", "bunjang:listing:", "bunjang-jp:sold:", "bunjang-jp:listing:")
+        )
+    ]
+    deleted = 0
+    for i in range(0, len(summary_ids), batch):
+        result = _execute_with_retry(
+            lambda chunk=summary_ids[i : i + batch]: sb.table("prices_box")
+            .delete()
+            .in_("id", chunk)
+            .execute()
+        )
+        deleted += len(result.data or [])
+
+    new_rows = [
+        row for row in rows
+        if (
+            not str(row.get("source") or "").startswith(
+                ("bunjang:sold:", "bunjang:listing:", "bunjang-jp:sold:", "bunjang-jp:listing:")
+            )
+            or (
+                int(row["set_id"]),
+                str(row.get("region") or ""),
+                str(row.get("source") or ""),
+            ) not in existing_sources
+        )
+    ]
+    inserted = 0
+    for i in range(0, len(new_rows), batch):
+        chunk = new_rows[i : i + batch]
+        _execute_with_retry(lambda c=chunk: sb.table("prices_box").insert(c).execute())
+        inserted += len(chunk)
+    return deleted, inserted
