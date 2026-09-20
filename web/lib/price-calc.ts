@@ -69,7 +69,9 @@ export function pricesForDisplay(prices: PriceRecord[]): PriceRecord[] {
   if (listingSummary.length > 0) return listingSummary;
 
   const listingDetails = prices.filter(
-    (p) => isTradeDetailSource(p.source) && p.source?.includes(':listing:'),
+    (p) =>
+      isTradeDetailSource(p.source) &&
+      (p.source?.startsWith('listing:bunjang:') || p.source?.includes(':listing:')),
   );
   return listingDetails.length > 0 ? listingDetails : [];
 }
