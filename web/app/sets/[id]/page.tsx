@@ -14,6 +14,8 @@ import { SetCardsPriceTable } from '@/components/set-cards-price-table';
 import { fetchRecentPricesByCard } from '@/lib/fetch-recent-prices';
 import { fetchRecentBoxPricesBySet } from '@/lib/fetch-recent-box-prices';
 
+export const dynamic = 'force-dynamic';
+
 export default async function SetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const numericId = parseInt(id);

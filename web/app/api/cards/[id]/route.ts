@@ -5,6 +5,8 @@ import { calcRepresentativePrice } from '@/lib/price-calc';
 import { fetchRecentPricesByCard } from '@/lib/fetch-recent-prices';
 import { CARDS_LIST_SET_CODES, FEATURED_SET_CODES, isViewableSetCode } from '@/lib/constants';
 
+export const dynamic = 'force-dynamic';
+
 const SET_COLORS: Record<string, string> = {
   SV2a: 'from-green-500 to-emerald-700',
   SV2D: 'from-purple-500 to-fuchsia-700',

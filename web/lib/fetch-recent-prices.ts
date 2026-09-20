@@ -45,6 +45,7 @@ export async function fetchRecentPricesByCard(
       .gte('fetched_at', sinceIso)
       .order('card_id', { ascending: true })
       .order('fetched_at', { ascending: false })
+      .order('source', { ascending: true })
       .limit(maxRows),
     supabase
       .from('prices_jp')
@@ -54,6 +55,7 @@ export async function fetchRecentPricesByCard(
       .gte('fetched_at', sinceIso)
       .order('card_id', { ascending: true })
       .order('fetched_at', { ascending: false })
+      .order('source', { ascending: true })
       .limit(maxRows),
   ]);
 

@@ -5,6 +5,8 @@ import { isViewableSetCode } from '@/lib/constants';
 import { fetchRecentPricesByCard } from '@/lib/fetch-recent-prices';
 import { fetchRecentBoxPricesBySet } from '@/lib/fetch-recent-box-prices';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
