@@ -8,6 +8,64 @@ import { roundDisplayPrice } from './price-round';
 interface PriceRecord {
   price_krw: number;
   fetched_at?: string;
+  source?: string;
+}
+
+/** 개별 거래·호가 row (sold:bunjang:PID, bunjang:sold:PID 등) */
+export function isTradeDetailSource(source?: string | null): boolean {
+  if (!source) return false;
+  return (
+    /^(sold|listing):bunjang:\d+/.test(source) ||
+    /^sold:snkrdunk:\d+/.test(source) ||
+    /^bunjang(-jp)?:(sold|listing):\d+/.test(source)
+  );
+}
+
+function isSoldDetailSource(source?: string | null): boolean {
+  if (!source) return false;
+  if (source.startsWith('sold:') && isTradeDetailSource(source)) return true;
+  return isTradeDetailSource(source) && source.includes(':sold:');
+}
+
+/** 호가 summary — 대표 시세(체결 평균) 계산에서 제외 */
+export function isListingSummarySource(source?: string | null): boolean {
+  if (!source) return false;
+  return source.startsWith('listing:') || source === 'bunjang-jp:listing' || source === 'bunjang:listing';
+}
+
+/** 체결 summary — sold:bunjang, sold:bunjang+snkrdunk 등 */
+export function isSoldSummarySource(source?: string | null): boolean {
+  if (!source) return false;
+  if (isTradeDetailSource(source) || isListingSummarySource(source)) return false;
+  return source.startsWith('sold:') || source === 'bunjang-jp:sold' || source === 'bunjang:sold';
+}
+
+/** 박스 개별 거래 row (bunjang(-jp):sold:PID:TS) */
+export function isBoxTradeDetailSource(source?: string | null): boolean {
+  if (!source) return false;
+  const parts = source.split(':');
+  return parts.length >= 3 && /^\d+$/.test(parts[2]);
+}
+
+/** 목록·상세에 쓸 대표가 row — 체결 우선, 없으면 호가 summary */
+export function pricesForDisplay(prices: PriceRecord[]): PriceRecord[] {
+  const soldSummary = prices.filter(
+    (p) => isSoldSummarySource(p.source) && !isTradeDetailSource(p.source),
+  );
+  if (soldSummary.length > 0) return soldSummary;
+
+  const soldDetails = prices.filter((p) => isSoldDetailSource(p.source));
+  if (soldDetails.length > 0) return soldDetails;
+
+  const listingSummary = prices.filter(
+    (p) => isListingSummarySource(p.source) && !isTradeDetailSource(p.source),
+  );
+  if (listingSummary.length > 0) return listingSummary;
+
+  const listingDetails = prices.filter(
+    (p) => isTradeDetailSource(p.source) && p.source?.includes(':listing:'),
+  );
+  return listingDetails.length > 0 ? listingDetails : [];
 }
 
 /** 배열의 중앙값을 반환합니다. */
@@ -47,6 +105,7 @@ export function calcRepresentativePrice(prices: PriceRecord[]): {
   trend: number;
   history: { date: string; price: number }[];
 } {
+  prices = pricesForDisplay(prices);
   if (prices.length === 0) return { price: 0, trend: 0, history: [] };
 
   const byDate: Record<string, number[]> = {};
@@ -62,16 +121,21 @@ export function calcRepresentativePrice(prices: PriceRecord[]): {
 
   const sortedKeys = Object.keys(byDate).sort();
   if (sortedKeys.length === 0) {
-    // fetched_at 없는 레거시 행 — 전체 중앙값
     const vals = prices.map((p) => p.price_krw).filter((v) => v > 0);
-    const price = roundDisplayPrice(median(vals));
+    if (!vals.length) return { price: 0, trend: 0, history: [] };
+    const price = roundDisplayPrice(
+      isTradeDetailSource(prices[0]?.source) ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : median(vals),
+    );
     return { price, trend: 0, history: price ? [{ date: '시세', price }] : [] };
   }
 
-  const history = sortedKeys.slice(-7).map((key) => ({
-    date: labels[key],
-    price: roundDisplayPrice(median(byDate[key])),
-  }));
+  const history = sortedKeys.slice(-7).map((key) => {
+    const vals = byDate[key];
+    const dayRows = prices.filter((p) => p.fetched_at && kstDateKey(p.fetched_at) === key);
+    const useAvg = dayRows.some((p) => isSoldDetailSource(p.source) || isListingSummarySource(p.source));
+    const raw = useAvg ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : median(vals);
+    return { date: labels[key], price: roundDisplayPrice(raw) };
+  });
 
   const price = history[history.length - 1]?.price || 0;
 
@@ -88,7 +152,10 @@ export function calcRepresentativePrice(prices: PriceRecord[]): {
 }
 
 /** 최신 수집일(KST) 기준 price_krw. 해당일 스냅샷이 0이면 미등록. */
-export function latestPriceKrw(prices: { price_krw: number; fetched_at?: string }[]): number {
+export function latestPriceKrw(
+  prices: { price_krw: number; fetched_at?: string; source?: string }[],
+): number {
+  prices = pricesForDisplay(prices);
   if (!prices.length) return 0;
 
   const byDate: Record<string, { price_krw: number; t: number }> = {};

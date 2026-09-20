@@ -6,6 +6,8 @@ import { getSetShortName } from '@/lib/set-names';
 import { mapRawSet } from '@/lib/set-map';
 import type { SetData } from '@/lib/data';
 import { viewCountFromRow } from '@/lib/card-sort-helpers';
+import { fetchRecentPricesByCard } from '@/lib/fetch-recent-prices';
+import { fetchRecentBoxPricesBySet } from '@/lib/fetch-recent-box-prices';
 
 const SET_COLORS: Record<string, string> = {
   SV2a: 'from-green-500 to-emerald-700',
@@ -19,16 +21,12 @@ const SET_COLORS: Record<string, string> = {
 
 const CARD_SELECT = `
   id, name_kr, name_en, name_jp, rarity, rarity_rank, image_url, image_color, card_number,
-  card_sets ( id, set_code, name_kr ),
-  prices_kr ( price_krw, fetched_at ),
-  prices_jp ( price_krw, fetched_at )
+  card_sets ( id, set_code, name_kr )
 `;
 
 const CARD_SELECT_WITH_VIEWS = `
   id, name_kr, name_en, name_jp, rarity, rarity_rank, image_url, image_color, card_number, view_count,
-  card_sets ( id, set_code, name_kr ),
-  prices_kr ( price_krw, fetched_at ),
-  prices_jp ( price_krw, fetched_at )
+  card_sets ( id, set_code, name_kr )
 `;
 
 function isMissingViewCountError(err: unknown): boolean {
@@ -41,13 +39,15 @@ function isMissingViewCountError(err: unknown): boolean {
   return msg.includes('view_count') && (msg.includes('42703') || msg.includes('does not exist'));
 }
 
-function mapRawToCard(raw: Record<string, unknown>, compact = true): Card {
-  const pricesKR = Array.isArray(raw.prices_kr)
-    ? (raw.prices_kr as { price_krw: number; fetched_at: string }[])
-    : [];
-  const pricesJP = Array.isArray(raw.prices_jp)
-    ? (raw.prices_jp as { price_krw: number; fetched_at: string }[])
-    : [];
+function mapRawToCard(
+  raw: Record<string, unknown>,
+  priceMap: Map<number, { kr: { price_krw: number; fetched_at?: string }[]; jp: { price_krw: number; fetched_at?: string }[] }>,
+  compact = true,
+): Card {
+  const cid = raw.id as number;
+  const p = priceMap.get(cid);
+  const pricesKR = p?.kr ?? [];
+  const pricesJP = p?.jp ?? [];
   const setRaw = raw.card_sets;
   const set = (Array.isArray(setRaw) ? setRaw[0] : setRaw) as {
     id: number;
@@ -90,7 +90,8 @@ async function fetchWeeklyHotCard(supabase: ReturnType<typeof getSupabaseServer>
     .maybeSingle();
 
   if (error || !data) return null;
-  return mapRawToCard(data as Record<string, unknown>);
+  const priceMap = await fetchRecentPricesByCard(supabase, [WEEKLY_HOT_CARD.cardId]);
+  return mapRawToCard(data as Record<string, unknown>, priceMap);
 }
 
 async function fetchTrendingCards(
@@ -101,13 +102,11 @@ async function fetchTrendingCards(
 ): Promise<Card[]> {
   if (featuredSetIds.length === 0) return [];
 
-  const selectWithViews = CARD_SELECT_WITH_VIEWS;
-
   let rows: Record<string, unknown>[] | null = null;
 
   const tryViewSort = await supabase
     .from('cards')
-    .select(selectWithViews)
+    .select(CARD_SELECT_WITH_VIEWS)
     .in('set_id', featuredSetIds)
     .neq('id', excludeId)
     .order('view_count', { ascending: false })
@@ -129,7 +128,10 @@ async function fetchTrendingCards(
     rows.sort((a, b) => viewCountFromRow(b) - viewCountFromRow(a));
   }
 
-  return rows.slice(0, limit).map(r => mapRawToCard(r));
+  const slice = rows.slice(0, limit);
+  const ids = slice.map(r => r.id as number);
+  const priceMap = await fetchRecentPricesByCard(supabase, ids);
+  return slice.map(r => mapRawToCard(r, priceMap));
 }
 
 export async function getHomePageData(): Promise<{
@@ -152,7 +154,7 @@ export async function getHomePageData(): Promise<{
     fetchTrendingCards(supabase, featuredSetIds, WEEKLY_HOT_CARD.cardId),
     supabase
       .from('card_sets')
-      .select(`id, set_code, name_kr, name_en, released_at, image_url, prices_box ( region, price_krw )`)
+      .select(`id, set_code, name_kr, name_en, released_at, image_url`)
       .in('set_code', [...EXPANSION_SET_CODES])
       .order('released_at', { ascending: false })
       .limit(4),
@@ -160,6 +162,10 @@ export async function getHomePageData(): Promise<{
 
   if (setsResult.error) throw setsResult.error;
 
-  const sets = (setsResult.data || []).map(raw => mapRawSet(raw));
+  const setIds = (setsResult.data || []).map(s => s.id as number);
+  const boxMap = await fetchRecentBoxPricesBySet(supabase, setIds);
+  const sets = (setsResult.data || []).map(raw =>
+    mapRawSet({ ...raw, prices_box: boxMap.get(raw.id as number) ?? [] }),
+  );
   return { highlight, trending, sets };
 }

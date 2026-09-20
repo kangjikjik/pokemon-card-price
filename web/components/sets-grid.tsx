@@ -4,18 +4,25 @@ import Link from 'next/link';
 import type { SetData } from '@/lib/data';
 import { SetPackImage } from '@/components/set-pack-image';
 import { SetBoxPriceRows } from '@/components/set-box-price';
-import { saveSetsListState, useSetsListRestore } from '@/lib/scroll-restore';
+import { saveSetsListState } from '@/lib/scroll-restore';
 
 type Props = {
   sets: SetData[];
   currentTabId?: string;
+  currentInitial?: string | null;
+  currentYear?: string | null;
 };
 
-export function SetsGrid({ sets, currentTabId = 'expansion' }: Props) {
+export function SetsGrid({
+  sets,
+  currentTabId = 'expansion',
+  currentInitial = null,
+  currentYear = null,
+}: Props) {
   // SetsTabs에서 useSetsListRestore를 호출하도록 변경했으므로 여기서는 제거합니다.
 
   const onSetClick = () => {
-    saveSetsListState(window.scrollY, currentTabId);
+    saveSetsListState(window.scrollY, currentTabId, currentInitial, currentYear);
   };
 
   return (

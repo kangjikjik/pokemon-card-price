@@ -4,9 +4,11 @@ export const SPECIAL_SET_CODES = ['CEL', 'CEL25PK'] as const;
 
 
 
-/** 노출 79개 — crawler/seeds/kr_sets.py 와 동기화 (한국 발매일 최신순) */
+/** 노출 80개 — crawler/seeds/kr_sets.py 와 동기화 (한국 발매일 최신순) */
 
 export const FEATURED_SET_CODES = [
+
+  'MG7',
 
   'MG6',
 

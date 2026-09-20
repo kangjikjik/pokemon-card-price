@@ -3,14 +3,12 @@
 export const EXCLUDED_RARITIES = new Set([
   "U", "C", "SA", "N", "CM", "UM", "PROMO", "R",
   /** collectory: 마스터볼 미러 카드번호 접미사 M — 공식 단독 등급명 아님 */
-  "M",
 ]);
 
 /** collectory/구 DB → 표준 등급 */
 export const RARITY_ALIASES: Record<string, string> = {
   "UR-ex": "SR",
   IR: "AR",
-  RM: "RR",
   /** 나무위키 𖤓 빛나는 전설 */
   Shining: "SL",
   SHINING: "SL",
@@ -52,6 +50,7 @@ export const RARITY_LABELS: Record<string, string> = {
   FUR: "퓨처울트라레어",
   H: "홀로",
   HR: "하이퍼레어",
+  RM: "마스터볼 미러",
   SL: "빛나는",
   PR: "프리즘스타",
   TR: "트레이너스레어",
@@ -94,6 +93,8 @@ export const RARITY_RANK: Record<string, number> = {
   H: 11,
   /** 더블레어 — 히트 중 가장 낮음 */
   RR: 10,
+  /** 포켓몬 카드 151 마스터볼 미러 */
+  RM: 11,
   R: 3,
   U: 2,
   C: 1,
@@ -101,7 +102,7 @@ export const RARITY_RANK: Record<string, number> = {
 };
 
 /** 현 등급 필터·정렬 순서: MUR → RR */
-const CURRENT_RARITIES = ["MUR", "UR", "BWR", "SAR", "MA", "SR", "ACE", "AR", "RR"] as const;
+const CURRENT_RARITIES = ["MUR", "UR", "BWR", "SAR", "MA", "SR", "ACE", "AR", "RM", "RR"] as const;
 const LEGACY_RARITIES = ["SSR", "HR", "CSR", "CHR", "RRR", "A", "K", "S", "PR", "TR", "P"] as const;
 
 function sortByRarityDesc(codes: readonly string[]): string[] {

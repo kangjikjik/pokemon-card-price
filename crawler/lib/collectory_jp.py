@@ -1,6 +1,8 @@
 """Collectory 일본판(region=jp) 카드 ID 조회·거래내역."""
 from __future__ import annotations
 
+import time
+
 import httpx
 
 from lib.collectory_prices import card_num_key
@@ -38,6 +40,7 @@ def search_collectory_jp_card_id(
     client: httpx.Client,
 ) -> str:
     """collectory 검색 API — region=jp 카드 ID."""
+    # SNK/Collectory — 일본어 공식명(name_jp)만. 한글 번역명은 아이템 등에서 불일치.
     queries = []
     if name_jp:
         queries.extend([
@@ -45,8 +48,6 @@ def search_collectory_jp_card_id(
             f"{card_number} {name_jp}".strip(),
             name_jp,
         ])
-    if name_kr:
-        queries.append(f"{name_kr} {card_number}".strip())
     if card_number:
         queries.append(card_number)
 
@@ -56,8 +57,21 @@ def search_collectory_jp_card_id(
         if not q or q in seen:
             continue
         seen.add(q)
-        res = client.get(f"{COLLECTORY_API}/cards/search", params={"q": q}, timeout=20)
-        if res.status_code != 200:
+        res = None
+        for attempt in range(3):
+            try:
+                res = client.get(f"{COLLECTORY_API}/cards/search", params={"q": q}, timeout=90)
+                break
+            except (httpx.ReadTimeout, httpx.ConnectTimeout, httpx.NetworkError):
+                if attempt + 1 >= 3:
+                    res = None
+                    break
+                time.sleep(2 * (attempt + 1))
+            except httpx.HTTPError as exc:
+                print(f"[collectory] search 오류 {q[:24]!r}: {exc}")
+                res = None
+                break
+        if res is None or res.status_code != 200:
             continue
         for card in res.json().get("results", {}).get("cards") or []:
             if (card.get("region") or "").lower() != "jp":
@@ -77,7 +91,7 @@ def build_jp_card_id_map(
     cards: list[dict],
     client: httpx.Client,
     *,
-    workers: int = 8,
+    workers: int = 4,
 ) -> dict[int, str]:
     """DB card id → collectory jp card_id."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -98,9 +112,12 @@ def build_jp_card_id_map(
     with ThreadPoolExecutor(max_workers=w) as pool:
         futures = [pool.submit(_one, c) for c in cards]
         for fut in as_completed(futures):
-            db_id, col_id = fut.result()
-            if col_id:
-                out[db_id] = col_id
+            try:
+                db_id, col_id = fut.result()
+                if col_id:
+                    out[db_id] = col_id
+            except Exception as exc:
+                print(f"[collectory] ID 매칭 스킵: {exc}")
     return out
 
 

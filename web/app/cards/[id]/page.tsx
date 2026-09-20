@@ -9,6 +9,16 @@ import { type Card, formatKRW } from '@/lib/data';
 import { chartAxisMax, formatChartAxisKrw } from '@/lib/chart-axis';
 import { RarityBadge, TrendBadge, CardImage, RegionLabel } from '@/components/ui';
 
+interface TradeRecord {
+  price_krw: number;
+  source: string;
+  fetched_at: string;
+  traded_at?: string;  // 실제 번개장터 거래 날짜
+  platform: string;
+  label: string;
+  url?: string;
+}
+
 const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { color: string; name: string; value: number }[]; label?: string }) => {
   if (active && payload && payload.length) {
     return (
@@ -25,12 +35,40 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   return null;
 };
 
+function formatTradeDate(iso: string): string {
+  if (!iso) return '-';
+  return new Date(iso).toLocaleDateString('ko-KR', {
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).replace(/\. /g, '-').replace('.', '');
+}
+
+function LabelBadge({ label }: { label: string }) {
+  const colors: Record<string, string> = {
+    '거래완료': 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    '호가': 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300',
+    'RAW': 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
+    'PSA 10': 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300',
+  };
+  const cls = colors[label] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+  return (
+    <span className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${cls}`}>
+      {label}
+    </span>
+  );
+}
+
 export default function CardDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
   const [card, setCard] = useState<Card | null>(null);
   const [loading, setLoading] = useState(true);
   const [chartType, setChartType] = useState<'KR' | 'JP'>('KR');
+  const [trades, setTrades] = useState<{ kr: TradeRecord[]; jp: TradeRecord[] }>({ kr: [], jp: [] });
+  const [tradesLoading, setTradesLoading] = useState(true);
+  const [tradeTab, setTradeTab] = useState<'KR' | 'JP'>('KR');
 
   useEffect(() => {
     fetch(`/api/cards/${id}`)
@@ -40,6 +78,12 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
       .finally(() => setLoading(false));
 
     fetch(`/api/cards/${id}/view`, { method: 'POST' }).catch(() => {});
+
+    fetch(`/api/cards/${id}/trades`)
+      .then(r => r.json())
+      .then(json => setTrades({ kr: json.kr || [], jp: json.jp || [] }))
+      .catch(() => setTrades({ kr: [], jp: [] }))
+      .finally(() => setTradesLoading(false));
   }, [id]);
 
   if (loading) {
@@ -174,6 +218,88 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
                 </LineChart>
               </ResponsiveContainer>
             </div>
+          </div>
+
+          {/* Trade History */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">거래 내역</h3>
+              <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-lg">
+                <button
+                  onClick={() => setTradeTab('KR')}
+                  className={`px-3 py-1 rounded-md text-sm font-bold transition-all ${tradeTab === 'KR' ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                >
+                  🇰🇷 한국판
+                </button>
+                <button
+                  onClick={() => setTradeTab('JP')}
+                  className={`px-3 py-1 rounded-md text-sm font-bold transition-all ${tradeTab === 'JP' ? 'bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                >
+                  🇯🇵 일본판
+                </button>
+              </div>
+            </div>
+
+            {/* Body */}
+            {tradesLoading ? (
+              <div className="flex justify-center items-center py-12">
+                <Loader2 className="w-6 h-6 animate-spin text-slate-400" />
+              </div>
+            ) : (() => {
+              const list = tradeTab === 'KR' ? trades.kr : trades.jp;
+              if (list.length === 0) {
+                return (
+                  <div className="py-12 text-center text-slate-400 dark:text-slate-500 text-sm">
+                    거래 내역이 없습니다
+                  </div>
+                );
+              }
+              return (
+                <>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 px-6 py-2 border-b border-slate-100 dark:border-slate-800/60">
+                    최근 {list.length}건 표시
+                  </p>
+                  <ul className="divide-y divide-slate-100 dark:divide-slate-800 max-h-96 overflow-y-auto">
+                    {list.map((t, i) => {
+                      const inner = (
+                        <>
+                          <LabelBadge label={t.label} />
+                          <span className="text-sm text-slate-600 dark:text-slate-300 font-medium min-w-[70px]">
+                            {t.platform}
+                          </span>
+                          <span className="text-sm text-slate-400 dark:text-slate-500 flex-1">
+                            {formatTradeDate(t.traded_at || t.fetched_at)}
+                          </span>
+                          <span className="text-sm font-bold text-slate-900 dark:text-white tabular-nums">
+                            {formatKRW(t.price_krw)}
+                          </span>
+                          {t.url && (
+                            <span className="text-xs text-amber-500 shrink-0">↗</span>
+                          )}
+                        </>
+                      );
+                      return t.url ? (
+                        <li key={i}>
+                          <a
+                            href={t.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 px-6 py-3 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors cursor-pointer"
+                          >
+                            {inner}
+                          </a>
+                        </li>
+                      ) : (
+                        <li key={i} className="flex items-center gap-3 px-6 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
+                          {inner}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </>
+              );
+            })()}
           </div>
         </div>
       </div>

@@ -7,7 +7,7 @@ type Params = { params: Promise<{ board: string; id: string }> };
 function dbUnavailable(msg: string) {
   if (msg.includes('community_posts')) {
     return NextResponse.json(
-      { error: '게시판 DB가 아직 준비되지 않았습니다. add_community_v2.sql을 실행해 주세요.' },
+      { error: '게시판 서비스를 일시적으로 이용할 수 없습니다.' },
       { status: 503 },
     );
   }

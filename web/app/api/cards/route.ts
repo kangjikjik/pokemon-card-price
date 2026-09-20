@@ -13,6 +13,7 @@ import {
 } from '@/lib/rarity';
 import { matchesSearchQuery, searchIlikePattern, setMatchesSearchQuery } from '@/lib/search';
 import { buildLatestKrPriceMap, viewCountFromRow } from '@/lib/card-sort-helpers';
+import { fetchRecentPricesByCard } from '@/lib/fetch-recent-prices';
 
 const SET_COLORS: Record<string, string> = {
   SV2a: 'from-green-500 to-emerald-700',
@@ -119,10 +120,27 @@ function isMissingViewCountError(err: unknown): boolean {
 
 const FULL_SELECT_COMPACT = `
   id, name_kr, name_jp, name_en, rarity, rarity_rank, image_url, image_color, card_number,
-  card_sets ( id, set_code, name_kr, name_en, name_jp ),
-  prices_kr ( price_krw, fetched_at ),
-  prices_jp ( price_krw, fetched_at )
+  card_sets ( id, set_code, name_kr, name_en, name_jp )
 `;
+
+async function attachRecentPrices(
+  supabase: ReturnType<typeof getSupabaseServer>,
+  rows: Record<string, unknown>[],
+): Promise<Record<string, unknown>[]> {
+  if (!rows.length) return rows;
+  const priceMap = await fetchRecentPricesByCard(
+    supabase,
+    rows.map(r => r.id as number),
+  );
+  return rows.map(r => {
+    const p = priceMap.get(r.id as number);
+    return {
+      ...r,
+      prices_kr: p?.kr ?? [],
+      prices_jp: p?.jp ?? [],
+    };
+  });
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -249,7 +267,11 @@ export async function GET(request: NextRequest) {
 
       if (fullError) throw fullError;
 
-      const byId = new Map((fullRows || []).map(r => [r.id as number, r]));
+      const withPrices = await attachRecentPrices(
+        supabase,
+        (fullRows || []) as Record<string, unknown>[],
+      );
+      const byId = new Map(withPrices.map(r => [r.id as number, r]));
       const cards = pageIds
         .map(id => byId.get(id))
         .filter(r => r != null)
@@ -262,14 +284,7 @@ export async function GET(request: NextRequest) {
     }
 
     // ── fallback (unknown sort) ──
-    const selectFields = compact
-      ? FULL_SELECT_COMPACT
-      : `
-        id, name_kr, name_jp, name_en, rarity, rarity_rank, image_url, image_color, card_number,
-        card_sets ( id, set_code, name_kr, name_en, name_jp ),
-        prices_kr ( price_krw, fetched_at ),
-        prices_jp ( price_krw, price_jpy, fetched_at )
-      `;
+    const selectFields = FULL_SELECT_COMPACT;
 
     let countQuery = supabase
       .from('cards')
@@ -307,7 +322,8 @@ export async function GET(request: NextRequest) {
 
     if (allRows.length === 0) throw new Error('No data');
 
-    let cards = allRows
+    const withPrices = await attachRecentPrices(supabase, allRows);
+    let cards = withPrices
       .map(d => transformCard(d, compact))
       .filter(c => isDisplayableRarity(c.rarity));
 

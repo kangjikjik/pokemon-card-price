@@ -11,6 +11,8 @@ import { ScrollFab } from '@/components/scroll-fab';
 import { ScrollRestore } from '@/components/scroll-restore';
 import { compareCardsByRarity, isDisplayableRarity } from '@/lib/rarity';
 import { SetCardsPriceTable } from '@/components/set-cards-price-table';
+import { fetchRecentPricesByCard } from '@/lib/fetch-recent-prices';
+import { fetchRecentBoxPricesBySet } from '@/lib/fetch-recent-box-prices';
 
 export default async function SetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -25,7 +27,7 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
     image_url: '',
     prices_box: [],
   });
-  let cards: { id: number; name_kr: string; name_jp: string; name_en: string; rarity: string; card_number: string; image_color: string; prices_kr: { price_krw: number; fetched_at?: string }[]; prices_jp: { price_krw: number; fetched_at?: string }[] }[] = [];
+  let cards: { id: number; name_kr: string; name_jp: string; name_en: string; rarity: string; card_number: string; image_url?: string; image_color: string; prices_kr: { price_krw: number; fetched_at?: string }[]; prices_jp: { price_krw: number; fetched_at?: string }[] }[] = [];
   let usedMock = false;
 
   try {
@@ -35,12 +37,12 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
     const [setResult, cardsResult] = await Promise.all([
       supabase
         .from('card_sets')
-        .select(`id, set_code, name_kr, name_jp, name_en, released_at, image_url, prices_box ( region, price_krw, fetched_at )`)
+        .select(`id, set_code, name_kr, name_jp, name_en, released_at, image_url`)
         .eq('id', numericId)
         .single(),
       supabase
         .from('cards')
-        .select(`id, name_kr, name_jp, name_en, rarity, rarity_rank, image_url, image_color, card_number, prices_kr ( price_krw, fetched_at ), prices_jp ( price_krw, fetched_at )`)
+        .select(`id, name_kr, name_jp, name_en, rarity, rarity_rank, image_url, image_color, card_number`)
         .eq('set_id', numericId)
         .order('rarity_rank', { ascending: false })
         .order('card_number', { ascending: true }),
@@ -51,13 +53,28 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
     if (!isViewableSetCode(setResult.data.set_code)) notFound();
 
     const raw = setResult.data;
-    set = mapRawSet(raw);
-    cards = (cardsResult.data || [])
+    const boxMap = await fetchRecentBoxPricesBySet(supabase, [numericId]);
+    set = mapRawSet({ ...raw, prices_box: boxMap.get(numericId) ?? [] });
+    const baseCards = (cardsResult.data || [])
       .filter(c => isDisplayableRarity(c.rarity))
       .sort((a, b) => compareCardsByRarity(
         { rarity: a.rarity, setCode: set.code, number: a.card_number, name: a.name_kr || a.name_jp || a.name_en, imageUrl: (a as { image_url?: string }).image_url },
         { rarity: b.rarity, setCode: set.code, number: b.card_number, name: b.name_kr || b.name_jp || b.name_en, imageUrl: (b as { image_url?: string }).image_url },
-      )) as typeof cards;
+      ));
+
+    const priceMap = await fetchRecentPricesByCard(
+      supabase,
+      baseCards.map(c => c.id as number),
+    );
+
+    cards = baseCards.map(c => {
+      const p = priceMap.get(c.id as number);
+      return {
+        ...c,
+        prices_kr: p?.kr ?? [],
+        prices_jp: p?.jp ?? [],
+      };
+    }) as typeof cards;
   } catch {
     usedMock = true;
     const featuredCodes = FEATURED_SET_CODES as readonly string[];
@@ -76,6 +93,7 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
         name_en: c.enName,
         rarity: c.rarity,
         card_number: c.number,
+        image_url: c.imageUrl,
         prices_kr: c.priceKR > 0 ? [{ price_krw: c.priceKR }] : [],
         prices_jp: c.priceJP > 0 ? [{ price_krw: c.priceJP }] : [],
       }))
@@ -98,10 +116,10 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
           <p className="text-slate-500 dark:text-slate-400 mb-6">{set.enName} · 발매일: {set.releaseDate}</p>
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1">
-              <SetBoxPriceRows region="KR" marketPrice={set.boxPriceKR} msrpBox={set.msrpBoxKR} msrpPack={set.msrpPackKR} boxLabel="미개봉 박스" />
+              <SetBoxPriceRows setId={set.id} region="KR" marketPrice={set.boxPriceKR} msrpBox={set.msrpBoxKR} msrpPack={set.msrpPackKR} boxLabel="미개봉 박스" />
             </div>
             <div className="flex-1">
-              <SetBoxPriceRows region="JP" marketPrice={set.boxPriceJP} msrpBox={set.msrpBoxJP} msrpPack={set.msrpPackJP} boxLabel="미개봉 박스" />
+              <SetBoxPriceRows setId={set.id} region="JP" marketPrice={set.boxPriceJP} msrpBox={set.msrpBoxJP} msrpPack={set.msrpPackJP} boxLabel="미개봉 박스" />
             </div>
           </div>
         </div>

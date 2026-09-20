@@ -5,6 +5,7 @@ import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
@@ -44,6 +45,17 @@ JP_KR_EXCLUDE = ("한글판", "한국판", "한글", "한국)", "KR ", "코리�
 
 _PAGE_CACHE: dict[str, tuple[float, list[PriceQuote]]] = {}
 _CACHE_TTL_SEC = 300
+KST = timezone(timedelta(hours=9))
+COLLECTORY_DATE_RE = re.compile(r"(\d{1,2})월\s*(\d{1,2})일")
+# Collectory SNKRDUNK — 🏅 PSA 10 / A급 B급 등 컬럼 레이아웃
+SNKRDUNK_RAW_GRADES = frozenset({"A", "B", "C", "S", "A급", "B급", "C급", "S급"})
+GRADED_SLAB_LABELS = frozenset({"PSA", "BGS", "CGC", "ARS", "BRG", "SGC", "PCG", "HGA", "KSA", "GRAAD"})
+SNK_CONDITION_IN_TEXT = re.compile(r"\[(?:A|B|C|S)(?:급)?\]", re.I)
+SNKRDUNK_PID_RE = re.compile(r"snkrdunk\.com/apparels/(\d+)", re.I)
+# Collectory SNKRDUNK — 🏅 PSA 10 / A급 B급 등 컬럼 레이아웃
+SNKRDUNK_RAW_GRADES = frozenset({"A", "B", "C", "S", "A급", "B급", "C급", "S급"})
+GRADED_SLAB_LABELS = frozenset({"PSA", "BGS", "CGC", "ARS", "BRG", "SGC", "PCG", "HGA", "KSA", "GRAAD"})
+SNK_CONDITION_IN_TEXT = re.compile(r"\[(?:A|B|C|S)(?:급)?\]", re.I)
 
 
 @dataclass(frozen=True)
@@ -67,6 +79,74 @@ def _row_text(row_html: str) -> list[str]:
     text = re.sub(r"<[^>]+>", "|", row_html)
     text = re.sub(r"\|+", "|", text)
     return [p.strip() for p in text.split("|") if p.strip()]
+
+
+def _parse_collectory_trade_date(raw: str) -> str:
+    """Collectory '6월 21일' → ISO YYYY-MM-DD (KST 기준, 미래면 전년)."""
+    m = COLLECTORY_DATE_RE.search(raw or "")
+    if not m:
+        return ""
+    month, day = int(m.group(1)), int(m.group(2))
+    now = datetime.now(KST)
+    year = now.year
+    try:
+        dt = datetime(year, month, day, tzinfo=KST)
+    except ValueError:
+        return ""
+    if dt.date() > now.date():
+        dt = dt.replace(year=year - 1)
+    return dt.strftime("%Y-%m-%d")
+
+
+def _is_snkrdunk_graded_row(parts: list[str], row_html: str) -> bool:
+    """SNKRDUNK 슬랩(PSA·BGS·ARS) — Collectory 🏅 컬럼."""
+    if len(parts) < 2 or parts[1] != "SNKRDUNK":
+        return False
+    if len(parts) >= 3 and parts[2] == "🏅":
+        return True
+    if len(parts) >= 4 and (parts[3] or "").upper() in GRADED_SLAB_LABELS:
+        return True
+    if "🏅" in row_html and any(lbl in row_html.upper() for lbl in GRADED_SLAB_LABELS):
+        return True
+    return False
+
+
+def _parse_jp_grade_title(parts: list[str], row_html: str) -> tuple[str, str] | None:
+    """
+    JP 거래 행 grade/title.
+    None → 슬랩·등급카드 등 raw 싱글 아님 (스킵).
+    """
+    if len(parts) < 2:
+        return "Single", ""
+
+    if parts[1] == "SNKRDUNK":
+        if _is_snkrdunk_graded_row(parts, row_html):
+            return None
+        grade = parts[2] if len(parts) > 2 else "Single"
+        # SNKRDUNK RAW — A급/B급/C급/S급 또는 제목에 [A] 등
+        if grade in SNKRDUNK_RAW_GRADES:
+            return grade, grade
+        if SNK_CONDITION_IN_TEXT.search(grade):
+            return grade, grade
+        # 제품명만 있고 상태 등급 없음 → 슬랩 오파싱·다른 SKU 가능성
+        if re.search(r"\d{2,3}/\d{3}", grade) or "拡張パック" in grade:
+            return None
+        return None
+
+    grade = parts[2] if len(parts) > 2 else "Single"
+    title = parts[-1] if parts else ""
+    return grade, title
+
+
+def _extract_row_url(row_html: str, source: str) -> str:
+    """거래 행 HTML에서 SNKRDUNK·메ルカ리 링크 추출."""
+    for href in re.findall(r'href="([^"]+)"', row_html):
+        h = href.replace("&amp;", "&")
+        if source == "snkrdunk" and "snkrdunk.com" in h:
+            return h
+        if source == "mercari" and "mercari.com" in h:
+            return h
+    return ""
 
 
 def _parse_transaction_row(row_html: str) -> PriceQuote | None:
@@ -115,22 +195,33 @@ def _parse_transaction_row_jp(row_html: str) -> PriceQuote | None:
 
     parts = _row_text(row_html)
     source_raw = parts[1] if len(parts) > 1 else ""
-    grade = parts[2] if len(parts) > 2 else "Single"
-    title = parts[-1] if parts else ""
+    parsed = _parse_jp_grade_title(parts, row_html)
+    if parsed is None:
+        return None
+    grade, title = parsed
 
     if is_graded_grade(grade):
         return None
     if any(k in title for k in JP_KR_EXCLUDE):
         return None
-    t_upper = title.upper()
-    if any(k in t_upper for k in ("PSA", "BGS", "CGC", "BRG", "슬랩", "SLAB")):
+    t_upper = f"{grade} {title}".upper()
+    if any(k in t_upper for k in ("PSA", "BGS", "CGC", "BRG", "ARS", "슬랩", "SLAB", "鑑定")):
         return None
 
     source = _normalize_source(source_raw, row_html)
     tier = classify_collectory_row_jp(source, grade, title)
     if tier is None:
         return None
-    return PriceQuote(price_krw=price, tier=tier, source=source, title=title)
+    trade_date = _parse_collectory_trade_date(parts[0] if parts else "")
+    url = _extract_row_url(row_html, source)
+    return PriceQuote(
+        price_krw=price,
+        tier=tier,
+        source=source,
+        title=title,
+        url=url,
+        trade_date=trade_date,
+    )
 
 
 def _parse_page_quotes_jp(html: str) -> list[PriceQuote]:
