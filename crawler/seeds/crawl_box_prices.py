@@ -79,7 +79,10 @@ from lib.box_price_search import (  # noqa: E402
 )
 from lib.bunjang_card_price import is_previous_kst_day  # noqa: E402
 
-from lib.price_history import save_daily_box_snapshots  # noqa: E402
+from lib.price_history import (  # noqa: E402
+    save_daily_box_snapshots,
+    save_incremental_box_snapshots,
+)
 
 from kr_sets import KR_BY_CODE, KR_SETS  # noqa: E402
 
@@ -526,7 +529,12 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
         if not rows:
             rows.append({"set_id": set_id, "region": region, "price_krw": 0, "source": f"{source_prefix}:none"})
 
-        deleted, inserted = save_daily_box_snapshots(
+        save_fn = (
+            save_incremental_box_snapshots
+            if DAILY_INCREMENTAL
+            else save_daily_box_snapshots
+        )
+        deleted, inserted = save_fn(
 
             sb,
 

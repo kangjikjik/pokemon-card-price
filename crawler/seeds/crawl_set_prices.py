@@ -29,7 +29,10 @@ from lib.bunjang_card_price import (  # noqa: E402
     sort_sold_items_by_time,
     split_by_status_kr,
 )
-from lib.price_history import save_daily_snapshots  # noqa: E402
+from lib.price_history import (  # noqa: E402
+    save_daily_snapshots,
+    save_incremental_snapshots,
+)
 from lib.price_search import (  # noqa: E402
     MIN_SOLD_FOR_AGGREGATE,
     build_search_queries,
@@ -299,7 +302,8 @@ def main() -> None:
             if DAILY_INCREMENTAL
             else [c["id"] for c in cards]
         )
-        deleted, inserted = save_daily_snapshots(sb, "prices_kr", all_ids, priced_rows)
+        save_fn = save_incremental_snapshots if DAILY_INCREMENTAL else save_daily_snapshots
+        deleted, inserted = save_fn(sb, "prices_kr", all_ids, priced_rows)
         unpriced = len(cards) - ok
         print(
             f"\n완료: {ok}장 저장"

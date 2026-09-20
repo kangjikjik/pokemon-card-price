@@ -25,7 +25,10 @@ from lib.bunjang_card_price import (  # noqa: E402
     resolve_card_price,
     sort_sold_items_by_time,
 )
-from lib.price_history import save_daily_snapshots  # noqa: E402
+from lib.price_history import (  # noqa: E402
+    save_daily_snapshots,
+    save_incremental_snapshots,
+)
 from lib.price_search import MIN_SOLD_FOR_AGGREGATE, filter_prices_pipeline  # noqa: E402
 from lib.rarity_rank import is_displayable_rarity  # noqa: E402
 from lib.trainer_item_cards import is_trainer_or_item_card  # noqa: E402
@@ -239,7 +242,8 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
             if DAILY_INCREMENTAL
             else [c["id"] for c in cards]
         )
-        deleted, inserted = save_daily_snapshots(sb, "prices_jp", ids, rows)
+        save_fn = save_incremental_snapshots if DAILY_INCREMENTAL else save_daily_snapshots
+        deleted, inserted = save_fn(sb, "prices_jp", ids, rows)
         print(f"완료: {ok}/{len(cards)}장 저장 (교체 {deleted}→{inserted})")
     else:
         print(f"드라이런: {ok}/{len(cards)}장 매칭")
