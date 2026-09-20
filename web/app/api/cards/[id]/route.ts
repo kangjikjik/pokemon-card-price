@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { MOCK_CARDS, type Card } from '@/lib/data';
 import { calcRepresentativePrice } from '@/lib/price-calc';
+import { fetchRecentPricesByCard } from '@/lib/fetch-recent-prices';
 import { CARDS_LIST_SET_CODES, FEATURED_SET_CODES, isViewableSetCode } from '@/lib/constants';
 
 const SET_COLORS: Record<string, string> = {
@@ -76,23 +77,17 @@ export async function GET(
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    const since = new Date();
-    since.setDate(since.getDate() - 90);
-    const [krRes, jpRes] = await Promise.all([
-      supabase.from('prices_kr').select('price_krw, fetched_at, source')
-        .eq('card_id', numericId).gt('price_krw', 0)
-        .gte('fetched_at', since.toISOString())
-        .order('fetched_at', { ascending: false }).limit(120),
-      supabase.from('prices_jp').select('price_krw, price_jpy, fetched_at, source')
-        .eq('card_id', numericId).gt('price_krw', 0)
-        .gte('fetched_at', since.toISOString())
-        .order('fetched_at', { ascending: false }).limit(120),
-    ]);
+    const priceMap = await fetchRecentPricesByCard(
+      supabase,
+      [numericId],
+      { daysBack: 90, perCardMax: 12 },
+    );
+    const prices = priceMap.get(numericId) ?? { kr: [], jp: [] };
 
     const payload = {
       ...cardRow,
-      prices_kr: krRes.data || [],
-      prices_jp: jpRes.data || [],
+      prices_kr: prices.kr,
+      prices_jp: prices.jp,
     };
 
     return NextResponse.json({ data: transformCard(payload as Record<string, unknown>), source: 'db' });

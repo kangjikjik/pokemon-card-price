@@ -31,7 +31,7 @@ export async function fetchRecentPricesByCard(
 
   const daysBack = opts?.daysBack ?? 7;
   const perCardMax = opts?.perCardMax ?? 12;
-  const maxRows = opts?.maxRows ?? Math.min(cardIds.length * perCardMax, 800);
+  const maxRows = opts?.maxRows ?? cardIds.length * perCardMax;
   const since = new Date();
   since.setDate(since.getDate() - daysBack);
   const sinceIso = since.toISOString();
@@ -43,6 +43,7 @@ export async function fetchRecentPricesByCard(
       .in('card_id', cardIds)
       .gt('price_krw', 0)
       .gte('fetched_at', sinceIso)
+      .order('card_id', { ascending: true })
       .order('fetched_at', { ascending: false })
       .limit(maxRows),
     supabase
@@ -51,6 +52,7 @@ export async function fetchRecentPricesByCard(
       .in('card_id', cardIds)
       .gt('price_krw', 0)
       .gte('fetched_at', sinceIso)
+      .order('card_id', { ascending: true })
       .order('fetched_at', { ascending: false })
       .limit(maxRows),
   ]);
