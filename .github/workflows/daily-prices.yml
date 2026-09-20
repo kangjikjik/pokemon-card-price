@@ -8,8 +8,6 @@ name: Daily price batch
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 15 * * *"   # UTC 15:00 = KST 00:00
 
 concurrency:
   group: daily-price-crawl
