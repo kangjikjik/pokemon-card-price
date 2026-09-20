@@ -260,7 +260,14 @@ function CardsPageContent() {
                 </div>
                 <div className="p-4 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-2">
-                    <RarityBadge rarity={card.rarity} />
+                    <div className="flex items-center gap-2 min-w-0">
+                      <RarityBadge rarity={card.rarity} />
+                      {card.set && (
+                        <span className="text-xs text-slate-500 dark:text-slate-400 truncate" title={card.set}>
+                          {card.set}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <h4 className="text-slate-900 dark:text-white font-semibold truncate mb-3">{card.name}</h4>
                   <div className="mt-auto space-y-2">

@@ -116,6 +116,8 @@ def run_set(set_code: str, apply: bool, thorough: bool, quiet: bool = True) -> i
         cmd.append("--thorough")
     if quiet:
         cmd.append("--quiet")
+    if "--previous-day" in sys.argv:
+        cmd.append("--previous-day")
     print(f"\n{'=' * 60}\n>>> {set_code} 시작: {' '.join(cmd)}\n{'=' * 60}")
     return subprocess.call(cmd, cwd=str(SEEDS_DIR))
 
@@ -188,7 +190,12 @@ def main() -> None:
     if "--all" in sys.argv:
         from batch_promo import run_promo_for_region
 
-        promo_failed = run_promo_for_region("KR", apply=apply, quiet=quiet)
+        promo_failed = run_promo_for_region(
+            "KR",
+            apply=apply,
+            quiet=quiet,
+            previous_day_only="--previous-day" in sys.argv,
+        )
         if promo_failed:
             print(f"\n프로모 KR 실패: {', '.join(promo_failed)}")
             sys.exit(1)

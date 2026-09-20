@@ -103,6 +103,7 @@ KR_KEYWORDS = [
 FOREIGN_FOR_KR = [
     "일본판", "일판", "일본", "일어", "JP", "jp", "日本", "japanese", "영문판", "영판", "미판",
     "Japanese", "English", "EN ", " EN", "海外", "북미", "미국판", "북미판",
+    "중판", "중국판", "중국어판", "중국어", "중국",
 ]
 
 BUNDLE_KEYWORDS = [
@@ -136,7 +137,10 @@ SET_CODE_ALIASES: dict[str, list[str]] = {
     "MG7": ["MG7", "M6", "m6", "스톰에메랄다", "스톰 에메랄다", "스톰에메랄드", "스톰 에메랄드", "스토에메랄da", "스토 에메랄da", "에메랄da"],
     "MG6": ["MG6", "M5", "m5", "어비스아이", "어비스 아이"],
     "MG5": ["MG5", "니힐제로", "니힐 제로"],
-    "MG4a": ["MG4a", "MG4A", "메가드림", "메가 드림", "MEGA 드림", "드림 ex", "MEGA 드림 ex"],
+    "MG4a": [
+        "MG4a", "MG4A", "메가드림", "메가 드림", "메가드림ex",
+        "메가 드림 ex", "MEGA 드림", "드림 ex", "MEGA 드림 ex",
+    ],
     "SV2a": ["151", "포켓몬151", "포켓몬 카드151", "포켓몬카드151", "카드151"],
     "S10a": ["포켓몬 GO", "포켓몬GO", "포켓몬go", "포켓몬고", "Pokemon GO", "Pokémon GO", "pokemongo"],
 }
@@ -375,7 +379,7 @@ def _title_matches_name(title: str, name_kr: str) -> bool:
     if not name:
         return True
     core = name
-    for suf in [" ex", " EX", " VSTAR", " VMAX", " V", " GX"]:
+    for suf in [" 프로모", " ex", " EX", " VSTAR", " VMAX", " V", " GX"]:
         if core.endswith(suf):
             core = core[: -len(suf)].strip()
             break
@@ -438,8 +442,8 @@ def _is_multi_card_sale(title: str, name_kr: str) -> bool:
 def filter_median_outliers(
     prices: list[int],
     *,
-    max_ratio: float = 2.2,
-    min_ratio: float = 0.35,
+    max_ratio: float = 1.5,
+    min_ratio: float = 0.65,
     min_samples: int = 4,
 ) -> list[int]:
     """중앙값 대비 비정상 고가·저가 제거 (일판 오매칭·묶음 잔여)."""

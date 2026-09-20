@@ -11,7 +11,13 @@ SEEDS_DIR = Path(__file__).resolve().parent
 CRAWLER = SEEDS_DIR / "crawl_promo_prices.py"
 
 
-def run_promo_for_region(region: str, *, apply: bool, quiet: bool) -> list[str]:
+def run_promo_for_region(
+    region: str,
+    *,
+    apply: bool,
+    quiet: bool,
+    previous_day_only: bool = False,
+) -> list[str]:
     """region: KR | JP. 실패한 set_code 목록 반환."""
     region = region.upper()
     if region not in ("KR", "JP"):
@@ -32,6 +38,8 @@ def run_promo_for_region(region: str, *, apply: bool, quiet: bool) -> list[str]:
             cmd.append("--apply")
         if quiet:
             cmd.append("--quiet")
+        if previous_day_only:
+            cmd.append("--previous-day")
         print(f">>> promo {code} ({region})")
         if subprocess.call(cmd, cwd=str(SEEDS_DIR)) != 0:
             failed.append(code)

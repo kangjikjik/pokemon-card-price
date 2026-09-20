@@ -8,6 +8,7 @@ import {
   isSpecialSetCode,
 } from '@/lib/constants';
 import { mapRawSet } from '@/lib/set-map';
+import { fetchRecentBoxPricesBySet } from '@/lib/fetch-recent-box-prices';
 import { SetsTabs } from '@/components/sets-tabs';
 import { ScrollFab } from '@/components/scroll-fab';
 import { PokeballIcon } from '@/components/pokeball-icon';
@@ -19,12 +20,16 @@ async function getSets(): Promise<SetData[]> {
     const supabase = getSupabaseServer();
     const { data, error } = await supabase
       .from('card_sets')
-      .select(`id, set_code, name_kr, name_jp, name_en, released_at, image_url, prices_box ( region, price_krw, fetched_at )`)
+      .select(`id, set_code, name_kr, name_jp, name_en, released_at, image_url`)
       .in('set_code', [...FEATURED_SET_CODES, ...SETS_PAGE_EXTRA_CODES])
       .order('released_at', { ascending: false });
 
     if (error || !data || data.length === 0) throw new Error('no data');
-    return data.map((raw) => mapRawSet(raw));
+    const setIds = data.map(s => s.id as number);
+    const boxMap = await fetchRecentBoxPricesBySet(supabase, setIds);
+    return data.map((raw) =>
+      mapRawSet({ ...raw, prices_box: boxMap.get(raw.id as number) ?? [] }),
+    );
   } catch {
     return MOCK_SETS.filter((s) => (FEATURED_SET_CODES as readonly string[]).includes(s.code));
   }

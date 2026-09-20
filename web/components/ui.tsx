@@ -24,6 +24,7 @@ export const RarityBadge = ({ rarity }: { rarity: string }) => {
       case 'ACE': return 'bg-gradient-to-r from-fuchsia-500 to-pink-600 text-white';
       case 'RRR': return 'bg-gradient-to-r from-orange-500 to-red-500 text-white';
       case 'RR': return 'bg-gradient-to-r from-blue-500 to-cyan-600 text-white';
+      case 'RM': return 'bg-gradient-to-r from-sky-200 via-blue-300 to-indigo-400 text-slate-900 shadow-[0_0_8px_rgba(96,165,250,0.45)]';
       case 'A': return 'bg-gradient-to-r from-red-500 via-yellow-400 to-blue-500 text-white';
       case 'K': return 'bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 text-slate-900';
       case 'PR': return 'bg-gradient-to-r from-violet-600 to-indigo-800 text-white';
@@ -100,7 +101,7 @@ export const CardImage = ({
     return (
       <div className={cn('w-full h-full relative rounded-lg overflow-hidden', className)}>
         <Image
-          src={normalizeCardImageUrl(imageUrl)}
+                src={normalizeCardImageUrl(imageUrl) ?? imageUrl}
           alt={altText}
           fill
           sizes="(max-width: 768px) 50vw, 25vw"

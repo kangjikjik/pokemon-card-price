@@ -55,7 +55,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       }
       if (likeError.message.includes('community_post_likes')) {
         return NextResponse.json(
-          { error: '따봉 기능 DB가 준비되지 않았습니다. add_community_v2.sql을 실행해 주세요.' },
+          { error: '따봉 기능을 일시적으로 이용할 수 없습니다.' },
           { status: 503 },
         );
       }

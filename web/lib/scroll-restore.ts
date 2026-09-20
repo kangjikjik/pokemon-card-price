@@ -53,20 +53,36 @@ function clearSavedCardsState() {
   sessionStorage.removeItem(SCROLL_KEY);
 }
 
-export function saveSetsListState(scrollY: number, tabId: string) {
+export function saveSetsListState(
+  scrollY: number,
+  tabId: string,
+  initial: string | null = null,
+  year: string | null = null,
+) {
   sessionStorage.setItem(SETS_SCROLL_KEY, String(scrollY));
   sessionStorage.setItem(`${SETS_SCROLL_KEY}-tab`, tabId);
+  sessionStorage.setItem(`${SETS_SCROLL_KEY}-initial`, initial ?? "");
+  sessionStorage.setItem(`${SETS_SCROLL_KEY}-year`, year ?? "");
 }
 
-export function useSetsListRestore(ready = true, setTab?: (tab: any) => void) {
+export function useSetsListRestore(
+  ready = true,
+  restoreState?: (state: { tab: string | null; initial: string | null; year: string | null }) => void,
+) {
   useEffect(() => {
     if (!ready) return;
     if ("scrollRestoration" in history) {
       history.scrollRestoration = "manual";
     }
     const savedTab = sessionStorage.getItem(`${SETS_SCROLL_KEY}-tab`);
-    if (savedTab && setTab) {
-      setTab(savedTab);
+    const savedInitial = sessionStorage.getItem(`${SETS_SCROLL_KEY}-initial`);
+    const savedYear = sessionStorage.getItem(`${SETS_SCROLL_KEY}-year`);
+    if (restoreState) {
+      restoreState({
+        tab: savedTab,
+        initial: savedInitial || null,
+        year: savedYear || null,
+      });
     }
 
     const savedScroll = sessionStorage.getItem(SETS_SCROLL_KEY);
@@ -82,10 +98,12 @@ export function useSetsListRestore(ready = true, setTab?: (tab: any) => void) {
       restore();
       sessionStorage.removeItem(SETS_SCROLL_KEY);
       sessionStorage.removeItem(`${SETS_SCROLL_KEY}-tab`);
+      sessionStorage.removeItem(`${SETS_SCROLL_KEY}-initial`);
+      sessionStorage.removeItem(`${SETS_SCROLL_KEY}-year`);
     }, 150);
 
     return () => window.clearTimeout(t);
-  }, [ready, setTab]);
+  }, [ready, restoreState]);
 }
 
 export function saveCardsListState(scrollY: number, filters: { rarity: string; sort: string }) {

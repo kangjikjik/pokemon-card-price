@@ -8,8 +8,8 @@ import {
   usePriceVariant,
 } from '@/components/price-variant-ui';
 import { ClickableTableRow } from '@/components/clickable-table-row';
-import { RarityBadge } from '@/components/ui';
-import { latestPriceKrw } from '@/lib/price-calc';
+import { CardImage, RarityBadge } from '@/components/ui';
+import { calcRepresentativePrice } from '@/lib/price-calc';
 
 type SetCardRow = {
   id: number | string;
@@ -18,8 +18,9 @@ type SetCardRow = {
   name_en: string;
   rarity: string;
   card_number: string;
-  prices_kr: { price_krw: number; fetched_at?: string }[];
-  prices_jp: { price_krw: number; fetched_at?: string }[];
+  image_url?: string;
+  prices_kr: { price_krw: number; fetched_at?: string; source?: string }[];
+  prices_jp: { price_krw: number; fetched_at?: string; source?: string }[];
 };
 
 function SetTableBody({ cards }: { cards: SetCardRow[] }) {
@@ -27,13 +28,22 @@ function SetTableBody({ cards }: { cards: SetCardRow[] }) {
     <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
       {cards.map(card => {
         const matrix = buildCardPriceMatrix({
-          priceKR: latestPriceKrw(card.prices_kr),
-          priceJP: latestPriceKrw(card.prices_jp),
+          priceKR: calcRepresentativePrice(card.prices_kr).price,
+          priceJP: calcRepresentativePrice(card.prices_jp).price,
           trendKR: 0,
           trendJP: 0,
         });
         return (
           <ClickableTableRow key={card.id} href={`/cards/${card.id}`}>
+            <td className="p-2 w-16">
+              <div className="w-12 h-16">
+                <CardImage
+                  imageUrl={card.image_url}
+                  altText={card.name_kr || card.name_jp || card.name_en}
+                  colorClass="from-slate-400 to-slate-600"
+                />
+              </div>
+            </td>
             <td className="p-4 font-bold text-slate-900 dark:text-white group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
               {card.name_kr || card.name_jp || card.name_en}
             </td>
@@ -72,6 +82,7 @@ export function SetCardsPriceTable({ cards }: { cards: SetCardRow[] }) {
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 text-sm">
+              <th className="p-4 font-medium whitespace-nowrap">이미지</th>
               <th className="p-4 font-medium">카드명</th>
               <th className="p-4 font-medium">레어도</th>
               <th className="p-4 font-medium text-right">

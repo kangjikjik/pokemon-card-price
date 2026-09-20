@@ -2,8 +2,8 @@
 번개장터 전용 카드 시세 수집 — KR / JP 공용.
 
 정책:
-  1) 거래완료(status=3, 90일 이내) → 평균가
-  2) 없으면 판매중(status=0) 최저가
+  1) 거래완료(status=3, 90일 이내)와 판매중(status=0) 호가를 함께 평균
+  2) 한 종류만 있으면 해당 가격으로 평균
   3) 단품 싱글만 (묶음·다량·다종 제외, 1장 판매만)
 """
 from __future__ import annotations
@@ -12,10 +12,11 @@ import json
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Callable
 
 SOLD_MAX_AGE_DAYS = 90
+KST = timezone(timedelta(hours=9))
 
 _HEADERS = {
     "User-Agent": (
@@ -59,6 +60,22 @@ def _is_recent_sold(update_time: int) -> bool:
     return (now - update_time) <= SOLD_MAX_AGE_DAYS * 86400
 
 
+def previous_kst_day_bounds() -> tuple[int, int]:
+    """Return the previous KST calendar day as Unix timestamp bounds."""
+    today = datetime.now(KST).date()
+    end = datetime.combine(today, datetime.min.time(), tzinfo=KST)
+    start = end - timedelta(days=1)
+    return int(start.timestamp()), int(end.timestamp())
+
+
+def is_previous_kst_day(update_time: int) -> bool:
+    """Whether a Bunjang item's update/post time is from yesterday in KST."""
+    if not update_time:
+        return False
+    start, end = previous_kst_day_bounds()
+    return start <= int(update_time) < end
+
+
 # ──────────────────────────────────────────────────
 # KR 매물 분류
 # ──────────────────────────────────────────────────
@@ -99,7 +116,6 @@ def split_by_status_kr_with_items(
     KR 매물 → (sold_items, listing_items).
     각 item: {"price": int, "pid": str}
     """
-    from lib.card_image_verify import CardImageVerifier  # noqa: PLC0415
     from lib.price_search import is_raw_kr_listing, parse_listing_quantity  # noqa: PLC0415
 
     sold: list[dict] = []
@@ -115,8 +131,7 @@ def split_by_status_kr_with_items(
     except Exception:
         pass
 
-    with CardImageVerifier(image_url, referer) as verifier:
-        for item in items:
+    for item in items:
             title = str(item.get("name", ""))
             try:
                 price = int(item.get("price", 0) or 0)
@@ -126,7 +141,7 @@ def split_by_status_kr_with_items(
                 continue
             if not is_raw_kr_listing(title, name_kr, rarity, card_number, set_code, set_name_kr):
                 continue
-            if parse_listing_quantity(title) > 1 or not verifier.matches(item):
+            if parse_listing_quantity(title) > 1:
                 continue
 
             status = str(item.get("status", ""))
@@ -175,15 +190,13 @@ def split_by_status_jp_with_items(
     JP 매물 → (sold_items, listing_items).
     각 item: {"price": int, "pid": str, "update_time": int}
     """
-    from lib.card_image_verify import CardImageVerifier  # noqa: PLC0415
     from lib.jp_price_search import is_raw_jp_listing  # noqa: PLC0415
     from lib.price_search import parse_listing_quantity  # noqa: PLC0415
 
     sold: list[dict] = []
     listing: list[dict] = []
 
-    with CardImageVerifier(image_url) as verifier:
-        for item in items:
+    for item in items:
             title = str(item.get("name", ""))
             try:
                 price = int(item.get("price", 0) or 0)
@@ -196,7 +209,7 @@ def split_by_status_jp_with_items(
                 name_en=name_en, set_code=set_code,
             ):
                 continue
-            if parse_listing_quantity(title) > 1 or not verifier.matches(item):
+            if parse_listing_quantity(title) > 1:
                 continue
 
             status = str(item.get("status", ""))
@@ -273,10 +286,8 @@ def resolve_card_price(
     """
     (price, count, source).
 
-    - sold 10건 이상: 평균(average)
-    - sold 10건 미만 + 호가 있음: 판매중 최저가 (표본 부족)
-    - sold만 있음: 그 sold 평균
-    - sold 없으면: 판매중 최저가(min)
+    - 거래완료와 판매중 호가가 있으면 두 가격을 함께 평균
+    - 한 종류만 있으면 해당 가격으로 평균
     """
     from lib.price_search import MIN_SOLD_FOR_AGGREGATE  # noqa: PLC0415
 
@@ -284,11 +295,11 @@ def resolve_card_price(
         min_sold_for_aggregate = MIN_SOLD_FOR_AGGREGATE
     sold = [p for p in sold if p > 0]
     listing = [p for p in listing if p > 0]
-    if sold:
-        avg = round(sum(sold) / len(sold))
-        return avg, len(sold), f"sold:{source_suffix}"
-    if listing:
-        return min(listing), len(listing), f"listing:{source_suffix}"
+    values = sold + listing
+    if values:
+        avg = round(sum(values) / len(values))
+        tier = "sold+listing" if sold and listing else ("sold" if sold else "listing")
+        return avg, len(values), f"{tier}:{source_suffix}"
     return 0, 0, "none"
 
 
@@ -303,6 +314,7 @@ def prefetch_bunjang_kr(
     *,
     build_queries_fn: Callable[[str, str, str, str, str], list[str]],
     workers: int = 8,
+    previous_day_only: bool = False,
 ) -> dict[int, tuple[list[int], list[int], list[dict], list[dict]]]:
     """카드 목록을 병렬로 번개장터 조회.
 
@@ -320,6 +332,11 @@ def prefetch_bunjang_kr(
             set_code,
         )
         all_items = collect_bunjang_items(queries)
+        if previous_day_only:
+            all_items = [
+                item for item in all_items
+                if is_previous_kst_day(int(item.get("update_time", 0) or 0))
+            ]
         sold_items, listing_items = split_by_status_kr_with_items(
             all_items,
             card.get("name_kr") or "",
@@ -353,6 +370,7 @@ def prefetch_bunjang_jp(
     set_code: str,
     *,
     workers: int = 8,
+    previous_day_only: bool = False,
 ) -> dict[int, tuple[list[int], list[int], list[dict], list[dict]]]:
     """JP 카드 목록 → {card_id: (sold_prices, listing_prices, sold_items, listing_items)}."""
     from lib.jp_price_search import build_jp_search_queries  # noqa: PLC0415
@@ -375,6 +393,11 @@ def prefetch_bunjang_jp(
             name_en=card.get("name_en") or "",
         )
         all_items = collect_bunjang_items(queries)
+        if previous_day_only:
+            all_items = [
+                item for item in all_items
+                if is_previous_kst_day(int(item.get("update_time", 0) or 0))
+            ]
         sold_items, listing_items = split_by_status_jp_with_items(
             all_items,
             card.get("name_jp") or "",

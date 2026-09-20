@@ -18,11 +18,35 @@ const NAV_ITEMS = [
 const NavLink = ({ to, children, onClick }: { to: string; children: React.ReactNode; onClick?: () => void }) => {
   const pathname = usePathname();
   const isActive = pathname === to || (to !== '/' && pathname.startsWith(to));
+  const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    onClick?.();
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    const target = new URL(to, window.location.origin);
+    if (
+      target.pathname === window.location.pathname &&
+      target.search === window.location.search &&
+      target.hash === window.location.hash
+    ) {
+      window.location.reload();
+    } else {
+      window.location.assign(target.href);
+    }
+  };
 
   return (
-    <Link
+    <a
       href={to}
-      onClick={onClick}
+      onClick={handleClick}
       className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${
         isActive
           ? 'bg-amber-500 text-white dark:text-slate-900 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
@@ -30,7 +54,7 @@ const NavLink = ({ to, children, onClick }: { to: string; children: React.ReactN
       }`}
     >
       {children}
-    </Link>
+    </a>
   );
 };
 

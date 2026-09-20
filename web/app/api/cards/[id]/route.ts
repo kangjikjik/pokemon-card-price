@@ -58,27 +58,44 @@ export async function GET(
 
     const supabase = getSupabaseServer();
 
-    const { data, error } = await supabase
+    const { data: cardRow, error } = await supabase
       .from('cards')
       .select(`
         id, name_kr, name_jp, name_en, rarity, rarity_rank, image_url, image_color, card_number,
-        card_sets ( id, set_code, name_kr, name_jp, name_en, released_at ),
-        prices_kr ( price_krw, source, fetched_at ),
-        prices_jp ( price_krw, price_jpy, source, fetched_at )
+        card_sets ( id, set_code, name_kr, name_jp, name_en, released_at )
       `)
       .eq('id', numericId)
       .single();
 
     if (error) throw error;
-    if (!data) throw new Error('Not found');
+    if (!cardRow) throw new Error('Not found');
 
-    const setRaw = data.card_sets as { set_code: string } | { set_code: string }[] | null;
+    const setRaw = cardRow.card_sets as { set_code: string } | { set_code: string }[] | null;
     const setCode = (Array.isArray(setRaw) ? setRaw[0] : setRaw)?.set_code || '';
     if (!isViewableSetCode(setCode)) {
       return NextResponse.json({ error: 'Not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ data: transformCard(data as Record<string, unknown>), source: 'db' });
+    const since = new Date();
+    since.setDate(since.getDate() - 90);
+    const [krRes, jpRes] = await Promise.all([
+      supabase.from('prices_kr').select('price_krw, fetched_at, source')
+        .eq('card_id', numericId).gt('price_krw', 0)
+        .gte('fetched_at', since.toISOString())
+        .order('fetched_at', { ascending: false }).limit(120),
+      supabase.from('prices_jp').select('price_krw, price_jpy, fetched_at, source')
+        .eq('card_id', numericId).gt('price_krw', 0)
+        .gte('fetched_at', since.toISOString())
+        .order('fetched_at', { ascending: false }).limit(120),
+    ]);
+
+    const payload = {
+      ...cardRow,
+      prices_kr: krRes.data || [],
+      prices_jp: jpRes.data || [],
+    };
+
+    return NextResponse.json({ data: transformCard(payload as Record<string, unknown>), source: 'db' });
   } catch {
     const viewableCodes = CARDS_LIST_SET_CODES as readonly string[];
     const card = MOCK_CARDS.find(c => c.id === id && viewableCodes.includes(c.setCode));

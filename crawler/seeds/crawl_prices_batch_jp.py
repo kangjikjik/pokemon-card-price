@@ -59,6 +59,8 @@ def run_set(set_code: str, apply: bool, quiet: bool = True) -> int:
         cmd.append("--apply")
     if quiet:
         cmd.append("--quiet")
+    if "--previous-day" in sys.argv:
+        cmd.append("--previous-day")
     print(f"\n{'=' * 60}\n>>> JP {set_code}\n{'=' * 60}")
     return subprocess.call(cmd, cwd=str(SEEDS_DIR))
 

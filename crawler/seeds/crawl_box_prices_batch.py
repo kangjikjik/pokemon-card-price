@@ -73,6 +73,8 @@ def run_set(set_code: str, apply: bool, region: str = "KR") -> int:
         cmd.extend(["--region", "JP"])
     if apply:
         cmd.append("--apply")
+    if "--previous-day" in sys.argv:
+        cmd.append("--previous-day")
     cmd.append("--quiet")
     label = "JP" if region.upper() == "JP" else "KR"
     print(f"\n{'=' * 60}\n>>> {set_code} {label} 박스 시세\n{'=' * 60}")
