@@ -2,6 +2,20 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type PriceRow = { price_krw: number; fetched_at?: string; source?: string };
 
+function isBunjangSource(source?: string | null): boolean {
+  if (!source) return false;
+  return (
+    source === 'bunjang:sold' ||
+    source === 'bunjang:listing' ||
+    source === 'bunjang:sold+listing' ||
+    source === 'sold:bunjang' ||
+    source === 'listing:bunjang' ||
+    source === 'sold+listing:bunjang' ||
+    /^sold:bunjang:\d+/.test(source) ||
+    /^listing:bunjang:\d+/.test(source)
+  );
+}
+
 /** 카드별 최근 시세만 조회 (세트 SSR CPU 한도 방지). */
 export async function fetchRecentPricesByCard(
   supabase: SupabaseClient,
@@ -22,18 +36,6 @@ export async function fetchRecentPricesByCard(
   since.setDate(since.getDate() - daysBack);
   const sinceIso = since.toISOString();
 
-  /** 양수 요약 우선. 미등록 요약만 있는 경우 최근 상세 거래를 fallback으로 사용한다. */
-  const summaryFilter = [
-    'source.eq.bunjang:sold',
-    'source.eq.bunjang:listing',
-    'source.eq.bunjang:sold+listing',
-    'source.eq.sold:bunjang',
-    'source.eq.listing:bunjang',
-    'source.eq.sold+listing:bunjang',
-    'source.like.sold:bunjang:*',
-    'source.like.listing:bunjang:*',
-  ].join(',');
-
   const [krRes, jpRes] = await Promise.all([
     supabase
       .from('prices_kr')
@@ -41,7 +43,6 @@ export async function fetchRecentPricesByCard(
       .in('card_id', cardIds)
       .gt('price_krw', 0)
       .gte('fetched_at', sinceIso)
-      .or(summaryFilter)
       .order('fetched_at', { ascending: false })
       .limit(maxRows),
     supabase
@@ -50,12 +51,12 @@ export async function fetchRecentPricesByCard(
       .in('card_id', cardIds)
       .gt('price_krw', 0)
       .gte('fetched_at', sinceIso)
-      .or(summaryFilter)
       .order('fetched_at', { ascending: false })
       .limit(maxRows),
   ]);
 
   for (const row of krRes.data || []) {
+    if (!isBunjangSource(row.source)) continue;
     const bucket = out.get(row.card_id as number);
     if (bucket && bucket.kr.length < perCardMax) {
       bucket.kr.push({
@@ -66,6 +67,7 @@ export async function fetchRecentPricesByCard(
     }
   }
   for (const row of jpRes.data || []) {
+    if (!isBunjangSource(row.source)) continue;
     const bucket = out.get(row.card_id as number);
     if (bucket && bucket.jp.length < perCardMax) {
       bucket.jp.push({
