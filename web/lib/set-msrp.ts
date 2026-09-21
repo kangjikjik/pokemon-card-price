@@ -381,6 +381,14 @@ export const SET_MSRP: Record<string, SetMsrp> = {
     sourceKR: 'https://pokemoncard.co.kr/card/387',
     sourceJP: 'https://www.pokemon-card.com/ex/25th/products/',
   },
+  CEL30: {
+    packKR: 3500,
+    boxKR: 70000,
+    packJP: 360,
+    boxJP: 7200,
+    sourceKR: 'https://pokemonstore.co.kr/pages/pokemon30th/product/index.html',
+    sourceJP: 'https://www.30th.pokemon-card.com/product/m6a',
+  },
   S7R: {
     packKR: 1000,
     boxKR: 30000,
@@ -657,8 +665,16 @@ export const SET_MSRP: Record<string, SetMsrp> = {
 
 const DEFAULT_MSRP: SetMsrp = { packKR: 1000, boxKR: 30000, packJP: 180, boxJP: 5400 };
 
+const NO_MSRP: SetMsrp = { packKR: 0, boxKR: 0, packJP: 0, boxJP: 0 };
+
 export function getSetMsrp(code: string): SetMsrp {
+  if (code === 'PRM-MISC') return NO_MSRP;
   return SET_MSRP[code] ?? DEFAULT_MSRP;
+}
+
+export function hasSetMsrp(code: string): boolean {
+  const m = getSetMsrp(code);
+  return m.boxKR > 0 || m.packKR > 0 || m.boxJP > 0 || m.packJP > 0;
 }
 
 export function formatYen(amount: number): string {

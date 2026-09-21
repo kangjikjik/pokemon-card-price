@@ -13,7 +13,8 @@ export const RarityBadge = ({ rarity }: { rarity: string }) => {
       case 'MUR': return 'bg-gradient-to-r from-rose-500 via-red-600 to-amber-500 text-white shadow-[0_0_10px_rgba(244,63,94,0.5)]';
       case 'MA': return 'bg-gradient-to-r from-amber-600 via-orange-600 to-red-700 text-white shadow-[0_0_10px_rgba(234,88,12,0.5)]';
       case 'BWR': return 'bg-gradient-to-r from-zinc-700 via-slate-300 to-zinc-900 text-white shadow-[0_0_10px_rgba(148,163,184,0.4)]';
-      case 'FUR': return 'bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-600 text-white';
+      case 'FUR': return 'bg-gradient-to-r from-cyan-400 via-blue-500 to-violet-600 text-white shadow-[0_0_10px_rgba(56,189,248,0.45)]';
+      case 'PKR': return 'bg-gradient-to-r from-yellow-300 via-amber-400 to-yellow-500 text-slate-900 shadow-[0_0_8px_rgba(251,191,36,0.45)]';
       case 'SAR': return 'bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-600 text-slate-900 shadow-[0_0_10px_rgba(245,158,11,0.5)]';
       case 'UR': return 'bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 text-slate-900 shadow-[0_0_8px_rgba(251,191,36,0.5)]';
       case 'HR': return 'bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 text-white shadow-[0_0_10px_rgba(236,72,153,0.5)]';

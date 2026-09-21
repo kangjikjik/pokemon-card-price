@@ -32,7 +32,7 @@ PACK_IMAGE = "https://cdn.collectory.cc/cards/us/30th/set-logo2.webp"
 
 RARITY_FROM_COLLECTORY = {
     "Futuristic Rare": "FUR",
-    "Pikachu Rare": "K",
+    "Pikachu Rare": "PKR",
 }
 
 # collectory KR 행에 레어도가 없는 30주년 역사 카드 reprint

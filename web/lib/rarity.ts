@@ -12,6 +12,9 @@ export const RARITY_ALIASES: Record<string, string> = {
   /** 나무위키 𖤓 빛나는 전설 */
   Shining: "SL",
   SHINING: "SL",
+  /** 30th CELEBRATION 신규 */
+  "Futuristic Rare": "FUR",
+  "Pikachu Rare": "PKR",
 };
 
 export function normalizeRarity(rarity: string): string {
@@ -48,6 +51,7 @@ export const RARITY_LABELS: Record<string, string> = {
   MUR: "메가울트라레어",
   MA: "메가어택레어",
   FUR: "퓨처울트라레어",
+  PKR: "피카츄레어",
   H: "홀로",
   HR: "하이퍼레어",
   RM: "마스터볼 미러",
@@ -69,7 +73,8 @@ export const RARITY_LABELS: Record<string, string> = {
  * 히트: UR/HR/… > PR(프리즘) > SR > … > RR
  */
 export const RARITY_RANK: Record<string, number> = {
-  FUR: 31,
+  FUR: 32,
+  PKR: 31,
   MUR: 30,
   UR: 29,
   BWR: 28,
@@ -102,7 +107,7 @@ export const RARITY_RANK: Record<string, number> = {
 };
 
 /** 현 등급 필터·정렬 순서: MUR → RR */
-const CURRENT_RARITIES = ["MUR", "UR", "BWR", "SAR", "MA", "SR", "ACE", "AR", "RM", "RR"] as const;
+const CURRENT_RARITIES = ["FUR", "PKR", "MUR", "UR", "BWR", "SAR", "MA", "SR", "ACE", "AR", "RM", "RR"] as const;
 const LEGACY_RARITIES = ["SSR", "HR", "CSR", "CHR", "RRR", "A", "K", "S", "PR", "TR", "P"] as const;
 
 function sortByRarityDesc(codes: readonly string[]): string[] {
