@@ -15,9 +15,12 @@ from lib.price_search import (
     KR_KEYWORDS,
     RARITY_BLOCK_ABOVE,
     RARITY_TOKENS,
+    _is_goods_listing,
     _is_multi_card_sale,
     calculate_median_price,
     card_number_in_title,
+    title_has_commemorative_year,
+    title_has_sl_reprint,
 )
 
 JP_RARITY_EQUIV: dict[str, set[str]] = {
@@ -33,6 +36,19 @@ BUNJANG_JP_HINTS = [
     "일본", "일판", "일어", "일어판", "JP", "jp", "日本", "japanese", "영문판", "미판",
     "Japanese", "海外", "일본산", "일본발",
 ]
+
+
+def filter_jp_items_by_kr_floor(items: list[dict], kr_reference: int) -> list[dict]:
+    """일본판 가격이 한국판 대표 시세보다 낮으면 오매칭으로 제외."""
+    if kr_reference <= 0:
+        return items
+    return [it for it in items if int(it.get("price", 0) or 0) >= kr_reference]
+
+
+def filter_jp_prices_by_kr_floor(prices: list[int], kr_reference: int) -> list[int]:
+    if kr_reference <= 0:
+        return prices
+    return [p for p in prices if p >= kr_reference]
 
 
 def build_jp_search_queries(
@@ -86,7 +102,11 @@ def _is_graded_listing(title: str) -> bool:
     return any(k.upper() in t for k in GRADED_KEYWORDS)
 
 
-def _title_matches_jp_rarity(title: str, rarity: str) -> bool:
+def _title_matches_jp_rarity(title: str, rarity: str, set_code: str = "") -> bool:
+    from lib.price_search import is_cel30_sl  # noqa: PLC0415
+
+    if is_cel30_sl(set_code, rarity):
+        return True
     r = (rarity or "").upper()
     t = title.upper()
     equiv = JP_RARITY_EQUIV.get(r, {r})
@@ -139,12 +159,18 @@ def is_raw_jp_listing(
         return False
     if any(k in title for k in BUY_KEYWORDS):
         return False
+    if _is_goods_listing(title):
+        return False
     if _is_graded_listing(title):
         return False
     from lib.trainer_item_cards import skip_card_number_in_title  # noqa: PLC0415
 
     is_trainer_item = skip_card_number_in_title(set_code, card_number, name_jp)
     if _is_korean_listing(title, allow_ambiguous_jp=is_trainer_item):
+        return False
+    if not title_has_commemorative_year(title, set_code):
+        return False
+    if not title_has_sl_reprint(title, rarity):
         return False
     if _is_bundle_listing(title):
         return False
@@ -154,7 +180,7 @@ def is_raw_jp_listing(
         title, name_kr, name_jp, name_en, rarity, card_number, set_code
     ):
         return False
-    if not _title_matches_jp_rarity(title, rarity):
+    if not _title_matches_jp_rarity(title, rarity, set_code):
         return False
     # 포켓몬 ex: 일판 표기 필수. 트레이너·아이템은 체결 제목에 일판이 없는 경우가 많음.
     if not is_trainer_item and not any(h in title for h in BUNJANG_JP_HINTS):

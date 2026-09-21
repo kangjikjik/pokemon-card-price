@@ -134,11 +134,39 @@ def build_bunjang_jp_queries(
     slim: bool = False,
 ) -> list[str]:
     """번개 일판 검색어 — **카드명 + 등급 + 일판** (M5·팩번호 금지)."""
+    from lib.price_search import COMMEMORATIVE_YEAR_IN_TITLE  # noqa: PLC0415
+
     r = (rarity or "").upper()
     names = bunjang_search_names(name_kr, name_jp, name_en, rarity, card_number, set_code)
 
+    commemorative_prefix = COMMEMORATIVE_YEAR_IN_TITLE.get((set_code or "").upper())
     queries: list[str] = []
     limit = 12 if r == "MUR" else 8
+
+    if commemorative_prefix:
+        from lib.price_search import commemorative_card_search_queries, is_cel30_sl  # noqa: PLC0415
+
+        for base in names[:limit]:
+            for q in commemorative_card_search_queries(
+                commemorative_prefix, base, r, set_name_kr, set_code
+            ):
+                queries.append(f"{q} 일판")
+                if "일판" not in q:
+                    queries.append(q)
+            compact = re.sub(r"\s+", "", base)
+            if is_cel30_sl(set_code, r):
+                queries.append(f"{commemorative_prefix} 복각 {compact}일판")
+            else:
+                queries.append(f"{commemorative_prefix} {compact}{r}일판")
+        seen: set[str] = set()
+        out: list[str] = []
+        for q in queries:
+            q = re.sub(r"\s+", " ", q).strip()
+            if q and q not in seen and _has_hangul(q):
+                seen.add(q)
+                out.append(q)
+        return out
+
     for base in names[:limit]:
         compact = re.sub(r"\s+", "", base)
         queries.append(f"{base} {r} 일판")
@@ -172,8 +200,12 @@ def title_matches_bunjang_name(
     set_code: str = "",
 ) -> bool:
     """매물 제목이 카드와 일치하는지 (번개 한글 표기 기준)."""
+    from lib.price_search import match_pikachu_pkr_name_in_title  # noqa: PLC0415
+
     if not title.strip():
         return False
+    if match_pikachu_pkr_name_in_title(title, name_kr):
+        return True
     t_compact = _compact_match_text(title)
     for cand in bunjang_search_names(
         name_kr, name_jp, name_en, rarity, card_number, set_code

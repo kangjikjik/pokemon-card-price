@@ -26,14 +26,35 @@ APPLY = "--apply" in sys.argv
 
 SET_CODE = "CEL30"
 COLLECTORY_ID = "bfc5bc98-87f1-46b2-b68d-e82152e744d4"
-SET_NAME_KR = "30th CELEBRATION"
+SET_NAME_KR = "30주년 기념"
 RELEASED_AT = "2026-09-16"
-PACK_IMAGE = "https://cdn.collectory.cc/cards/us/30th/set-logo2.webp"
+PACK_IMAGE = "/set-boxes/CEL30.png"
 
 RARITY_FROM_COLLECTORY = {
     "Futuristic Rare": "FUR",
     "Pikachu Rare": "PKR",
 }
+
+# KR 017/103~046/103 — 30종 일러스트 피카츄 (PKR)
+PIKACHU_PKR_FIRST = 17
+PIKACHU_PKR_LAST = 46
+
+
+def pikachu_pkr_index(card_number: str) -> int | None:
+    num = normalize_card_number(card_number)
+    try:
+        n = int(num.split("/")[0])
+    except ValueError:
+        return None
+    if num.endswith("/103") and PIKACHU_PKR_FIRST <= n <= PIKACHU_PKR_LAST:
+        return n - PIKACHU_PKR_FIRST + 1
+    return None
+
+
+def pikachu_pkr_name_kr(card_number: str) -> str | None:
+    idx = pikachu_pkr_index(card_number)
+    return f"{idx}번 피카츄" if idx else None
+
 
 # collectory KR 행에 레어도가 없는 30주년 역사 카드 reprint
 RARITY_OVERRIDES: dict[str, str] = {
@@ -46,6 +67,9 @@ RARITY_OVERRIDES: dict[str, str] = {
 
 
 def resolve_rarity(card: dict, siblings: list[dict]) -> str:
+    num = normalize_card_number(card.get("card_number") or "")
+    if pikachu_pkr_index(num):
+        return "PKR"
     raw = (card.get("rarity") or "").strip()
     if not raw:
         raw = next((s.get("rarity") or "" for s in siblings if s.get("rarity")), "").strip()
@@ -108,10 +132,11 @@ def main() -> None:
     inserted = updated = 0
     for number, card, rarity in candidates:
         image_url = (card.get("cdn_image_url") or card.get("image_url") or "").strip()
+        name_kr = pikachu_pkr_name_kr(number) or pick_name_ko(card, None)
         payload = {
             "set_id": set_id,
             "card_number": number,
-            "name_kr": pick_name_ko(card, None),
+            "name_kr": name_kr,
             "name_jp": (card.get("name_ja") or "").strip(),
             "name_en": (card.get("name_en") or card.get("name") or "").strip(),
             "rarity": rarity,

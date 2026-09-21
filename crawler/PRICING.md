@@ -11,16 +11,16 @@
 
 | 순서 | 작업 | 스크립트 |
 |------|------|----------|
-| 1 | KR 확장팩 79 + 프로모 KR | `crawl_prices_batch.py --apply --daily --all` |
-| 2 | JP 확장팩 79 + 프로모 JP | `crawl_prices_batch_jp.py --apply --all` |
-| 3 | KR 박스 79 | `crawl_box_prices_batch.py --apply --all` |
-| 4 | JP 박스 79 | `crawl_box_prices_batch.py --apply --all --region JP` |
+| 1 | KR 확장팩 82 + 프로모 KR | `crawl_prices_batch.py --apply --daily --all` |
+| 2 | JP 확장팩 82 + 프로모 JP | `crawl_prices_batch_jp.py --apply --all` |
+| 3 | KR 박스 82 | `crawl_box_prices_batch.py --apply --all` |
+| 4 | JP 박스 82 | `crawl_box_prices_batch.py --apply --all --region JP` |
 
 ---
 
 ## 1. KR 확장팩 카드 (`prices_kr`)
 
-- **대상:** 79팩, RR 이상
+- **대상:** 82팩(`KR_SETS`), RR 이상
 - **소스:** 번개장터(`api.bunjang.co.kr`) **전용**
 - **조건:** 한글판 **raw 싱글** (미등급·단품·1장)
 - **1순위:** 거래완료(`status=3`, 90일 이내) → **평균가**

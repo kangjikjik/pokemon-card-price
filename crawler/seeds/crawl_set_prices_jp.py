@@ -29,6 +29,10 @@ from lib.price_history import (  # noqa: E402
     save_daily_snapshots,
     save_incremental_snapshots,
 )
+from lib.jp_price_search import (  # noqa: E402
+    filter_jp_items_by_kr_floor,
+    filter_jp_prices_by_kr_floor,
+)
 from lib.price_search import MIN_SOLD_FOR_AGGREGATE, filter_prices_pipeline  # noqa: E402
 from lib.rarity_rank import is_displayable_rarity  # noqa: E402
 from lib.trainer_item_cards import is_trainer_or_item_card  # noqa: E402
@@ -44,6 +48,18 @@ TRAINER_ITEM_ONLY = "--trainer-item-only" in sys.argv
 DAILY_INCREMENTAL = "--previous-day" in sys.argv
 WORKERS = 16          # 번개장터 병렬
 MAX_SOLD_ROWS = 100
+
+
+def get_arg(flag: str, default: str = "") -> str:
+    if flag in sys.argv:
+        idx = sys.argv.index(flag)
+        if idx + 1 < len(sys.argv):
+            return sys.argv[idx + 1]
+    return default
+
+
+ONLY_RARITY = get_arg("--rarity", "").upper()
+ONLY_CARD_NUMBER = get_arg("--card-number", "")
 
 
 def _append_bunjang_jp_rows(
@@ -67,14 +83,6 @@ def _append_bunjang_jp_rows(
         })
 
 
-def get_arg(flag: str, default: str = "") -> str:
-    if flag in sys.argv:
-        idx = sys.argv.index(flag)
-        if idx + 1 < len(sys.argv):
-            return sys.argv[idx + 1]
-    return default
-
-
 def get_exchange_rate() -> float:
     key = os.getenv("EXCHANGE_RATE_API_KEY", "").strip()
     if key:
@@ -92,6 +100,28 @@ def get_exchange_rate() -> float:
 def _log(msg: str) -> None:
     if not QUIET:
         print(msg)
+
+
+def load_kr_reference_prices(card_ids: list[int]) -> dict[int, int]:
+    """카드별 한국판 대표 시세(요약 행). 상세 PID 행은 제외."""
+    if not card_ids:
+        return {}
+    rows = (
+        sb.table("prices_kr")
+        .select("card_id,price_krw,source")
+        .in_("card_id", card_ids)
+        .gt("price_krw", 0)
+        .execute()
+        .data
+        or []
+    )
+    refs: dict[int, int] = {}
+    for row in rows:
+        source = str(row.get("source") or "")
+        if source.startswith("sold:bunjang:") or source.startswith("listing:bunjang:"):
+            continue
+        refs[int(row["card_id"])] = int(row["price_krw"])
+    return refs
 
 
 def resolve_set_code(raw: str) -> str:
@@ -119,6 +149,10 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
         or []
     )
     cards = [c for c in cards if is_displayable_rarity(c.get("rarity"))]
+    if ONLY_RARITY:
+        cards = [c for c in cards if (c.get("rarity") or "").upper() == ONLY_RARITY]
+    if ONLY_CARD_NUMBER:
+        cards = [c for c in cards if (c.get("card_number") or "") == ONLY_CARD_NUMBER]
     if TRAINER_ITEM_ONLY:
         cards = [
             c for c in cards
@@ -128,8 +162,15 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
         print(f"=== {set_name}({set_code}) — 대상 카드 없음 ===")
         return 0, 0
 
-    print(f"=== {set_name}({set_code}) JP 시세 [번개장터 전용] ===")
+    suffix = ""
+    if ONLY_CARD_NUMBER:
+        suffix = f" ({ONLY_CARD_NUMBER}만)"
+    elif ONLY_RARITY:
+        suffix = f" ({ONLY_RARITY}만)"
+    print(f"=== {set_name}({set_code}) JP 시세 [번개장터 전용]{suffix} ===")
     print(f"대상: {len(cards)}장")
+
+    kr_refs = load_kr_reference_prices([c["id"] for c in cards])
 
     bunjang_prefetch = prefetch_bunjang_jp(
         cards,
@@ -176,6 +217,14 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
 
         rarity = card.get("rarity") or ""
         historical_sold, historical_listing = historical_by_card.get(cid, ([], []))
+        kr_floor = kr_refs.get(cid, 0)
+        if kr_floor > 0:
+            b_sold_items = filter_jp_items_by_kr_floor(b_sold_items, kr_floor)
+            b_listing_items = filter_jp_items_by_kr_floor(b_listing_items, kr_floor)
+            historical_sold = filter_jp_prices_by_kr_floor(historical_sold, kr_floor)
+            historical_listing = filter_jp_prices_by_kr_floor(historical_listing, kr_floor)
+            b_sold = [it["price"] for it in b_sold_items]
+            b_listing = [it["price"] for it in b_listing_items]
         allowed = filter_prices_pipeline(
             historical_sold + historical_listing + b_sold + b_listing,
             rarity,
@@ -253,9 +302,9 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
 
 def main() -> None:
     targets: list[str] = []
-    if "--set" in sys.argv:
-        idx = sys.argv.index("--set")
-        targets = [resolve_set_code(s) for s in sys.argv[idx + 1:] if not s.startswith("-")]
+    set_code = resolve_set_code(get_arg("--set", ""))
+    if set_code:
+        targets = [set_code]
     elif "--all" in sys.argv:
         targets = [s.code for s in KR_SETS]
     else:

@@ -96,6 +96,19 @@ def build_box_search_queries(set_name_kr: str, set_code: str) -> list[str]:
                 f"{n} 확장팩",
                 f"{n} 강화 확장팩",
             ])
+        if set_code.upper() == "CEL":
+            queries.extend([
+                "25주년 기념 박스",
+                "25주년 컬렉션 박스",
+                "포켓몬카드 25주년 기념 박스",
+                "포켓몬카드 25주년 박스",
+            ])
+        if set_code.upper() == "CEL30":
+            queries.extend([
+                "30주년 기념 박스",
+                "포켓몬카드 30주년 기념 박스",
+                "포켓몬카드 30주년 박스",
+            ])
     seen: set[str] = set()
     out: list[str] = []
     for q in queries:
@@ -675,3 +688,176 @@ def filter_bunjang_jp_box_listings(
         items, set_name_kr, set_code, msrp_box_krw, msrp_pack_krw, verifier=None
     )
     return [q.price for q in listings]
+
+
+# ── 낱팩 1장 시세 (CEL25PK 등) ───────────────────────────────
+
+PACK_ONLY_SET_CODES = frozenset({"CEL25PK"})
+MULTI_PACK_QTY_RE = re.compile(r"(\d+)\s*팩", re.I)
+
+
+def build_pack_search_queries(set_name_kr: str, set_code: str) -> list[str]:
+    queries: list[str] = []
+    for n in _box_search_name_candidates(set_name_kr, set_code):
+        queries.extend([
+            f"{n}",
+            f"{n} 1팩",
+            f"{n} 낱팩",
+            f"포켓몬카드 {n}",
+            f"포켓몬카드 {n} 1팩",
+            f"포켓몬카드 {n} 낱팩",
+            f"포켓몬 {n} 1팩",
+        ])
+    if set_code.upper() == "CEL25PK":
+        queries.extend([
+            "25주년 프로모팩",
+            "25주년 기념 프로모팩",
+            "25주년 프로모 카드팩",
+            "포켓몬 카드 25주년 프로모 카드팩",
+            "포켓몬카드 25주년 프로모팩",
+            "포켓몬카드 25주년 기념 프로모팩",
+            "한글 25주년 프로모팩",
+            "포켓몬카드 s8a-P",
+        ])
+    seen: set[str] = set()
+    out: list[str] = []
+    for q in queries:
+        q = re.sub(r"\s+", " ", q).strip()
+        if q and q not in seen:
+            seen.add(q)
+            out.append(q)
+    return out
+
+
+def pack_price_bounds(msrp_pack_kr: int) -> tuple[int, int]:
+    msrp = max(msrp_pack_kr, 500)
+    return msrp, max(msrp * 50, 150_000)
+
+
+def _pack_unit_price(total_price: int, title: str) -> int | None:
+    m = MULTI_PACK_QTY_RE.search(title)
+    if m:
+        qty = int(m.group(1))
+        if qty >= 2:
+            unit = total_price // qty
+            return unit if unit >= 500 else None
+    if MULTI_PACK_RE.search(title) and "1팩" not in title and "한팩" not in title:
+        return None
+    return total_price
+
+
+def _price_suggests_pack(unit_price: int, msrp_pack_kr: int) -> bool:
+    if unit_price <= 0 or msrp_pack_kr <= 0:
+        return False
+    lo, hi = pack_price_bounds(msrp_pack_kr)
+    return lo <= unit_price <= hi
+
+
+def _is_sealed_promo_pack_title(title: str) -> bool:
+    if _has_box_marker(title):
+        return False
+    if any(k in title for k in ("PSA", "BGS", "BRG", "CGC", "등급", "1장", "카드만", "싱글", "단품")):
+        return False
+    compact = title.replace(" ", "")
+    return (
+        "프로모팩" in compact
+        or "프로모카드팩" in compact
+        or ("프로모" in compact and "카드팩" in compact)
+        or ("프로모" in title and "카드 팩" in title)
+    )
+
+
+def _title_matches_commemorative_pack(title: str, set_code: str) -> bool:
+    if set_code.upper() != "CEL25PK":
+        return False
+    t = _norm(title)
+    if "25주년" not in t:
+        return False
+    return any(k in t for k in ("프로모팩", "프로모카드팩", "프로모카드")) or (
+        "프로모" in t and "팩" in t
+    )
+
+
+def is_kr_pack_listing(
+    title: str,
+    set_name_kr: str,
+    set_code: str,
+    msrp_pack_kr: int,
+    unit_price: int = 0,
+) -> bool:
+    if not title.strip():
+        return False
+    if _is_buy_listing(title):
+        return False
+    if _is_japanese_box(title):
+        return False
+    if any(k in title for k in FOREIGN_FOR_KR):
+        return False
+    sealed_promo_pack = _is_sealed_promo_pack_title(title)
+    if not (_title_matches_set(title, set_name_kr, set_code) or _title_matches_commemorative_pack(title, set_code)):
+        return False
+    if _has_box_marker(title):
+        return False
+    if _is_box_listing(title, unit_price, 0, msrp_pack_kr):
+        return False
+    if not sealed_promo_pack and _looks_like_single_card(title, unit_price, 0, msrp_pack_kr):
+        return False
+    if _is_bundle_box_listing(title, set_name_kr, set_code):
+        return False
+    if _looks_like_pack_listing(title, unit_price, 0, msrp_pack_kr):
+        return True
+    if unit_price and _price_suggests_pack(unit_price, msrp_pack_kr):
+        return True
+    if any(k in title for k in ("프로모팩", "프로모 팩", "프로모")) and "박스" not in title:
+        return True
+    return False
+
+
+def _collect_verified_pack_quotes(
+    items: list[dict],
+    set_name_kr: str,
+    set_code: str,
+    msrp_pack_kr: int,
+) -> tuple[list[VerifiedBoxQuote], list[VerifiedBoxQuote]]:
+    lo, hi = pack_price_bounds(msrp_pack_kr)
+    sold: list[VerifiedBoxQuote] = []
+    listings: list[VerifiedBoxQuote] = []
+    for item in items:
+        title = str(item.get("name", ""))
+        try:
+            price = int(item.get("price", 0) or 0)
+        except (TypeError, ValueError):
+            continue
+        unit = _pack_unit_price(price, title)
+        if unit is None:
+            continue
+        if not is_kr_pack_listing(title, set_name_kr, set_code, msrp_pack_kr, unit):
+            continue
+        if unit < lo or unit > hi:
+            continue
+        pid = str(item.get("pid", "") or "")
+        quote = VerifiedBoxQuote(price=unit, updated_at=_bunjang_update_time(item), pid=pid)
+        if _is_bunjang_sold(item):
+            if quote.updated_at > 0:
+                cutoff = datetime.now(timezone.utc) - timedelta(days=SOLD_MAX_AGE_DAYS)
+                occurred = datetime.fromtimestamp(quote.updated_at, tz=timezone.utc)
+                if occurred < cutoff:
+                    continue
+            sold.append(quote)
+        elif _is_bunjang_listing(item):
+            listings.append(quote)
+    return sold, listings
+
+
+def filter_bunjang_kr_pack_quotes(
+    items: list[dict],
+    set_name_kr: str,
+    set_code: str,
+    msrp_box_kr: int,
+    msrp_pack_kr: int = 0,
+    verifier: BoxImageVerifier | None = None,
+    *,
+    allow_opened: bool = False,
+) -> tuple[list[VerifiedBoxQuote], list[VerifiedBoxQuote]]:
+    del msrp_box_kr, verifier, allow_opened
+    return _collect_verified_pack_quotes(items, set_name_kr, set_code, msrp_pack_kr)

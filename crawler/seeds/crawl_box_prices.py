@@ -60,9 +60,13 @@ from lib.box_price_search import (  # noqa: E402
 
     VerifiedBoxQuote,
 
+    PACK_ONLY_SET_CODES,
+
     build_box_search_queries,
 
     build_jp_box_search_queries,
+
+    build_pack_search_queries,
 
     filter_bunjang_jp_box_quotes,
 
@@ -397,16 +401,21 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
         source_prefix = "bunjang-jp"
 
     else:
+        pack_only = set_code.upper() in PACK_ONLY_SET_CODES
+        if pack_only:
+            msrp = 0
+            pack_msrp = meta.msrp_pack_kr or 3000
+            queries = build_pack_search_queries(set_name, set_code)
+            from lib.box_price_search import filter_bunjang_kr_pack_quotes
 
-        msrp = meta.msrp_box_kr or 30000
-
-        pack_msrp = meta.msrp_pack_kr or 0
-
-        queries = build_box_search_queries(set_name, set_code)
-
-        filter_fn = filter_bunjang_kr_box_quotes
-
-        source_prefix = "bunjang"
+            filter_fn = filter_bunjang_kr_pack_quotes
+            source_prefix = "bunjang-pack"
+        else:
+            msrp = meta.msrp_box_kr or 30000
+            pack_msrp = meta.msrp_pack_kr or 0
+            queries = build_box_search_queries(set_name, set_code)
+            filter_fn = filter_bunjang_kr_box_quotes
+            source_prefix = "bunjang"
 
 
 

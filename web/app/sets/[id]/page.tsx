@@ -117,7 +117,7 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
             alt={set.name}
             colorClass={set.imageColor}
             size="lg"
-            compact={set.code === 'CEL25PK' || set.code === 'PRM-MISC'}
+            compact={set.code === 'CEL25PK' || set.code === 'CEL30' || set.code === 'PRM-MISC'}
           />
         </div>
         <div className="p-6 md:p-8 flex-1 flex flex-col justify-center">

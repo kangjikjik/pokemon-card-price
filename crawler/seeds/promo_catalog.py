@@ -4,11 +4,11 @@
 - 기타 프로모: PRM-MISC (잉어킹 등 단발 프로모 카드 모음)
 """
 
-MAGIKARP_PROMO_IMAGE = "https://cdn.collectory.cc/cards/kr/M-P/040_M-P.webp"
-
 from __future__ import annotations
 
 from dataclasses import dataclass
+
+MAGIKARP_PROMO_IMAGE = "https://cdn.collectory.cc/cards/kr/M-P/040_M-P.webp"
 
 
 @dataclass(frozen=True)
@@ -50,9 +50,9 @@ COMMEMORATIVE_25PK = CommemorativeSource(
 COMMEMORATIVE_30CELEBRATION = CommemorativeSource(
     "CEL30",
     "bfc5bc98-87f1-46b2-b68d-e82152e744d4",
-    "30th CELEBRATION",
+    "30주년 기념",
     "2026-09-16",
-    "https://cdn.collectory.cc/cards/us/30th/set-logo2.webp",
+    "/set-boxes/CEL30.png",
 )
 
 COMMEMORATIVE_SOURCES: list[CommemorativeSource] = [

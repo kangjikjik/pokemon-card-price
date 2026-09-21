@@ -28,6 +28,7 @@ from lib.price_history import (  # noqa: E402
     save_incremental_snapshots,
 )
 from lib.price_search import (  # noqa: E402
+    build_promo_jp_search_queries,
     build_promo_search_queries,
     filter_prices_by_rarity_band,
 )
@@ -191,7 +192,27 @@ def crawl_promo_jp(set_code: str, set_name: str, cards: list[dict]) -> int:
     rate = get_exchange_rate()
     print(f"  JP: 번개장터 전용, 환율 JPY→KRW {rate}")
 
-    bunjang_prefetch = prefetch_bunjang_jp(cards, set_name, set_code, workers=WORKERS)
+    def _build_promo_jp_queries(
+        set_name_kr: str,
+        name_kr: str,
+        _rarity: str,
+        card_number: str,
+        promo_set_code: str,
+    ) -> list[str]:
+        return build_promo_jp_search_queries(
+            name_kr,
+            card_number,
+            promo_source=set_name_kr,
+            set_code=promo_set_code,
+        )
+
+    bunjang_prefetch = prefetch_bunjang_jp(
+        cards,
+        set_name,
+        set_code,
+        build_queries_fn=_build_promo_jp_queries,
+        workers=WORKERS,
+    )
     print(f"  번개 조회: {len(bunjang_prefetch)}/{len(cards)}장")
 
     rows: list[dict] = []

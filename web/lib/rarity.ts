@@ -74,15 +74,15 @@ export const RARITY_LABELS: Record<string, string> = {
  */
 export const RARITY_RANK: Record<string, number> = {
   FUR: 32,
-  PKR: 31,
   MUR: 30,
   UR: 29,
   BWR: 28,
   SAR: 27,
-  MA: 26,
-  SR: 25,
-  ACE: 24,
-  AR: 23,
+  PKR: 26,
+  MA: 25,
+  SR: 24,
+  ACE: 23,
+  AR: 22,
   SSR: 22,
   HR: 21,
   CSR: 20,
@@ -107,7 +107,7 @@ export const RARITY_RANK: Record<string, number> = {
 };
 
 /** 현 등급 필터·정렬 순서: MUR → RR */
-const CURRENT_RARITIES = ["FUR", "PKR", "MUR", "UR", "BWR", "SAR", "MA", "SR", "ACE", "AR", "RM", "RR"] as const;
+const CURRENT_RARITIES = ["FUR", "MUR", "UR", "BWR", "SAR", "PKR", "MA", "SR", "ACE", "AR", "RM", "RR"] as const;
 const LEGACY_RARITIES = ["SSR", "HR", "CSR", "CHR", "RRR", "A", "K", "S", "PR", "TR", "P"] as const;
 
 function sortByRarityDesc(codes: readonly string[]): string[] {

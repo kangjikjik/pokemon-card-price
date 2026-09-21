@@ -50,7 +50,7 @@ export const SET_BOX_IMAGES: Record<string, string> = {
   S7F: '/set-boxes/S7F.png',
   CEL: 'https://data1.pokemonkorea.co.kr/2021/10/2021-10-15_16-01-01-13015-1634281261.png',
   CEL25PK: '/set-boxes/CEL25PK.png',
-  CEL30: 'https://cdn.collectory.cc/cards/us/30th/set-logo2.webp',
+  CEL30: '/set-boxes/CEL30.png',
   S7R: '/set-boxes/S7R.png',
   S7D: '/set-boxes/S7D.png',
   S6H: '/set-boxes/S6H.png',

@@ -1,5 +1,5 @@
 """
-박스 시세 배치 — featured 79팩 순환 (KR / JP).
+박스 시세 배치 — featured 82팩 순환 (KR / JP).
 
   python crawl_box_prices_batch.py --apply --all
   python crawl_box_prices_batch.py --apply --all --region JP

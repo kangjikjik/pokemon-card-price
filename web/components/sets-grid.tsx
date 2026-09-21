@@ -38,7 +38,7 @@ export function SetsGrid({
             <SetPackImage
               imageUrl={set.imageUrl}
               alt={set.name}
-              compact={set.code === 'CEL25PK' || set.code === 'PRM-MISC'}
+              compact={set.code === 'CEL25PK' || set.code === 'CEL30' || set.code === 'PRM-MISC'}
               colorClass={set.imageColor}
               size="lg"
             />
