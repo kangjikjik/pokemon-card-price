@@ -119,6 +119,11 @@ BUY_KEYWORDS = [
     "대량매입", "매입)", "매입]", "구매 잉", "구매해요",
 ]
 
+# 띠부띠부씰·굿즈 (싱글 카드 거래 아님)
+GOODS_EXCLUDE_KEYWORDS = [
+    "띠부실", "띠부씰", "띠부띠부", "띠부", "굿즈)",
+]
+
 PROMO_MP_NUMBER_RE = re.compile(r"\d{2,3}/M-P", re.I)
 
 # 동일 카드 N장 — 장당 환산 (제외하지 않음)
@@ -182,6 +187,16 @@ BOX_MARKETPLACE_ALIASES: dict[str, list[str]] = {
     "SM5": ["울트라 포스"],
     "SM4+": ["울트라 문"],
     "SM4": ["울트라 썬"],
+    "CEL": ["25주년 기념", "25주년기념", "25주년 컬렉션", "25th Anniversary"],
+    "CEL30": ["30주년 기념", "30주년", "30th CELEBRATION", "30th Celebration"],
+    "CEL25PK": [
+        "25주년 프로모팩",
+        "25주년 기념 프로모팩",
+        "25주년 프로모 카드팩",
+        "프로모 카드팩",
+        "s8aP",
+        "s8a-P",
+    ],
 }
 
 
@@ -213,6 +228,104 @@ def is_legacy_set(set_code: str) -> bool:
     return any(code.startswith(p) for p in _LEGACY_PREFIXES)
 
 
+COMMEMORATIVE_YEAR_IN_TITLE: dict[str, str] = {
+    "CEL": "25주년",
+    "CEL30": "30주년",
+    "CEL25PK": "25주년",
+}
+
+def is_commemorative_card_set(set_code: str) -> bool:
+    return (set_code or "").upper() in COMMEMORATIVE_YEAR_IN_TITLE
+
+
+def title_has_commemorative_year(title: str, set_code: str) -> bool:
+    """CEL/CEL30 — 제목에 25주년·30주년 표기가 있어야 동일 세트 카드로 인정."""
+    required = COMMEMORATIVE_YEAR_IN_TITLE.get((set_code or "").upper())
+    if not required:
+        return True
+    return required in title
+
+
+def title_has_sl_reprint(title: str, rarity: str) -> bool:
+    """SL — 제목에 복각 표기 필수 (구세트·오매칭 제외)."""
+    if (rarity or "").upper() != "SL":
+        return True
+    return "복각" in title
+
+
+PIKACHU_PKR_NAME_RE = re.compile(r"^(\d+)번\s*피카츄$", re.I)
+
+
+def pikachu_pkr_index(name_kr: str) -> int | None:
+    m = PIKACHU_PKR_NAME_RE.match((name_kr or "").strip())
+    return int(m.group(1)) if m else None
+
+
+def match_pikachu_pkr_name_in_title(title: str, name_kr: str) -> bool:
+    """30주년 PKR — 번개 표기 `피카츄 N번` / `N번 피카츄` 모두 인정."""
+    idx = pikachu_pkr_index(name_kr)
+    if idx is None:
+        return False
+    compact = re.sub(r"\s+", "", title)
+    patterns = (
+        f"{idx}번피카츄",
+        f"피카츄{idx}번",
+        f"{idx}번 피카츄",
+        f"피카츄 {idx}번",
+    )
+    return any(p.replace(" ", "") in compact for p in patterns)
+
+
+def is_cel30_sl(set_code: str, rarity: str) -> bool:
+    """30주년 SL(Shining) — 번개 검색·제목에 등급 표기가 거의 없음."""
+    return (set_code or "").upper() == "CEL30" and (rarity or "").upper() == "SL"
+
+
+def commemorative_card_search_queries(
+    prefix: str,
+    name_kr: str,
+    rarity: str,
+    set_name_kr: str = "",
+    set_code: str = "",
+) -> list[str]:
+    """기념 세트(COL/CEL30) — 25주년·30주년 접두 검색어 (SL은 복각 포함)."""
+    r = (rarity or "").upper()
+    base = normalize_mega_spelling(name_kr.strip())
+    queries: list[str] = []
+    idx = pikachu_pkr_index(base)
+    if idx is not None:
+        queries.extend([
+            f"{prefix} 피카츄 {idx}번",
+            f"포켓몬카드 {prefix} 피카츄 {idx}번",
+            f"{prefix} {idx}번 피카츄",
+            f"포켓몬카드 {prefix} {idx}번 피카츄",
+        ])
+    elif is_cel30_sl(set_code, r) and base:
+        queries.extend([
+            f"{prefix} 복각 {base}",
+            f"포켓몬카드 {prefix} 복각 {base}",
+        ])
+    elif base and r:
+        compact = re.sub(r"\s+", "", base)
+        queries.extend([
+            f"포켓몬카드 {prefix} {base} {r}",
+            f"{prefix} {base} {r}",
+            f"포켓몬카드 {prefix} {base}{r}",
+            f"{prefix} {base}{r}",
+            f"포켓몬카드 {prefix} {compact}{r}",
+        ])
+        if set_name_kr:
+            queries.append(f"포켓몬카드 {set_name_kr} {base} {r}")
+    seen: set[str] = set()
+    out: list[str] = []
+    for q in queries:
+        q = re.sub(r"\s+", " ", q).strip()
+        if q and q not in seen:
+            seen.add(q)
+            out.append(q)
+    return out
+
+
 def build_search_queries(
     set_name_kr: str,
     name_kr: str,
@@ -235,9 +348,27 @@ def build_search_queries(
     if spaced_energy != base:
         name_variants.append(spaced_energy)
 
+    commemorative_prefix = COMMEMORATIVE_YEAR_IN_TITLE.get((set_code or "").upper())
     queries: list[str] = []
-    # 1순위: 사람들이 실제로 치는 형태
     is_energy = bool(re.search(r"(풀|불꽃|물)\s*에너지", base))
+
+    if commemorative_prefix:
+        for nm in name_variants:
+            queries.extend(
+                commemorative_card_search_queries(
+                    commemorative_prefix, nm, r, set_name_kr, set_code
+                )
+            )
+        seen: set[str] = set()
+        out: list[str] = []
+        for q in queries:
+            q = re.sub(r"\s+", " ", q).strip()
+            if q and q not in seen:
+                seen.add(q)
+                out.append(q)
+        return out
+
+    # 1순위: 사람들이 실제로 치는 형태
     for nm in name_variants:
         c = re.sub(r"\s+", "", nm)
         if nm and r:
@@ -314,6 +445,7 @@ def build_promo_search_queries(
             f"포켓몬카드 25주년 프로모 {base}",
             f"포켓몬카드 25주년 기념 프로모팩 {base}",
             f"포켓몬카드 s8aP {base}",
+            f"25주년 {base} 프로모",
         ])
     promo_aliases: dict[str, list[str]] = {
         "로켓단 등장!": ["로켓단 포스터", "로켓단세인상", "로켓단 등장"],
@@ -346,7 +478,42 @@ def build_promo_search_queries(
     return out
 
 
-def _title_matches_rarity(title: str, rarity: str) -> bool:
+def build_promo_jp_search_queries(
+    name_kr: str,
+    card_number: str = "",
+    promo_source: str = "",
+    set_code: str = "",
+) -> list[str]:
+    """프로모(P) 일본판 — 25주년 + 일판 표기."""
+    base = name_kr.strip()
+    queries: list[str] = []
+    for q in build_promo_search_queries(name_kr, card_number, promo_source, set_code):
+        if "일판" in q or "일본" in q:
+            queries.append(q)
+            continue
+        queries.append(f"{q} 일판")
+        if "한글" in q:
+            queries.append(q.replace("한글", "일판"))
+    if set_code.upper() == "CEL25PK":
+        queries.extend([
+            f"25주년 {base} 일판",
+            f"포켓몬카드 25주년 {base} 일판",
+            f"포켓몬카드 25주년 프로모 {base} 일판",
+            f"25주년 프로모 {base} 일판",
+        ])
+    seen: set[str] = set()
+    out: list[str] = []
+    for q in queries:
+        q = re.sub(r"\s+", " ", q).strip()
+        if q and q not in seen:
+            seen.add(q)
+            out.append(q)
+    return out
+
+
+def _title_matches_rarity(title: str, rarity: str, set_code: str = "") -> bool:
+    if is_cel30_sl(set_code, rarity):
+        return True
     t = title.upper()
     r = rarity.upper()
     tokens = RARITY_TOKENS.get(r, [r])
@@ -377,6 +544,8 @@ def _compact_match_text(text: str) -> str:
 def _title_matches_name(title: str, name_kr: str) -> bool:
     name = normalize_mega_spelling(name_kr.strip())
     if not name:
+        return True
+    if match_pikachu_pkr_name_in_title(title, name):
         return True
     core = name
     for suf in [" 프로모", " ex", " EX", " VSTAR", " VMAX", " V", " GX"]:
@@ -436,6 +605,16 @@ def _is_multi_card_sale(title: str, name_kr: str) -> bool:
             and not _title_matches_name(right, name_kr)
         ):
             return True
+    if "/" in title and not CARD_NUMBER_RE.search(title):
+        parts = [p.strip() for p in title.split("/") if len(p.strip()) >= 2]
+        if len(parts) >= 2:
+            name_hits = sum(1 for p in parts if _title_matches_name(p, name_kr))
+            other_named = sum(
+                1 for p in parts
+                if len(p.strip()) >= 2 and not _title_matches_name(p, name_kr)
+            )
+            if name_hits >= 1 and other_named >= 1:
+                return True
     return False
 
 
@@ -455,8 +634,7 @@ def filter_median_outliers(
         return clean
     lo = max(int(med * min_ratio), 300)
     hi = int(med * max_ratio)
-    filtered = [p for p in clean if lo <= p <= hi]
-    return filtered if len(filtered) >= max(2, len(clean) // 4) else clean
+    return [p for p in clean if lo <= p <= hi]
 
 
 def _is_graded_listing(title: str) -> bool:
@@ -535,6 +713,10 @@ def _is_buy_listing(title: str) -> bool:
     return any(k in title for k in BUY_KEYWORDS)
 
 
+def _is_goods_listing(title: str) -> bool:
+    return any(k in title for k in GOODS_EXCLUDE_KEYWORDS)
+
+
 def _promo_listing_valid(title: str, card_number: str) -> bool:
     """M-P 등 프로모 번호 — 오매칭(30주년·빛나는 등) 제외."""
     num = (card_number or "").strip().upper()
@@ -563,6 +745,8 @@ def is_raw_kr_listing(
         return False
     if _is_buy_listing(title):
         return False
+    if _is_goods_listing(title):
+        return False
     if _is_graded_listing(title):
         return False
     if _is_japanese_listing(title):
@@ -571,9 +755,13 @@ def is_raw_kr_listing(
         return False
     if _is_multi_card_sale(title, name_kr):
         return False
+    if not title_has_commemorative_year(title, set_code):
+        return False
+    if not title_has_sl_reprint(title, rarity):
+        return False
     if not _title_matches_name(title, name_kr):
         return False
-    if not _title_matches_rarity(title, rarity):
+    if not _title_matches_rarity(title, rarity, set_code):
         from lib.trainer_item_cards import skip_card_number_in_title  # noqa: PLC0415
 
         # MEGA 트레이너·에너지 SR — 번개 제목에 SR 미표기인 경우가 많음
@@ -627,7 +815,7 @@ def filter_bunjang_listings(
         if relaxed:
             if not _title_matches_name(title, name_kr):
                 continue
-            if not _title_matches_rarity(title, rarity):
+            if not _title_matches_rarity(title, rarity, set_code):
                 continue
             if _is_graded_listing(title) or _is_japanese_listing(title):
                 continue
@@ -665,6 +853,8 @@ def filter_prices_by_rarity_band(prices: list[int], rarity: str) -> list[int]:
         "ACE": (5_000, 150_000),
         "HR": (3_000, 150_000),
         "SSR": (5_000, 150_000),
+        "SL": (5_000, 500_000),
+        "PKR": (500, 50_000),
         "P": (1_000, 500_000),
     }
     lo, hi = bands.get(rarity.upper(), (300, 3_000_000))

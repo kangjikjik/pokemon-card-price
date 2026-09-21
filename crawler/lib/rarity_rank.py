@@ -6,11 +6,14 @@ RARITY_ALIASES: dict[str, str] = {
     "RM": "RR",
     "Shining": "SL",
     "SHINING": "SL",
+    "Futuristic Rare": "FUR",
+    "Pikachu Rare": "PKR",
 }
 
 # 히트: UR/HR/… > PR > SR > … > RR
 RARITY_RANK: dict[str, int] = {
-    "FUR": 30,
+    "FUR": 32,
+    "PKR": 21,
     "MA": 29,
     "MUR": 28,
     "BWR": 27,

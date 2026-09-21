@@ -1,6 +1,6 @@
 /** 스페셜 · 기념 (확장팩 주기 밖 — 25주년 등) */
 
-export const SPECIAL_SET_CODES = ['CEL', 'CEL25PK'] as const;
+export const SPECIAL_SET_CODES = ['CEL', 'CEL25PK', 'CEL30'] as const;
 
 
 
@@ -204,7 +204,7 @@ export const PROMO_PAGE_SET_CODES = [
 
 /** B) 스페셜·기념 (CEL25PK — CEL은 FEATURED에 포함) */
 
-export const COMMEMORATIVE_SET_CODES = ['CEL25PK'] as const;
+export const COMMEMORATIVE_SET_CODES = ['CEL25PK', 'CEL30'] as const;
 
 
 

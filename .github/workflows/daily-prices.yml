@@ -19,7 +19,7 @@ jobs:
 
   # ─── 1. KR 카드 시세 ─────────────────────────────────────
   kr-cards:
-    name: KR cards (79 sets)
+    name: KR cards (82 sets)
     runs-on: ubuntu-latest
     timeout-minutes: 360
 
@@ -39,7 +39,7 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python crawler/scripts/sync_github_secrets.py --check-only
 
-      - name: Crawl KR cards (all 79 sets)
+      - name: Crawl KR cards (all 82 sets)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
@@ -48,7 +48,7 @@ jobs:
 
   # ─── 2. JP 카드 시세 ─────────────────────────────────────
   jp-cards:
-    name: JP cards (79 sets)
+    name: JP cards (82 sets)
     runs-on: ubuntu-latest
     timeout-minutes: 360
 
@@ -68,7 +68,7 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: python crawler/scripts/sync_github_secrets.py --check-only
 
-      - name: Crawl JP cards (all 79 sets)
+      - name: Crawl JP cards (all 82 sets)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
@@ -78,7 +78,7 @@ jobs:
 
   # ─── 3. KR 박스 시세 ─────────────────────────────────────
   kr-boxes:
-    name: KR box prices (79 sets)
+    name: KR box prices (82 sets)
     runs-on: ubuntu-latest
     timeout-minutes: 180
     needs: kr-cards
@@ -102,7 +102,7 @@ jobs:
 
   # ─── 4. JP 박스 시세 ─────────────────────────────────────
   jp-boxes:
-    name: JP box prices (79 sets)
+    name: JP box prices (82 sets)
     runs-on: ubuntu-latest
     timeout-minutes: 180
     needs: jp-cards

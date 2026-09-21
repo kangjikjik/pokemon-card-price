@@ -35,7 +35,7 @@ def main() -> None:
     set_id = set_rows[0]["id"]
     payload = {
         "set_id": set_id,
-        "name_kr": "잉어킹",
+        "name_kr": "잉어킹 프로모",
         "name_jp": "コイキング",
         "name_en": "Magikarp",
         "rarity": "P",
@@ -47,7 +47,7 @@ def main() -> None:
         sb.table("cards")
         .select("id")
         .eq("set_id", set_id)
-        .eq("name_kr", "잉어킹")
+        .eq("card_number", CARD_NUMBER)
         .execute()
         .data
         or []
@@ -55,10 +55,10 @@ def main() -> None:
     if existing:
         card_id = existing[0]["id"]
         sb.table("cards").update(payload).eq("id", card_id).execute()
-        print(f"Updated card {card_id}: {CARD_NUMBER} 잉어킹")
+        print(f"Updated card {card_id}: {CARD_NUMBER} 잉어킹 프로모")
     else:
         inserted = sb.table("cards").insert(payload).execute().data or []
-        print(f"Inserted card {inserted[0]['id']}: {CARD_NUMBER} 잉어킹")
+        print(f"Inserted card {inserted[0]['id']}: {CARD_NUMBER} 잉어킹 프로모")
 
 
 if __name__ == "__main__":

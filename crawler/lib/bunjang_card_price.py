@@ -369,6 +369,7 @@ def prefetch_bunjang_jp(
     set_name_kr: str,
     set_code: str,
     *,
+    build_queries_fn: Callable[..., list[str]] | None = None,
     workers: int = 8,
     previous_day_only: bool = False,
 ) -> dict[int, tuple[list[int], list[int], list[dict], list[dict]]]:
@@ -382,16 +383,25 @@ def prefetch_bunjang_jp(
     _slim = is_legacy_set(set_code)
 
     def _one(card: dict) -> tuple[int, tuple[list[int], list[int], list[dict], list[dict]]]:
-        queries = build_jp_search_queries(
-            set_name_kr,
-            card.get("name_jp") or "",
-            card.get("name_kr") or "",
-            card.get("rarity") or "",
-            card.get("card_number") or "",
-            set_code,
-            slim=_slim,
-            name_en=card.get("name_en") or "",
-        )
+        if build_queries_fn is not None:
+            queries = build_queries_fn(
+                set_name_kr,
+                card.get("name_kr") or "",
+                card.get("rarity") or "",
+                card.get("card_number") or "",
+                set_code,
+            )
+        else:
+            queries = build_jp_search_queries(
+                set_name_kr,
+                card.get("name_jp") or "",
+                card.get("name_kr") or "",
+                card.get("rarity") or "",
+                card.get("card_number") or "",
+                set_code,
+                slim=_slim,
+                name_en=card.get("name_en") or "",
+            )
         all_items = collect_bunjang_items(queries)
         if previous_day_only:
             all_items = [

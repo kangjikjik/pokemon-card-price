@@ -1,3 +1,7 @@
+/** PRM-MISC 대표 이미지 — 잉어킹 프로모 카드 */
+export const PRM_MISC_CARD_IMAGE =
+  'https://cdn.collectory.cc/cards/kr/M-P/040_M-P.webp';
+
 /** 확장팩 박스 — 한국 공식 박스만 (crawler/seeds/kr_sets.py 와 동기화) */
 export const SET_BOX_IMAGES: Record<string, string> = {
   MG6: 'https://data1.pokemonkorea.co.kr/2026/06/2026-06-04_13-37-18-11403-1780547838.png',
@@ -46,6 +50,7 @@ export const SET_BOX_IMAGES: Record<string, string> = {
   S7F: '/set-boxes/S7F.png',
   CEL: 'https://data1.pokemonkorea.co.kr/2021/10/2021-10-15_16-01-01-13015-1634281261.png',
   CEL25PK: '/set-boxes/CEL25PK.png',
+  CEL30: '/set-boxes/CEL30.png',
   S7R: '/set-boxes/S7R.png',
   S7D: '/set-boxes/S7D.png',
   S6H: '/set-boxes/S6H.png',
@@ -93,8 +98,7 @@ function isBadBoxUrl(url: string): boolean {
 }
 
 export function getSetBoxImageUrl(code: string, dbUrl?: string | null): string {
-  // 단일 프로모 묶음에는 대표 상품 이미지가 없으므로 기본 이미지를 표시한다.
-  if (code === 'PRM-MISC') return '';
+  if (code === 'PRM-MISC') return PRM_MISC_CARD_IMAGE;
 
   const preset = SET_BOX_IMAGES[code];
   if (preset) return preset;

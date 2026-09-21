@@ -14,6 +14,8 @@ import { SetCardsPriceTable } from '@/components/set-cards-price-table';
 import { fetchRecentPricesByCard } from '@/lib/fetch-recent-prices';
 import { fetchRecentBoxPricesBySet } from '@/lib/fetch-recent-box-prices';
 
+export const dynamic = 'force-dynamic';
+
 export default async function SetDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const numericId = parseInt(id);
@@ -65,6 +67,7 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
     const priceMap = await fetchRecentPricesByCard(
       supabase,
       baseCards.map(c => c.id as number),
+      { daysBack: 90 },
     );
 
     cards = baseCards.map(c => {
@@ -109,7 +112,13 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
 
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden mb-8 flex flex-col md:flex-row shadow-sm">
         <div className="w-full md:w-44 shrink-0 p-4 md:p-6 flex items-center justify-center">
-          <SetPackImage imageUrl={set.imageUrl} alt={set.name} colorClass={set.imageColor} size="lg" />
+          <SetPackImage
+            imageUrl={set.imageUrl}
+            alt={set.name}
+            colorClass={set.imageColor}
+            size="lg"
+            compact={set.code === 'CEL25PK' || set.code === 'CEL30' || set.code === 'PRM-MISC'}
+          />
         </div>
         <div className="p-6 md:p-8 flex-1 flex flex-col justify-center">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">{set.name}</h1>

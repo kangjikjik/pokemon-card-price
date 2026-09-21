@@ -1,12 +1,14 @@
 """
 사용자 요청에 따른 최소화된 프로모 카탈로그.
-- 스페셜·기념: CEL(기존), CEL25PK(25주년 프로모팩)
-- 기타 프로모: PRM-MISC (잉어킹 등 단일 프로모 카드 모음)
+- 스페셜·기념: CEL(기존), CEL25PK(25주년 프로모팩), CEL30(30th CELEBRATION)
+- 기타 프로모: PRM-MISC (잉어킹 등 단발 프로모 카드 모음)
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+
+MAGIKARP_PROMO_IMAGE = "https://cdn.collectory.cc/cards/kr/M-P/040_M-P.webp"
 
 
 @dataclass(frozen=True)
@@ -33,7 +35,7 @@ PROMO_MISC = PromoSource(
     "",
     "기타 프로모팩",
     "",
-    "",
+    MAGIKARP_PROMO_IMAGE,
 )
 
 # 25주년 프로모팩 (P 카드 + 스페셜·기념 탭)
@@ -45,7 +47,18 @@ COMMEMORATIVE_25PK = CommemorativeSource(
     "https://data1.pokemonkorea.co.kr/2021/10/2021-10-15_18-19-47-44100-1634289587.png",
 )
 
-COMMEMORATIVE_SOURCES: list[CommemorativeSource] = [COMMEMORATIVE_25PK]
+COMMEMORATIVE_30CELEBRATION = CommemorativeSource(
+    "CEL30",
+    "bfc5bc98-87f1-46b2-b68d-e82152e744d4",
+    "30주년 기념",
+    "2026-09-16",
+    "/set-boxes/CEL30.png",
+)
+
+COMMEMORATIVE_SOURCES: list[CommemorativeSource] = [
+    COMMEMORATIVE_25PK,
+    COMMEMORATIVE_30CELEBRATION,
+]
 
 PROMO_EVENT_CODES = [] # Gym, PD26 등 모두 삭제됨
 COMMEMORATIVE_CODES = [s.code for s in COMMEMORATIVE_SOURCES]
@@ -71,4 +84,4 @@ PROMO_YUYU_VERS: dict[str, str] = {}
 COLLECTORY_API = "https://collectory.cc/api"
 PROMO_RARITY_RAW = frozenset({"PROMO", "P", "프로모"})
 
-COMMEMORATIVE_ONLY_CODES = ["CEL25PK"]
+COMMEMORATIVE_ONLY_CODES = ["CEL25PK", "CEL30"]

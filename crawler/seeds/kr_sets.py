@@ -159,9 +159,15 @@ KR_SETS: list[KrSet] = [
     KrSet("S7F", "퓨전아츠", "2021-12-01",
           "/set-boxes/S7F.png",
           "BS2021018", "d4e370fe-533d-4dfb-aac3-ad8aee5a25ab", 1000, 30000, 392),
-    KrSet("CEL", "25주년 기념 컬렉션", "2021-10-22",
+    KrSet("CEL", "25주년 기념", "2021-10-22",
           "https://data1.pokemonkorea.co.kr/2021/10/2021-10-15_16-01-01-13015-1634281261.png",
           "BS2021015", "1331f663-aaa7-4a73-b371-4193edad37bf", 2500, 40000, 387),
+    KrSet("CEL30", "30주년 기념", "2026-09-16",
+          "/set-boxes/CEL30.png",
+          "", "bfc5bc98-87f1-46b2-b68d-e82152e744d4", 3500, 70000, 0),
+    KrSet("CEL25PK", "25주년 기념 프로모팩", "2021-10-22",
+          "https://data1.pokemonkorea.co.kr/2021/10/2021-10-15_18-19-47-44100-1634289587.png",
+          "", "50e15946-2779-44eb-82c3-2446ddbaf9ac", 3300, 0, 0),
     KrSet("S7R", "창공스트림", "2021-09-08",
           "/set-boxes/S7R.png",
           "BS2021012", "34e421b1-6596-4b38-b7c1-f21847d6b5fb", 1000, 30000, 379),
@@ -272,6 +278,7 @@ KR_SETS_ALL: list[KrSet] = KR_SETS
 KR_BY_CODE: dict[str, KrSet] = {s.code: s for s in KR_SETS_ALL}
 
 FEATURED_SET_CODES: list[str] = [s.code for s in KR_SETS]
+FEATURED_SET_COUNT = len(KR_SETS)
 
 RELEASE_DATES: dict[str, str] = {s.code: s.released_at for s in KR_SETS_ALL}
 NAME_KR: dict[str, str] = {s.code: s.name_kr for s in KR_SETS_ALL}

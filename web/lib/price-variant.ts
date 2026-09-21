@@ -16,6 +16,7 @@ export interface CardPriceMatrix {
 }
 
 export const PRICE_GRADES: PriceGrade[] = ['raw', 'psa10', 'brg10'];
+export const VISIBLE_PRICE_GRADES: PriceGrade[] = ['raw'];
 
 export const GRADE_LABELS: Record<PriceGrade, string> = {
   raw: '싱글',

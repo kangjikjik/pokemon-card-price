@@ -170,7 +170,9 @@ export default async function HomePage() {
                       ) : (
                         <span className="text-slate-500 dark:text-slate-400">시세 미등록</span>
                       )}
-                      <span className="text-slate-400">· 발매가 {formatKRW(set.msrpBoxKR)}</span>
+                      {set.msrpBoxKR > 0 && (
+                        <span className="text-slate-400">· 발매가 {formatKRW(set.msrpBoxKR)}</span>
+                      )}
                     </span>
                     <span className="flex items-center gap-2 flex-wrap">
                       <RegionLabel region="JP" />
@@ -179,7 +181,9 @@ export default async function HomePage() {
                       ) : (
                         <span className="text-slate-500 dark:text-slate-400">시세 미등록</span>
                       )}
-                      <span className="text-slate-400">· 발매가 {formatYen(set.msrpBoxJP)}</span>
+                      {set.msrpBoxJP > 0 && (
+                        <span className="text-slate-400">· 발매가 {formatYen(set.msrpBoxJP)}</span>
+                      )}
                     </span>
                   </div>
                 </Link>

@@ -114,11 +114,13 @@ export const SetBoxPriceRows = ({
           ) : (
             <div className="text-sm font-medium text-slate-500 dark:text-slate-400">시세 미등록</div>
           )}
-          <p className="text-[11px] text-slate-400 mt-1 leading-snug">
-            발매가 {formatMsrp(msrpBox)}
-            <span className="mx-1">·</span>
-            팩 {formatMsrp(msrpPack)}
-          </p>
+          {(msrpBox > 0 || msrpPack > 0) && (
+            <p className="text-[10px] text-slate-400 mt-1 leading-snug whitespace-nowrap tracking-tight">
+              발매가 {formatMsrp(msrpBox)}
+              <span className="mx-1">·</span>
+              팩 {formatMsrp(msrpPack)}
+            </p>
+          )}
         </div>
       </button>
 

@@ -17,34 +17,52 @@ export async function fetchRecentBoxPricesBySet(
   }
 
   const daysBack = opts?.daysBack ?? 7;
-  const perSetMax = opts?.perSetMax ?? 24;
-  const maxRows = opts?.maxRows ?? Math.min(setIds.length * perSetMax, 600);
+  const perSetMax = opts?.perSetMax ?? 30;
   const since = new Date();
   since.setDate(since.getDate() - daysBack);
 
-  const { data } = await supabase
-    .from('prices_box')
-    .select('set_id, region, price_krw, fetched_at, source')
-    .in('set_id', setIds)
-    .gt('price_krw', 0)
-    .gte('fetched_at', since.toISOString())
-    .order('fetched_at', { ascending: false })
-    .limit(maxRows);
+  // Supabase 기본 응답 제한을 피하되, 세트마다 요청하지 않고
+  // 1000행 단위로만 페이지 조회해 서버 렌더링 시간을 제한한다.
+  const rows: Record<string, unknown>[] = [];
+  for (let offset = 0; ; offset += 1000) {
+    const { data } = await supabase
+      .from('prices_box')
+      .select('set_id, region, price_krw, fetched_at, source')
+      .in('set_id', setIds)
+      .gt('price_krw', 0)
+      .gte('fetched_at', since.toISOString())
+      .order('fetched_at', { ascending: false })
+      .range(offset, offset + 999);
+    rows.push(...((data || []) as Record<string, unknown>[]));
+    if (!data || data.length < 1000) break;
+  }
 
-  for (const row of data || []) {
+  for (const row of rows) {
     const sid = row.set_id as number;
     const bucket = out.get(sid);
-    if (!bucket || bucket.length >= perSetMax) continue;
+    if (!bucket) continue;
+    const region = row.region as string;
+    const regionCount = bucket.filter((item) => item.region === region).length;
+    if (regionCount >= perSetMax) continue;
     const source = row.source as string | undefined;
     // 대표 요약 행은 시세 추이·대표가 계산에 사용하고,
     // PID가 있는 개별 행은 거래내역과 보조 계산에 사용한다.
-    if (!source || (!isBoxTradeDetailSource(source) && !source.endsWith(':sold') && !source.endsWith(':listing'))) {
+    if (
+      !source ||
+      (
+        !isBoxTradeDetailSource(source) &&
+        !source.endsWith(':sold') &&
+        !source.endsWith(':listing') &&
+        !source.endsWith(':sold+listing') &&
+        source !== 'sold+listing:bunjang'
+      )
+    ) {
       continue;
     }
     bucket.push({
-      region: row.region as string,
+      region,
       price_krw: row.price_krw as number,
-      fetched_at: row.fetched_at ?? undefined,
+      fetched_at: row.fetched_at as string | undefined,
       source,
     });
   }

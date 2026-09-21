@@ -49,15 +49,15 @@ try {
     Invoke-Logged @($Python, "crawl_prices_batch.py", "--apply", "--daily", "--all")
 
     "" | Tee-Object -FilePath $LogFile -Append
-    "===== JP all 79 sets =====" | Tee-Object -FilePath $LogFile -Append
+    "===== JP all 82 sets =====" | Tee-Object -FilePath $LogFile -Append
     Invoke-Logged @($Python, "crawl_prices_batch_jp.py", "--apply", "--all")
 
     "" | Tee-Object -FilePath $LogFile -Append
-    "===== KR box prices (all 79 sets) =====" | Tee-Object -FilePath $LogFile -Append
+    "===== KR box prices (all 82 sets) =====" | Tee-Object -FilePath $LogFile -Append
     Invoke-Logged @($Python, "crawl_box_prices_batch.py", "--apply", "--all")
 
     "" | Tee-Object -FilePath $LogFile -Append
-    "===== JP box prices (all 79 sets) =====" | Tee-Object -FilePath $LogFile -Append
+    "===== JP box prices (all 82 sets) =====" | Tee-Object -FilePath $LogFile -Append
     Invoke-Logged @($Python, "crawl_box_prices_batch.py", "--apply", "--all", "--region", "JP")
 } finally {
     Pop-Location

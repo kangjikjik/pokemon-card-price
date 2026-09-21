@@ -23,7 +23,7 @@ import {
   type CardPriceMatrix,
   type PriceGrade,
   type PriceRegion,
-  PRICE_GRADES,
+  VISIBLE_PRICE_GRADES,
 } from '@/lib/price-variant';
 
 type PriceVariantContextValue = {
@@ -132,7 +132,7 @@ export function PriceVariantTabs({
         ))}
       </div>
       <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg w-fit max-w-full flex-wrap">
-        {PRICE_GRADES.map(g => (
+        {VISIBLE_PRICE_GRADES.map(g => (
           <button
             key={g}
             type="button"
@@ -219,7 +219,7 @@ export function PriceMatrix({
         <thead>
           <tr>
             <th className="p-2 text-left text-slate-500 dark:text-slate-400 font-medium w-24" />
-            {PRICE_GRADES.map(g => (
+            {VISIBLE_PRICE_GRADES.map(g => (
               <th
                 key={g}
                 className={cn(
@@ -245,7 +245,7 @@ export function PriceMatrix({
                     {isKr ? '한국' : '일본'}
                   </span>
                 </td>
-                {PRICE_GRADES.map(grade => {
+                {VISIBLE_PRICE_GRADES.map(grade => {
                   const snap = matrix[region][grade];
                   const selected = selectedRegion === region && selectedGrade === grade;
                   const clickable = Boolean(onSelect);

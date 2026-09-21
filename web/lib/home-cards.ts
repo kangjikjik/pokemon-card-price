@@ -17,6 +17,7 @@ const SET_COLORS: Record<string, string> = {
   S11:  'from-indigo-700 to-purple-900',
   S12:  'from-blue-500 to-indigo-700',
   'PRM-MISC': 'from-red-400 to-orange-600',
+  CEL30: 'from-amber-400 to-rose-600',
 };
 
 const CARD_SELECT = `
@@ -90,7 +91,11 @@ async function fetchWeeklyHotCard(supabase: ReturnType<typeof getSupabaseServer>
     .maybeSingle();
 
   if (error || !data) return null;
-  const priceMap = await fetchRecentPricesByCard(supabase, [WEEKLY_HOT_CARD.cardId]);
+  const priceMap = await fetchRecentPricesByCard(
+    supabase,
+    [WEEKLY_HOT_CARD.cardId],
+    { daysBack: 90 },
+  );
   return mapRawToCard(data as Record<string, unknown>, priceMap);
 }
 
