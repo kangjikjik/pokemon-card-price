@@ -46,6 +46,7 @@ export const SET_SHORT_NAMES: Record<string, string> = {
   S7F: '퓨전아츠',
   CEL: '25주년기념컬렉션',
   CEL25PK: '25주년프로모팩',
+  CEL30: '30thCELEBRATION',
   'PRM-GYM01': '짐프로모Vol.1',
   'PRM-GYM02': '짐프로모Vol.2',
   'PRM-GYM03': '짐프로모Vol.3',
