@@ -8,8 +8,9 @@ name: Daily price batch
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 15 * * *"   # UTC 15:00 = KST 00:00
+  # schedule: 일시 중지 (2026-09 Actions 2,000분 한도 소진 — 10/1 리셋 후 필요 시 주석 해제)
+  # schedule:
+  #   - cron: "0 15 * * *"   # UTC 15:00 = KST 00:00
 
 concurrency:
   group: daily-price-crawl
