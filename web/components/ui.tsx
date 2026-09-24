@@ -73,9 +73,9 @@ export const RegionLabel = ({
   const Flag = region === 'KR' ? FlagKR : FlagJP;
   const label = region === 'KR' ? '한국판' : '일본판';
   return (
-    <span className={cn('inline-flex items-center gap-1.5 text-sm leading-none', className)}>
-      <Flag />
-      <span>{label}{suffix}</span>
+    <span className={cn('inline-flex items-center gap-1.5 text-sm leading-none whitespace-nowrap', className)}>
+      <Flag className="shrink-0" />
+      <span className="whitespace-nowrap">{label}{suffix}</span>
     </span>
   );
 };

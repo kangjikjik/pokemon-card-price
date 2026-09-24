@@ -132,15 +132,15 @@ export default async function HomePage() {
                     </div>
                     <h4 className="text-slate-900 dark:text-white font-semibold truncate mb-3">{card.name}</h4>
                     <div className="mt-auto space-y-2">
-                      <div className="flex justify-between items-center">
-                        <RegionLabel region="KR" />
-                        <span className="text-slate-700 dark:text-slate-300 text-sm font-medium">
+                      <div className="flex justify-between items-center gap-2 min-w-0">
+                        <RegionLabel region="KR" className="shrink-0" />
+                        <span className="text-slate-700 dark:text-slate-300 text-sm font-medium whitespace-nowrap tabular-nums shrink-0">
                           {card.priceKR > 0 ? formatKRW(card.priceKR) : '미등록'}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <RegionLabel region="JP" />
-                        <span className="text-slate-700 dark:text-slate-300 text-sm font-medium">
+                      <div className="flex justify-between items-center gap-2 min-w-0">
+                        <RegionLabel region="JP" className="shrink-0" />
+                        <span className="text-slate-700 dark:text-slate-300 text-sm font-medium whitespace-nowrap tabular-nums shrink-0">
                           {card.priceJP > 0 ? formatKRW(card.priceJP) : '미등록'}
                         </span>
                       </div>
