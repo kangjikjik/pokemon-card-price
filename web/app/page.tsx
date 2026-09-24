@@ -62,7 +62,7 @@ export default async function HomePage() {
             </h2>
           </div>
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 md:p-8 flex flex-col md:flex-row gap-8 items-center relative overflow-hidden group hover:border-slate-300 dark:hover:border-slate-700 shadow-sm transition-colors">
-            <div className="w-full md:w-1/3 aspect-[63/88] max-w-[280px] shrink-0 transform group-hover:scale-105 transition-transform duration-500">
+            <div className="w-full md:w-1/3 max-w-[280px] shrink-0 max-sm:transform-none sm:group-hover:scale-105 transition-transform duration-500">
               <CardImage
                 imageUrl={highlightCard.imageUrl}
                 altText={highlightCard.name}
@@ -118,10 +118,13 @@ export default async function HomePage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
               {topCards.map(card => (
                 <Link href={`/cards/${card.id}`} key={card.id} className="group flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:border-amber-500/50 transition-colors shadow-sm hover:shadow-md">
-                  <div className="aspect-[63/88] p-4 bg-slate-50 dark:bg-slate-950">
-                    <div className="w-full h-full relative group-hover:-translate-y-2 group-hover:scale-105 transition-all duration-300">
-                      <CardImage imageUrl={card.imageUrl} altText={card.name} colorClass={card.imageColor} />
-                    </div>
+                  <div className="p-3 sm:p-4 bg-slate-50 dark:bg-slate-950">
+                    <CardImage
+                      imageUrl={card.imageUrl}
+                      altText={card.name}
+                      colorClass={card.imageColor}
+                      className="max-sm:transform-none sm:group-hover:-translate-y-1 sm:group-hover:scale-[1.02] transition-transform duration-300"
+                    />
                   </div>
                   <div className="p-4 flex-1 flex flex-col">
                     <div className="flex justify-between items-start mb-2">
