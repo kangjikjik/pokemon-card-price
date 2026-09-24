@@ -129,7 +129,7 @@ export default function CardDetailPage({ params }: { params: Promise<{ id: strin
       <div className="flex flex-col md:flex-row gap-8 lg:gap-12">
         {/* Card Image */}
         <div className="w-full md:w-1/3 shrink-0">
-          <div className="aspect-[63/88] rounded-2xl p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl relative">
+          <div className="rounded-2xl p-2 sm:p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-2xl">
             <CardImage
               imageUrl={card.imageUrl}
               altText={card.name}

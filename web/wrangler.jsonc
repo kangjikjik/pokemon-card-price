@@ -10,5 +10,19 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  "vars": {
+    "NEXT_PUBLIC_SITE_URL": "https://cardory.cc",
+    "NEXT_PUBLIC_GA_MEASUREMENT_ID": "G-X1MW2PJGN0"
+  },
+  "routes": [
+    {
+      "pattern": "cardory.cc",
+      "custom_domain": true
+    },
+    {
+      "pattern": "www.cardory.cc",
+      "custom_domain": true
+    }
+  ]
 }

@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-  const base = process.env.NEXT_PUBLIC_SITE_URL || 'https://pokemon-card-price.stockpick.workers.dev';
+  const base = (process.env.NEXT_PUBLIC_SITE_URL || 'https://cardory.cc').replace(/\/$/, '');
   return {
     rules: [
       {

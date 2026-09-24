@@ -253,10 +253,13 @@ function CardsPageContent() {
                 onClick={handleCardClick}
                 className="group flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden hover:border-amber-500/50 transition-colors shadow-sm hover:shadow-md"
               >
-                <div className="aspect-[63/88] p-2 bg-slate-50 dark:bg-slate-950">
-                  <div className="w-full h-full relative group-hover:-translate-y-2 group-hover:scale-105 transition-all duration-300">
-                    <CardImage imageUrl={card.imageUrl} altText={card.name} colorClass={card.imageColor} />
-                  </div>
+                <div className="p-2 sm:p-3 bg-slate-50 dark:bg-slate-950">
+                  <CardImage
+                    imageUrl={card.imageUrl}
+                    altText={card.name}
+                    colorClass={card.imageColor}
+                    className="max-sm:transform-none sm:group-hover:-translate-y-1 sm:group-hover:scale-[1.02] transition-transform duration-300"
+                  />
                 </div>
                 <div className="p-4 flex-1 flex flex-col">
                   <div className="flex justify-between items-start mb-2">

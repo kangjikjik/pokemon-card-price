@@ -66,8 +66,24 @@ function isRateLimited(ip: string, ruleKey: string, max: number, windowMs: numbe
   return bucket.count > max;
 }
 
+const CANONICAL_HOST = 'cardory.cc';
+
+function canonicalHostRedirect(req: NextRequest): NextResponse | null {
+  const host = req.headers.get('host') ?? '';
+  if (host.endsWith('.workers.dev') || host === `www.${CANONICAL_HOST}`) {
+    const url = req.nextUrl.clone();
+    url.protocol = 'https';
+    url.hostname = CANONICAL_HOST;
+    return NextResponse.redirect(url, 301);
+  }
+  return null;
+}
+
 // ── 미들웨어 ─────────────────────────────────────────────
 export function middleware(req: NextRequest) {
+  const hostRedirect = canonicalHostRedirect(req);
+  if (hostRedirect) return hostRedirect;
+
   const { pathname } = req.nextUrl;
   const method = req.method.toUpperCase();
 
@@ -102,7 +118,6 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/api/community/:path*',
-    '/api/cards/:id/view',
+    '/((?!_next/static|_next/image|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };

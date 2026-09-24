@@ -19,7 +19,7 @@ const SECURITY_HEADERS = [
     value: [
       "default-src 'self'",
       // 스크립트: self + 인라인(Next.js hydration 필요) + Cloudflare Turnstile(향후)
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com https://www.googletagmanager.com",
       // 스타일: self + 인라인(Tailwind)
       "style-src 'self' 'unsafe-inline'",
       // 이미지: 허용 도메인
@@ -37,7 +37,7 @@ const SECURITY_HEADERS = [
       // 폰트
       "font-src 'self'",
       // 연결: Supabase API + Cloudflare
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://v6.exchangerate-api.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://v6.exchangerate-api.com https://www.google-analytics.com https://analytics.google.com https://*.google-analytics.com https://*.analytics.google.com",
       // 프레임
       "frame-src https://challenges.cloudflare.com",
       "frame-ancestors 'none'",

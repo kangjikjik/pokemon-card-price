@@ -38,6 +38,7 @@ function SetTableBody({ cards }: { cards: SetCardRow[] }) {
             <td className="p-2 w-16">
               <div className="w-12 h-16">
                 <CardImage
+                  fit="fill"
                   imageUrl={card.image_url}
                   altText={card.name_kr || card.name_jp || card.name_en}
                   colorClass="from-slate-400 to-slate-600"

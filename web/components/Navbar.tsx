@@ -69,7 +69,7 @@ export function Navbar() {
         <Link href="/" className="flex items-center gap-2 group shrink-0 justify-self-start">
           <PokeballIcon size="lg" className="group-hover:rotate-180 transition-transform duration-500" />
           <span className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight hidden sm:inline">
-            Poké<span className="text-amber-500">Price</span>
+            Card<span className="text-amber-500">ory</span>
           </span>
         </Link>
 

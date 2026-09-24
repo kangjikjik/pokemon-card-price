@@ -92,25 +92,38 @@ export const CardImage = ({
   altText,
   colorClass,
   className,
+  fit = 'responsive',
 }: {
   imageUrl?: string;
   altText: string;
   colorClass: string;
   className?: string;
+  /** responsive: 카드 비율(63/88) 유지. fill: 부모 크기에 맞춤(테이블 썸네일 등). */
+  fit?: 'responsive' | 'fill';
 }) => {
   if (imageUrl) {
     return (
-      <div className={cn('w-full h-full relative rounded-lg overflow-hidden', className)}>
+      <div
+        className={cn(
+          'relative w-full',
+          fit === 'fill' ? 'h-full' : 'aspect-[63/88]',
+          className,
+        )}
+      >
         <Image
-                src={normalizeCardImageUrl(imageUrl) ?? imageUrl}
+          src={normalizeCardImageUrl(imageUrl) ?? imageUrl}
           alt={altText}
           fill
           sizes="(max-width: 768px) 50vw, 25vw"
-          className="object-contain drop-shadow-xl"
+          className="object-contain object-center p-1.5 sm:p-2 drop-shadow-xl"
           unoptimized
         />
       </div>
     );
   }
-  return <CardPlaceholder colorClass={colorClass} className={className} />;
+  return (
+    <div className={cn('w-full', fit === 'fill' ? 'h-full' : 'aspect-[63/88]', className)}>
+      <CardPlaceholder colorClass={colorClass} className="h-full" />
+    </div>
+  );
 };
