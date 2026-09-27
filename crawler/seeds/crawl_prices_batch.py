@@ -26,6 +26,12 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 from lib.rarity_rank import is_displayable_rarity  # noqa: E402
 from kr_sets import KR_SETS  # noqa: E402
+from lib.crawl_incremental import (  # noqa: E402
+    exit_if_caught_up,
+    get_incremental_days,
+    print_incremental_banner,
+    read_last_crawl_kst,
+)
 from utils.db import get_supabase  # noqa: E402
 
 load_dotenv()
@@ -116,13 +122,19 @@ def run_set(set_code: str, apply: bool, thorough: bool, quiet: bool = True) -> i
         cmd.append("--thorough")
     if quiet:
         cmd.append("--quiet")
-    if "--previous-day" in sys.argv:
-        cmd.append("--previous-day")
+    from lib.crawl_incremental import forward_incremental_flags  # noqa: E402
+    forward_incremental_flags(cmd)
     print(f"\n{'=' * 60}\n>>> {set_code} 시작: {' '.join(cmd)}\n{'=' * 60}")
     return subprocess.call(cmd, cwd=str(SEEDS_DIR))
 
 
 def main() -> None:
+    incr = get_incremental_days(sys.argv, sb)
+    if incr is not None:
+        last = read_last_crawl_kst(sb)
+        print_incremental_banner(incr, last_crawl=last)
+        exit_if_caught_up(incr, last_crawl=last)
+
     apply = "--apply" in sys.argv
     thorough = "--thorough" in sys.argv
     quiet = "--verbose" not in sys.argv
@@ -194,7 +206,6 @@ def main() -> None:
             "KR",
             apply=apply,
             quiet=quiet,
-            previous_day_only="--previous-day" in sys.argv,
         )
         if promo_failed:
             print(f"\n프로모 KR 실패: {', '.join(promo_failed)}")

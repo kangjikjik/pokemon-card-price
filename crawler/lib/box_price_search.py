@@ -6,7 +6,7 @@ import unicodedata
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
-from lib.box_image_verify import BoxImageVerifier
+from lib.trade_sources import SOLD_MAX_AGE_DAYS
 from lib.price_search import (
     BUY_KEYWORDS,
     CARD_NUMBER_RE,
@@ -36,8 +36,13 @@ MULTI_SET_BOX_RE = re.compile(r"(\d{1,2})\s*(?:박스|box|BOX)", re.I)
 BUNJANG_STATUS_SOLD = frozenset({"3", 3})
 BUNJANG_STATUS_SELLING = frozenset({"0", 0})
 
-# 거래완료가 이 기간보다 오래되면 판매중 호가로 전환
-SOLD_MAX_AGE_DAYS = 90
+def _within_max_age(updated_at: int) -> bool:
+    """게시·거래 시각이 180일 이내인지. 시각이 없으면 유지한다."""
+    if updated_at <= 0:
+        return True
+    cutoff = datetime.now(timezone.utc) - timedelta(days=SOLD_MAX_AGE_DAYS)
+    occurred = datetime.fromtimestamp(updated_at, tz=timezone.utc)
+    return occurred >= cutoff
 
 
 @dataclass(frozen=True)
@@ -353,11 +358,10 @@ def _collect_verified_box_quotes(
     msrp_box_kr: int,
     msrp_pack_kr: int,
     is_jp: bool,
-    verifier: BoxImageVerifier | None,
     *,
     allow_opened: bool = False,
 ) -> tuple[list[VerifiedBoxQuote], list[VerifiedBoxQuote]]:
-    """제목·가격·이미지 검증 통과 매물 → (거래완료, 판매중)."""
+    """제목·가격·수량 필터 통과 매물 → (거래완료, 판매중)."""
     lo, hi = box_price_bounds(msrp_box_kr, msrp_pack_kr)
     sold: list[VerifiedBoxQuote] = []
     listings: list[VerifiedBoxQuote] = []
@@ -386,17 +390,12 @@ def _collect_verified_box_quotes(
             continue
         if unit < lo or unit > hi:
             continue
-        if verifier is not None and not verifier.matches(item):
-            continue
 
         pid = str(item.get("pid", "") or "")
         quote = VerifiedBoxQuote(price=unit, updated_at=_bunjang_update_time(item), pid=pid)
+        if not _within_max_age(quote.updated_at):
+            continue
         if _is_bunjang_sold(item):
-            if quote.updated_at > 0:
-                cutoff = datetime.now(timezone.utc) - timedelta(days=SOLD_MAX_AGE_DAYS)
-                occurred = datetime.fromtimestamp(quote.updated_at, tz=timezone.utc)
-                if occurred < cutoff:
-                    continue
             sold.append(quote)
         elif _is_bunjang_listing(item):
             listings.append(quote)
@@ -409,12 +408,11 @@ def filter_bunjang_kr_box_quotes(
     set_code: str,
     msrp_box_kr: int,
     msrp_pack_kr: int = 0,
-    verifier: BoxImageVerifier | None = None,
     *,
     allow_opened: bool = False,
 ) -> tuple[list[VerifiedBoxQuote], list[VerifiedBoxQuote]]:
     return _collect_verified_box_quotes(
-        items, set_name_kr, set_code, msrp_box_kr, msrp_pack_kr, False, verifier,
+        items, set_name_kr, set_code, msrp_box_kr, msrp_pack_kr, False,
         allow_opened=allow_opened,
     )
 
@@ -425,12 +423,11 @@ def filter_bunjang_jp_box_quotes(
     set_code: str,
     msrp_box_krw: int,
     msrp_pack_krw: int = 0,
-    verifier: BoxImageVerifier | None = None,
     *,
     allow_opened: bool = False,
 ) -> tuple[list[VerifiedBoxQuote], list[VerifiedBoxQuote]]:
     return _collect_verified_box_quotes(
-        items, set_name_kr, set_code, msrp_box_krw, msrp_pack_krw, True, verifier,
+        items, set_name_kr, set_code, msrp_box_krw, msrp_pack_krw, True,
         allow_opened=allow_opened,
     )
 
@@ -475,7 +472,7 @@ def filter_bunjang_box_listings(
 ) -> list[int]:
     """판매중 호가 가격만 (레거시 — 크림 등)."""
     _, listings = filter_bunjang_kr_box_quotes(
-        items, set_name_kr, set_code, msrp_box_kr, msrp_pack_kr, verifier=None
+        items, set_name_kr, set_code, msrp_box_kr, msrp_pack_kr
     )
     return [q.price for q in listings]
 
@@ -685,7 +682,7 @@ def filter_bunjang_jp_box_listings(
 ) -> list[int]:
     """판매중 호가 가격만 (레거시 — 크림 등)."""
     _, listings = filter_bunjang_jp_box_quotes(
-        items, set_name_kr, set_code, msrp_box_krw, msrp_pack_krw, verifier=None
+        items, set_name_kr, set_code, msrp_box_krw, msrp_pack_krw
     )
     return [q.price for q in listings]
 
@@ -837,12 +834,9 @@ def _collect_verified_pack_quotes(
             continue
         pid = str(item.get("pid", "") or "")
         quote = VerifiedBoxQuote(price=unit, updated_at=_bunjang_update_time(item), pid=pid)
+        if not _within_max_age(quote.updated_at):
+            continue
         if _is_bunjang_sold(item):
-            if quote.updated_at > 0:
-                cutoff = datetime.now(timezone.utc) - timedelta(days=SOLD_MAX_AGE_DAYS)
-                occurred = datetime.fromtimestamp(quote.updated_at, tz=timezone.utc)
-                if occurred < cutoff:
-                    continue
             sold.append(quote)
         elif _is_bunjang_listing(item):
             listings.append(quote)
@@ -855,9 +849,8 @@ def filter_bunjang_kr_pack_quotes(
     set_code: str,
     msrp_box_kr: int,
     msrp_pack_kr: int = 0,
-    verifier: BoxImageVerifier | None = None,
     *,
     allow_opened: bool = False,
 ) -> tuple[list[VerifiedBoxQuote], list[VerifiedBoxQuote]]:
-    del msrp_box_kr, verifier, allow_opened
+    del msrp_box_kr, allow_opened
     return _collect_verified_pack_quotes(items, set_name_kr, set_code, msrp_pack_kr)

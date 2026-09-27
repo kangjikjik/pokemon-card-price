@@ -81,10 +81,14 @@ function canonicalHostRedirect(req: NextRequest): NextResponse | null {
 
 // ── 미들웨어 ─────────────────────────────────────────────
 export function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+  // sitemap·robots는 미들웨어를 타면 구글 서치 콘솔이 가져오기에 실패한다.
+  if (pathname === '/robots.txt' || pathname === '/sitemap.xml' || pathname.startsWith('/sitemap/')) {
+    return NextResponse.next();
+  }
+
   const hostRedirect = canonicalHostRedirect(req);
   if (hostRedirect) return hostRedirect;
-
-  const { pathname } = req.nextUrl;
   const method = req.method.toUpperCase();
 
   // IP: Cloudflare → CF-Connecting-IP, 그 외 X-Forwarded-For
@@ -118,6 +122,6 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next/static|_next/image|sitemap\\.xml|robots\\.txt|sitemap/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };

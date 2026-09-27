@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
 import { CARDS_LIST_SET_CODES } from '@/lib/constants';
-import { isDisplayableRarity, normalizeRarity } from '@/lib/rarity';
+import { DISPLAY_RARITIES, RARITY_ALIASES } from '@/lib/rarity';
+
+function rawRarities(code: string): string[] {
+  const aliases = Object.entries(RARITY_ALIASES)
+    .filter(([, value]) => value === code)
+    .map(([key]) => key);
+  return [...new Set([code, ...aliases])];
+}
 
 export async function GET() {
   try {
@@ -15,36 +22,29 @@ export async function GET() {
     const featuredSetIds = (featuredSets || []).map((s) => s.id);
     if (featuredSetIds.length === 0) throw new Error('No featured sets');
 
-    const BATCH = 1000;
     const counts = new Map<string, number>();
+    const results = await Promise.all(
+      DISPLAY_RARITIES.map(async (code) => {
+        const { count, error } = await supabase
+          .from('cards')
+          .select('id', { count: 'exact', head: true })
+          .in('set_id', featuredSetIds)
+          .in('rarity', rawRarities(code));
+        if (error) throw error;
+        return [code, count ?? 0] as const;
+      }),
+    );
+
     let total = 0;
-    let offset = 0;
-
-    while (true) {
-      const { data, error } = await supabase
-        .from('cards')
-        .select('rarity')
-        .in('set_id', featuredSetIds)
-        .order('id', { ascending: true })
-        .range(offset, offset + BATCH - 1);
-
-      if (error) throw error;
-      if (!data || data.length === 0) break;
-
-      for (const row of data) {
-        const rarity = normalizeRarity((row.rarity as string) || '');
-        if (!isDisplayableRarity(rarity)) continue;
-        total += 1;
-        counts.set(rarity, (counts.get(rarity) || 0) + 1);
-      }
-
-      if (data.length < BATCH) break;
-      offset += BATCH;
+    for (const [code, count] of results) {
+      if (count <= 0) continue;
+      counts.set(code, count);
+      total += count;
     }
 
     return NextResponse.json(
       { total, byRarity: Object.fromEntries(counts), source: 'db' },
-      { headers: { 'Cache-Control': 'no-store' } },
+      { headers: { 'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=600' } },
     );
   } catch {
     return NextResponse.json({ total: 0, byRarity: {}, source: 'mock' });

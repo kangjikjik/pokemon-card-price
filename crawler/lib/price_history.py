@@ -5,6 +5,8 @@ import time
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable
 
+from lib.trade_reconcile import reconcile_box_rows, reconcile_card_rows
+
 KST = timezone(timedelta(hours=9))
 
 _MAX_RETRIES = 5
@@ -60,6 +62,8 @@ def save_daily_snapshots(
     if not card_ids:
         return 0, 0
 
+    rows, _ = reconcile_card_rows(sb, table, card_ids, rows)
+
     start, end = kst_day_bounds_utc()
     deleted = 0
     # Supabase in_ 필터 한도 대비 배치
@@ -99,6 +103,8 @@ def save_daily_box_snapshots(
     """
     if not set_ids:
         return 0, 0
+
+    rows, _ = reconcile_box_rows(sb, set_ids, region, rows)
 
     start, end = kst_day_bounds_utc()
     deleted = 0
@@ -147,6 +153,7 @@ def save_incremental_snapshots(
         .data
         or []
     )
+    rows, _ = reconcile_card_rows(sb, table, card_ids, rows, existing=existing)
     existing_sources = {
         (int(row["card_id"]), str(row.get("source") or ""))
         for row in existing
@@ -214,6 +221,7 @@ def save_incremental_box_snapshots(
         .data
         or []
     )
+    rows, _ = reconcile_box_rows(sb, set_ids, region, rows, existing=existing)
     existing_sources = {
         (int(row["set_id"]), str(row.get("region") or ""), str(row.get("source") or ""))
         for row in existing

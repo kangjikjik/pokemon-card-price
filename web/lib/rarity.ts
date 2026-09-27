@@ -2,16 +2,14 @@
 
 export const EXCLUDED_RARITIES = new Set([
   "U", "C", "SA", "N", "CM", "UM", "PROMO", "R",
-  /** collectory: 마스터볼 미러 카드번호 접미사 M — 공식 단독 등급명 아님 */
+  /** 151 마스터볼 미러 — 수집·노출 제외 */
+  "RM",
 ]);
 
 /** collectory/구 DB → 표준 등급 */
 export const RARITY_ALIASES: Record<string, string> = {
   "UR-ex": "SR",
   IR: "AR",
-  /** 나무위키 𖤓 빛나는 전설 */
-  Shining: "SL",
-  SHINING: "SL",
   /** 30th CELEBRATION 신규 */
   "Futuristic Rare": "FUR",
   "Pikachu Rare": "PKR",
@@ -54,8 +52,8 @@ export const RARITY_LABELS: Record<string, string> = {
   PKR: "피카츄레어",
   H: "홀로",
   HR: "하이퍼레어",
-  RM: "마스터볼 미러",
-  SL: "빛나는",
+  /** CEL30 Classic Collection 136~165 */
+  CC: "복각",
   PR: "프리즘스타",
   TR: "트레이너스레어",
   RRR: "트리플레어",
@@ -78,6 +76,8 @@ export const RARITY_RANK: Record<string, number> = {
   UR: 29,
   BWR: 28,
   SAR: 27,
+  /** 30주년 Classic Collection(136~165) — PKR 위 */
+  CC: 27,
   PKR: 26,
   MA: 25,
   SR: 24,
@@ -94,12 +94,9 @@ export const RARITY_RANK: Record<string, number> = {
   K: 15,
   S: 14,
   TR: 13,
-  SL: 12,
   H: 11,
   /** 더블레어 — 히트 중 가장 낮음 */
   RR: 10,
-  /** 포켓몬 카드 151 마스터볼 미러 */
-  RM: 11,
   R: 3,
   U: 2,
   C: 1,
@@ -107,7 +104,7 @@ export const RARITY_RANK: Record<string, number> = {
 };
 
 /** 현 등급 필터·정렬 순서: MUR → RR */
-const CURRENT_RARITIES = ["FUR", "MUR", "UR", "BWR", "SAR", "PKR", "MA", "SR", "ACE", "AR", "RM", "RR"] as const;
+const CURRENT_RARITIES = ["FUR", "MUR", "UR", "BWR", "SAR", "CC", "PKR", "MA", "SR", "ACE", "AR", "RR"] as const;
 const LEGACY_RARITIES = ["SSR", "HR", "CSR", "CHR", "RRR", "A", "K", "S", "PR", "TR", "P"] as const;
 
 function sortByRarityDesc(codes: readonly string[]): string[] {

@@ -1,4 +1,4 @@
-"""Collectory KR 데이터로 CEL30(30th CELEBRATION) 시드."""
+"""Collectory 데이터로 CEL30(30th CELEBRATION) 시드 — Classic Collection(CC) 136~165 포함."""
 
 from __future__ import annotations
 
@@ -39,6 +39,43 @@ RARITY_FROM_COLLECTORY = {
 PIKACHU_PKR_FIRST = 17
 PIKACHU_PKR_LAST = 46
 
+CLASSIC_COLLECTION_FIRST = 136
+CLASSIC_COLLECTION_LAST = 165
+
+# Classic Collection 136/103~165/103 — 공식 한글명 (Collectory KR 없을 때)
+CLASSIC_NAME_KR: dict[str, str] = {
+    "136/103": "피카츄",
+    "137/103": "리자몽",
+    "138/103": "이슬",
+    "139/103": "푸린",
+    "140/103": "포푸니",
+    "141/103": "빛나는 세레비",
+    "142/103": "루기아",
+    "143/103": "델케티",
+    "144/103": "나쁜 마기라스",
+    "145/103": "핫삼 ex",
+    "146/103": "메타그로스",
+    "147/103": "펄기아 LV.X",
+    "148/103": "유크시",
+    "149/103": "크로뱃",
+    "150/103": "팬텀",
+    "151/103": "다크라이&크레세리아 LEGEND",
+    "152/103": "다크라이&크레세리아 LEGEND",
+    "153/103": "N",
+    "154/103": "레쿠쟈 EX",
+    "155/103": "게노세크트 EX",
+    "156/103": "M 가디안 EX",
+    "157/103": "개굴닌자 BREAK",
+    "158/103": "솔가레오",
+    "159/103": "매시붕 GX",
+    "160/103": "피카츄&제크로무 GX",
+    "161/103": "자시안 V",
+    "162/103": "라이코",
+    "163/103": "뮤 VMAX",
+    "164/103": "아르세우스 VSTAR",
+    "165/103": "잉어킹",
+}
+
 
 def pikachu_pkr_index(card_number: str) -> int | None:
     num = normalize_card_number(card_number)
@@ -56,18 +93,42 @@ def pikachu_pkr_name_kr(card_number: str) -> str | None:
     return f"{idx}번 피카츄" if idx else None
 
 
-# collectory KR 행에 레어도가 없는 30주년 역사 카드 reprint
-RARITY_OVERRIDES: dict[str, str] = {
-    "137/103": "SL",
-    "142/103": "SL",
-    "160/103": "SL",
-    "163/103": "SL",
-    "165/103": "SL",
-}
+def is_classic_collection(card_number: str) -> bool:
+    num = normalize_card_number(card_number)
+    if "/" not in num:
+        return False
+    try:
+        n = int(num.split("/")[0])
+    except ValueError:
+        return False
+    return num.endswith("/103") and CLASSIC_COLLECTION_FIRST <= n <= CLASSIC_COLLECTION_LAST
 
 
-def resolve_rarity(card: dict, siblings: list[dict]) -> str:
-    num = normalize_card_number(card.get("card_number") or "")
+def pick_kr_row(rows: list[dict]) -> dict | None:
+    return next(
+        (r for r in rows if "/kr/" in (r.get("cdn_image_url") or r.get("image_url") or "")),
+        None,
+    )
+
+
+def pick_jp_row(rows: list[dict]) -> dict | None:
+    return next(
+        (r for r in rows if "/jp/" in (r.get("cdn_image_url") or r.get("image_url") or "")),
+        None,
+    )
+
+
+def pick_card_row(number: str, rows: list[dict]) -> dict | None:
+    kr = pick_kr_row(rows)
+    if is_classic_collection(number):
+        return kr or pick_jp_row(rows) or (rows[0] if rows else None)
+    return kr
+
+
+def resolve_rarity(card: dict, siblings: list[dict], number: str) -> str:
+    if is_classic_collection(number):
+        return "CC"
+    num = normalize_card_number(number)
     if pikachu_pkr_index(num):
         return "PKR"
     raw = (card.get("rarity") or "").strip()
@@ -76,11 +137,21 @@ def resolve_rarity(card: dict, siblings: list[dict]) -> str:
     raw = RARITY_FROM_COLLECTORY.get(raw, raw)
     if raw:
         return raw
-    num = normalize_card_number(card.get("card_number") or "")
-    if num in RARITY_OVERRIDES:
-        return RARITY_OVERRIDES[num]
     parsed = parse_rarity(card)
     return parsed or ""
+
+
+def resolve_name_kr(number: str, card: dict) -> str:
+    pkr = pikachu_pkr_name_kr(number)
+    if pkr:
+        return pkr
+    num = normalize_card_number(number)
+    if num in CLASSIC_NAME_KR:
+        return CLASSIC_NAME_KR[num]
+    from_collectory = pick_name_ko(card, None)
+    if from_collectory and any("\uac00" <= c <= "\ud7a3" for c in from_collectory):
+        return from_collectory
+    return from_collectory or num
 
 
 def fetch_cards() -> list[dict]:
@@ -97,19 +168,22 @@ def main() -> None:
         by_number[normalize_card_number(card.get("card_number") or "")].append(card)
 
     candidates: list[tuple[str, dict, str]] = []
+    classic_seen = 0
     for number, rows in sorted(by_number.items()):
         if not number:
             continue
-        kr = next((r for r in rows if "/kr/" in (r.get("cdn_image_url") or r.get("image_url") or "")), None)
-        if not kr:
+        card = pick_card_row(number, rows)
+        if not card:
             continue
-        rarity = resolve_rarity(kr, rows)
+        rarity = resolve_rarity(card, rows, number)
         if not is_displayable_rarity(rarity):
             continue
-        candidates.append((number, kr, rarity))
+        if is_classic_collection(number):
+            classic_seen += 1
+        candidates.append((number, card, rarity))
 
     print(f"mode={'APPLY' if APPLY else 'DRY-RUN'}")
-    print(f"KR displayable cards={len(candidates)}")
+    print(f"displayable cards={len(candidates)} (CC classic={classic_seen})")
 
     set_patch = {
         "set_code": SET_CODE,
@@ -132,7 +206,7 @@ def main() -> None:
     inserted = updated = 0
     for number, card, rarity in candidates:
         image_url = (card.get("cdn_image_url") or card.get("image_url") or "").strip()
-        name_kr = pikachu_pkr_name_kr(number) or pick_name_ko(card, None)
+        name_kr = resolve_name_kr(number, card)
         payload = {
             "set_id": set_id,
             "card_number": number,
@@ -144,7 +218,8 @@ def main() -> None:
             "image_url": image_url,
         }
         if not APPLY:
-            print(f"  [dry] {number} {payload['name_kr']} {rarity}")
+            img_lang = "KR" if "/kr/" in image_url else "JP" if "/jp/" in image_url else "?"
+            print(f"  [dry] {number} {name_kr} {rarity} img={img_lang}")
             continue
 
         existing = (

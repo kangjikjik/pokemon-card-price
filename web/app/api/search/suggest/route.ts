@@ -5,7 +5,7 @@ import { CARDS_LIST_SET_CODES } from '@/lib/constants';
 import { mapRawSet } from '@/lib/set-map';
 import { getSetShortName } from '@/lib/set-names';
 import { isDisplayableRarity, normalizeRarity } from '@/lib/rarity';
-import { matchesSearchQuery, searchIlikePattern, setMatchesSearchQuery } from '@/lib/search';
+import { cardNameSearchOr, matchesSearchQuery, setMatchesSearchQuery } from '@/lib/search';
 
 const SEARCH_SET_CODES = [...CARDS_LIST_SET_CODES];
 
@@ -16,8 +16,6 @@ export async function GET(request: NextRequest) {
   if (!q) {
     return NextResponse.json({ cards: [], sets: [] });
   }
-
-  const pattern = searchIlikePattern(q);
 
   try {
     const supabase = getSupabaseServer();
@@ -46,11 +44,7 @@ export async function GET(request: NextRequest) {
       .filter(s => setMatchesSearchQuery(s.set_code || '', q, s.name_kr))
       .map(s => s.id);
 
-    const nameOr = `name_kr.ilike.${pattern},name_jp.ilike.${pattern},name_en.ilike.${pattern}`;
-    const cardFilter =
-      matchingSetIds.length > 0
-        ? `${nameOr},set_id.in.(${matchingSetIds.join(',')})`
-        : nameOr;
+    const cardFilter = cardNameSearchOr(q, matchingSetIds);
 
     const { data: cards, error } = await supabase
       .from('cards')

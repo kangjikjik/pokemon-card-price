@@ -17,6 +17,22 @@ export function searchIlikePattern(query: string): string {
   return `%${compact}%`;
 }
 
+/**
+ * 카드 이름 검색 필터.
+ * 글자 사이 공백은 무시한다. "가라르파이어"와 "가라르 파이어"가 같다.
+ */
+export function cardNameSearchOr(query: string, matchingSetIds: number[] = []): string {
+  const compact = compactSearchText(query);
+  const escaped = compact.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const regex = escaped.split('').join('\\s*');
+  const quoted = `"${regex.replace(/\\/g, '\\\\').replace(/"/g, '')}"`;
+  const nameOr = ['name_kr', 'name_jp', 'name_en']
+    .map(column => `${column}.imatch.${quoted}`)
+    .join(',');
+  if (matchingSetIds.length === 0) return nameOr;
+  return `${nameOr},set_id.in.(${matchingSetIds.join(',')})`;
+}
+
 /** 세트 코드·짧은 이름·DB 이름으로 검색어 매칭 */
 export function setMatchesSearchQuery(
   setCode: string,

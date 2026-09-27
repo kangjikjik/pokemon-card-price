@@ -18,11 +18,42 @@ concurrency:
 
 jobs:
 
+  # ─── 0. 180일 초과 상세 행 정리 (TRADE §11) ─────────────────
+  purge-stale:
+    name: Purge stale trade details
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install -r crawler/requirements.txt
+
+      - name: Purge 180d+ detail rows + SNKRDUNK legacy
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        working-directory: crawler/seeds
+        run: python purge_stale_trade_details.py --apply
+
+      - name: Reconcile listing→sold duplicate PIDs (§13)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        working-directory: crawler/seeds
+        run: python reconcile_listing_to_sold.py --apply
+
   # ─── 1. KR 카드 시세 ─────────────────────────────────────
   kr-cards:
     name: KR cards (82 sets)
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    needs: purge-stale
 
     steps:
       - uses: actions/checkout@v4
@@ -45,13 +76,14 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         working-directory: crawler/seeds
-        run: python crawl_prices_batch.py --apply --daily --all --previous-day
+        run: python crawl_prices_batch.py --apply --daily --all --catch-up
 
   # ─── 2. JP 카드 시세 ─────────────────────────────────────
   jp-cards:
     name: JP cards (82 sets)
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    needs: purge-stale
 
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +107,7 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           EXCHANGE_RATE_API_KEY: ${{ secrets.EXCHANGE_RATE_API_KEY }}
         working-directory: crawler/seeds
-        run: python crawl_prices_batch_jp.py --apply --all --previous-day
+        run: python crawl_prices_batch_jp.py --apply --all --catch-up
 
   # ─── 3. KR 박스 시세 ─────────────────────────────────────
   kr-boxes:
@@ -99,7 +131,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         working-directory: crawler/seeds
-        run: python crawl_box_prices_batch.py --apply --all --previous-day
+        run: python crawl_box_prices_batch.py --apply --all --catch-up
 
   # ─── 4. JP 박스 시세 ─────────────────────────────────────
   jp-boxes:
@@ -123,4 +155,4 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         working-directory: crawler/seeds
-        run: python crawl_box_prices_batch.py --apply --all --region JP --previous-day
+        run: python crawl_box_prices_batch.py --apply --all --region JP --catch-up

@@ -1,4 +1,4 @@
-"""일본판 raw 싱글 — 번개·크림·Collectory 거래내역 검색·필터."""
+"""일본판 raw 싱글 — 번개장터 검색·필터 (TRADE_CRAWL_CRITERIA.md)."""
 from __future__ import annotations
 
 import re
@@ -9,6 +9,7 @@ from lib.bunjang_market_names import (
     title_matches_bunjang_name,
 )
 from lib.price_search import (
+    BOUNDED_RARITY_CODES,
     BUY_KEYWORDS,
     CARD_NUMBER_RE,
     GRADED_KEYWORDS,
@@ -17,10 +18,13 @@ from lib.price_search import (
     RARITY_TOKENS,
     _is_goods_listing,
     _is_multi_card_sale,
-    calculate_median_price,
     card_number_in_title,
+    title_has_bounded_rarity,
+    title_has_card_form,
     title_has_commemorative_year,
-    title_has_sl_reprint,
+    title_has_cc_reprint,
+    title_is_other_commemorative,
+    title_matches_set_discriminator,
 )
 
 JP_RARITY_EQUIV: dict[str, set[str]] = {
@@ -103,11 +107,17 @@ def _is_graded_listing(title: str) -> bool:
 
 
 def _title_matches_jp_rarity(title: str, rarity: str, set_code: str = "") -> bool:
-    from lib.price_search import is_cel30_sl  # noqa: PLC0415
+    from lib.price_search import is_cel30_cc  # noqa: PLC0415
 
-    if is_cel30_sl(set_code, rarity):
+    if is_cel30_cc(set_code, rarity):
         return True
     r = (rarity or "").upper()
+    if r == "S":
+        from lib.price_search import title_has_non_s_rarity  # noqa: PLC0415
+
+        return not title_has_non_s_rarity(title)
+    if r in BOUNDED_RARITY_CODES:
+        return title_has_bounded_rarity(title, r)
     t = title.upper()
     equiv = JP_RARITY_EQUIV.get(r, {r})
     tokens: set[str] = set()
@@ -154,7 +164,11 @@ def is_raw_jp_listing(
     name_en: str = "",
     set_code: str = "",
 ) -> bool:
-    """일본판 raw 싱글 (번개)."""
+    """일본판 raw 싱글 (번개). 한국 한정 프로모는 §16.3·§17.3에서 즉시 False."""
+    from lib.promo_exclusive import is_kr_exclusive_promo  # noqa: PLC0415
+
+    if is_kr_exclusive_promo(set_code, card_number):
+        return False  # M-P KR 전용 검증(promo_mp_kr_listing_valid)은 JP 경로에 없음
     if not title.strip():
         return False
     if any(k in title for k in BUY_KEYWORDS):
@@ -163,6 +177,14 @@ def is_raw_jp_listing(
         return False
     if _is_graded_listing(title):
         return False
+    if any(k in title for k in ("미판", "북미", "미국판", "영문판", "영판")):
+        return False
+    if title_is_other_commemorative(title, set_code):
+        return False
+    if not title_has_card_form(title, name_kr):
+        return False
+    if not title_matches_set_discriminator(title, name_kr, rarity, card_number, set_code):
+        return False
     from lib.trainer_item_cards import skip_card_number_in_title  # noqa: PLC0415
 
     is_trainer_item = skip_card_number_in_title(set_code, card_number, name_jp)
@@ -170,7 +192,7 @@ def is_raw_jp_listing(
         return False
     if not title_has_commemorative_year(title, set_code):
         return False
-    if not title_has_sl_reprint(title, rarity):
+    if not title_has_cc_reprint(title, rarity):
         return False
     if _is_bundle_listing(title):
         return False
@@ -190,6 +212,10 @@ def is_raw_jp_listing(
     if num and not skip_card_number_in_title(set_code, card_number, name_jp):
         if not card_number_in_title(title, num):
             return False
+    from lib.art_split import title_matches_split_art  # noqa: PLC0415
+
+    if not title_matches_split_art(title, name_kr, rarity, card_number, set_code):
+        return False
     return True
 
 
@@ -216,35 +242,3 @@ def filter_bunjang_jp_listings(
             continue
         prices.append(price)
     return prices
-
-
-def resolve_jp_tiered_price(
-    sold: list[int],
-    listings: list[int],
-    *,
-    calculate_median_price_fn=calculate_median_price,
-) -> tuple[int, int, str]:
-    from lib.price_resolve import aggregate_prices, resolve_listing_price
-
-    sold = [p for p in sold if p > 0]
-    listings = [p for p in listings if p > 0]
-    if sold:
-        price = aggregate_prices(
-            sold,
-            "SAR",
-            calculate_median_price=calculate_median_price_fn,
-            calculate_trimmed_mean=calculate_median_price_fn,
-            calculate_conservative_price=calculate_median_price_fn,
-        )
-        return price, len(sold), "sold:collectory"
-    if listings:
-        price, _ = resolve_listing_price(
-            listings,
-            ["bunjang"] * len(listings),
-            "SAR",
-            calculate_median_price=calculate_median_price_fn,
-            calculate_trimmed_mean=calculate_median_price_fn,
-        )
-        if price > 0:
-            return price, len(listings), "listing:bunjang+kream"
-    return 0, 0, "none"

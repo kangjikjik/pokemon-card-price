@@ -46,10 +46,21 @@ RARITY_TOKENS: dict[str, list[str]] = {
     "RRR": ["RRR", "트리플레어"],
     "RR": ["RR", "더블레어", "더블 레어", "더블"],
     "P": ["P", "프로모", "PROMO", "프로모션"],
+    # BWR에 "BW"를 넣지 않는다. 판정은 BOUNDED_RARITY_CODES (§3.1).
     "BWR": ["BWR"],
     "MA": ["MA", "메가어택"],
     "FUR": ["FUR"],
 }
+
+# 부분 문자열로 통과시키면 안 되는 등급. TRADE_CRAWL_CRITERIA.md §3.1
+# BW ⊂ BWR 처럼 짧은 코드가 검색·제목에 섞여도 긴 등급으로 저장하지 않는다.
+BOUNDED_RARITY_CODES = frozenset({"BWR"})
+
+# S등급 제목에 다른 등급 코드가 있으면 이로치 매물이 아니다. S 한 글자는 없어도 된다.
+_NON_S_RARITY_RE = re.compile(
+    r"(?<![A-Za-z])(?:MUR|SAR|SSR|CSR|CHR|RRR|BWR|ACE|FUR|HR|SR|AR|UR|RR|TR|PR|MA)(?![A-Za-z])",
+    re.IGNORECASE,
+)
 
 CARD_NUMBER_RE = re.compile(r"\b(\d{1,3}/\d{1,3})\b")
 
@@ -119,10 +130,23 @@ BUY_KEYWORDS = [
     "대량매입", "매입)", "매입]", "구매 잉", "구매해요",
 ]
 
-# 띠부띠부씰·굿즈 (싱글 카드 거래 아님)
+# 띠부띠부씰·인형·몬콜레 등 싱글 카드가 아닌 상품
 GOODS_EXCLUDE_KEYWORDS = [
     "띠부실", "띠부씰", "띠부띠부", "띠부", "굿즈)",
+    "인형", "몬콜레", "몬 콜레",
 ]
+
+# 포켓몬 이름 바로 뒤에 붙어도 같은 카드인 표기. 메탕구의 '구'는 여기 없다.
+_NAME_TAIL_PREFIXES = (
+    "이로치",
+    "카드",
+    "일판",
+    "한판",
+    "일본판",
+    "한국판",
+    "한글판",
+    "일어판",
+)
 
 PROMO_MP_NUMBER_RE = re.compile(r"\d{2,3}/M-P", re.I)
 
@@ -246,9 +270,82 @@ def title_has_commemorative_year(title: str, set_code: str) -> bool:
     return required in title
 
 
-def title_has_sl_reprint(title: str, rarity: str) -> bool:
-    """SL — 제목에 복각 표기 필수 (구세트·오매칭 제외)."""
-    if (rarity or "").upper() != "SL":
+def title_is_other_commemorative(title: str, set_code: str) -> bool:
+    """기념 세트가 아닌 카드에 25주년·30주년 매물이 섞이면 제외."""
+    if (set_code or "").upper() in COMMEMORATIVE_YEAR_IN_TITLE:
+        return False
+    text = title or ""
+    return "30주년" in text or "25주년" in text
+
+
+_FORM_TOKENS = ("VSTAR", "VMAX", "GX", "V")
+
+
+def card_form_token(name_kr: str) -> str | None:
+    """카드명의 VSTAR·VMAX·GX·V. ex는 생략 가능하므로 여기서 다루지 않는다."""
+    compact = re.sub(r"\s+", "", normalize_mega_spelling(name_kr or "")).upper()
+    for token in _FORM_TOKENS:
+        if compact.endswith(token):
+            return token
+    return None
+
+
+def title_has_card_form(title: str, name_kr: str) -> bool:
+    """님피아 V는 제목에 V가 있어야 한다. VMAX·VSTAR·GX는 서로 다른 카드다."""
+    token = card_form_token(name_kr)
+    if not token:
+        return True
+    text = title or ""
+    if token == "V":
+        if re.search(r"VMAX|VSTAR", text, re.I):
+            return False
+        return re.search(r"(?<![A-Za-z])V(?!MAX|STAR|[A-Za-z])", text, re.I) is not None
+    if token == "GX":
+        return re.search(r"(?<![A-Za-z])GX(?![A-Za-z])", text, re.I) is not None
+    return re.search(rf"(?<![A-Za-z]){token}(?![A-Za-z])", text, re.I) is not None
+
+
+def title_matches_set_discriminator(
+    title: str,
+    name_kr: str,
+    rarity: str,
+    card_number: str,
+    set_code: str,
+) -> bool:
+    """같은 이름·등급이 여러 팩에 있을 때 팩 또는 카드번호로 가른다."""
+    code = (set_code or "").upper()
+    r = (rarity or "").upper()
+    text = title or ""
+    compact = re.sub(r"\s+", "", text)
+    if r == "S":
+        return "이로치" in text and not title_has_non_s_rarity(text)
+    if code == "SV4" and "팬텀" in (name_kr or "") and r == "RR":
+        return "와일드포스" in compact or "와일드 포스" in text
+    if "님피아" in (name_kr or "") and card_form_token(name_kr) == "V" and r == "RR":
+        lowered = text.lower()
+        if "드림기프트" in text or "vmax" in lowered:
+            return False
+        if code == "S6H" and ("s8b" in lowered or "073/184" in text):
+            return False
+        if code == "S8B" and ("040/069" in text or "s6h" in lowered):
+            return False
+    if "무쇠무인" in (name_kr or "") and r == "SAR" and code in ("SV4M", "SV8"):
+        has_future = (
+            "미래의 일섬" in text
+            or "미래일섬" in compact
+            or "089/066" in text
+            or "89/066" in text
+        )
+        has_tera = "테라스탈" in text or "테라스텔" in text or "213/187" in text
+        if code == "SV4M":
+            return has_future and not has_tera
+        return has_tera and not has_future
+    return True
+
+
+def title_has_cc_reprint(title: str, rarity: str) -> bool:
+    """CC(복각) — 제목에 복각 표기 필수 (구세트·오매칭 제외)."""
+    if (rarity or "").upper() != "CC":
         return True
     return "복각" in title
 
@@ -276,9 +373,9 @@ def match_pikachu_pkr_name_in_title(title: str, name_kr: str) -> bool:
     return any(p.replace(" ", "") in compact for p in patterns)
 
 
-def is_cel30_sl(set_code: str, rarity: str) -> bool:
-    """30주년 SL(Shining) — 번개 검색·제목에 등급 표기가 거의 없음."""
-    return (set_code or "").upper() == "CEL30" and (rarity or "").upper() == "SL"
+def is_cel30_cc(set_code: str, rarity: str) -> bool:
+    """30주년 Classic Collection(CC) — 번개 검색·제목에 등급 표기가 거의 없음."""
+    return (set_code or "").upper() == "CEL30" and (rarity or "").upper() == "CC"
 
 
 def commemorative_card_search_queries(
@@ -288,7 +385,7 @@ def commemorative_card_search_queries(
     set_name_kr: str = "",
     set_code: str = "",
 ) -> list[str]:
-    """기념 세트(COL/CEL30) — 25주년·30주년 접두 검색어 (SL은 복각 포함)."""
+    """기념 세트(COL/CEL30) — 25주년·30주년 접두 검색어 (CC는 복각 포함)."""
     r = (rarity or "").upper()
     base = normalize_mega_spelling(name_kr.strip())
     queries: list[str] = []
@@ -300,7 +397,7 @@ def commemorative_card_search_queries(
             f"{prefix} {idx}번 피카츄",
             f"포켓몬카드 {prefix} {idx}번 피카츄",
         ])
-    elif is_cel30_sl(set_code, r) and base:
+    elif is_cel30_cc(set_code, r) and base:
         queries.extend([
             f"{prefix} 복각 {base}",
             f"포켓몬카드 {prefix} 복각 {base}",
@@ -351,6 +448,40 @@ def build_search_queries(
     commemorative_prefix = COMMEMORATIVE_YEAR_IN_TITLE.get((set_code or "").upper())
     queries: list[str] = []
     is_energy = bool(re.search(r"(풀|불꽃|물)\s*에너지", base))
+    code = (set_code or "").upper()
+
+    def finish(found: list[str]) -> list[str]:
+        from lib.art_split import extra_split_art_queries  # noqa: PLC0415
+
+        merged = list(found)
+        merged.extend(
+            extra_split_art_queries(set_name_kr, base, r, card_number, set_code)
+        )
+        return _dedupe_queries(merged)
+
+    if r == "S" and base:
+        return finish(shiny_s_search_queries(base))
+
+    if code == "SV4M" and "무쇠무인" in base and r == "SAR":
+        return finish([
+            "미래의 일섬 무쇠무인 ex sar",
+            "미래의 일섬 무쇠무인ex sar",
+            "포켓몬카드 미래의 일섬 무쇠무인 ex sar",
+        ])
+
+    if code == "SV8" and "무쇠무인" in base and r == "SAR":
+        return finish([
+            "테라스탈 페스타 무쇠무인 ex sar",
+            "테라스탈페스타 무쇠무인 ex sar",
+            "테라스텔 페스타 무쇠무인 ex sar",
+        ])
+
+    if code == "SV4" and "팬텀" in base and r == "RR":
+        queries.extend([
+            "와일드 포스 팬텀 ex rr",
+            "와일드포스 팬텀 ex rr",
+            "포켓몬카드 와일드 포스 팬텀 ex rr",
+        ])
 
     if commemorative_prefix:
         for nm in name_variants:
@@ -366,7 +497,7 @@ def build_search_queries(
             if q and q not in seen:
                 seen.add(q)
                 out.append(q)
-        return out
+        return finish(out)
 
     # 1순위: 사람들이 실제로 치는 형태
     for nm in name_variants:
@@ -408,6 +539,10 @@ def build_search_queries(
                 queries.append(f"메가 {rest} {r}")
                 queries.append(f"메가{rest}{r}")
 
+    return finish(queries)
+
+
+def _dedupe_queries(queries: list[str]) -> list[str]:
     seen: set[str] = set()
     out: list[str] = []
     for q in queries:
@@ -424,7 +559,7 @@ def build_promo_search_queries(
     promo_source: str = "",
     set_code: str = "",
 ) -> list[str]:
-    """프로모(P) 카드 — 세트명 없이 증정·이벤트 키워드 중심."""
+    """프로모(P) KR 검색어 (TRADE_CRAWL_CRITERIA.md §17.2)."""
     base = name_kr.strip()
     num = card_number.strip()
     queries: list[str] = [
@@ -484,7 +619,12 @@ def build_promo_jp_search_queries(
     promo_source: str = "",
     set_code: str = "",
 ) -> list[str]:
-    """프로모(P) 일본판 — 25주년 + 일판 표기."""
+    """프로모(P) JP 검색어 — KR 검색어 + 일판, 한국 한정은 [] (§17.3)."""
+    from lib.promo_exclusive import is_kr_exclusive_promo  # noqa: PLC0415
+
+    if is_kr_exclusive_promo(set_code, card_number):
+        return []  # §16.3: JP 검색 자체를 하지 않음
+
     base = name_kr.strip()
     queries: list[str] = []
     for q in build_promo_search_queries(name_kr, card_number, promo_source, set_code):
@@ -511,11 +651,47 @@ def build_promo_jp_search_queries(
     return out
 
 
+def title_has_bounded_rarity(title: str, code: str) -> bool:
+    """영문 등급 코드. 뒤에 영문이 더 붙으면 다른 등급이다.
+
+    번개 검색어 ``이름BWR`` 은 ``이름 BW`` 매물까지 돌려준다.
+    ``BW`` 는 ``BWR`` 이 아니고, ``BWRR`` 도 ``BWR`` 이 아니다.
+    카드명에 붙어 있는 ``제크로무exBWR`` 은 인정한다.
+    """
+    if not code:
+        return False
+    return re.search(rf"{re.escape(code)}(?![A-Za-z])", title or "", re.IGNORECASE) is not None
+
+
+def title_has_non_s_rarity(title: str) -> bool:
+    """S가 아닌 영문 등급 코드. S 한 글자·S급은 여기서 다루지 않는다."""
+    return _NON_S_RARITY_RE.search(title or "") is not None
+
+
+def shiny_s_search_queries(name_kr: str) -> list[str]:
+    """S등급 검색어. 등급 코드 없이 포켓몬 이름 + 이로치."""
+    base = normalize_mega_spelling((name_kr or "").strip())
+    if not base:
+        return []
+    compact = re.sub(r"\s+", "", base)
+    queries = [
+        f"{base} 이로치",
+        f"포켓몬카드 {base} 이로치",
+    ]
+    if compact != base:
+        queries.append(f"{compact} 이로치")
+    return _dedupe_queries(queries)
+
+
 def _title_matches_rarity(title: str, rarity: str, set_code: str = "") -> bool:
-    if is_cel30_sl(set_code, rarity):
+    if is_cel30_cc(set_code, rarity):
         return True
     t = title.upper()
     r = rarity.upper()
+    if r == "S":
+        return not title_has_non_s_rarity(title)
+    if r in BOUNDED_RARITY_CODES:
+        return title_has_bounded_rarity(title, r)
     tokens = RARITY_TOKENS.get(r, [r])
     has_rarity_token = any(tok.upper() in t for tok in tokens)
 
@@ -541,6 +717,44 @@ def _compact_match_text(text: str) -> str:
     return re.sub(r"\s+", "", text).lower()
 
 
+def _is_hangul_char(ch: str) -> bool:
+    return len(ch) == 1 and "가" <= ch <= "힣"
+
+
+def _hangul_tail_allowed(rest: str) -> bool:
+    """이름 직후 한글은 이로치·카드·일판만 허용. 메탕구처럼 이어지면 다른 이름."""
+    tails = sorted(_NAME_TAIL_PREFIXES, key=len, reverse=True)
+    s = rest
+    while s and _is_hangul_char(s[0]):
+        matched = False
+        for tail in tails:
+            if s.startswith(tail):
+                s = s[len(tail):]
+                matched = True
+                break
+        if not matched:
+            return False
+    return True
+
+
+def name_token_in_text(text: str, name: str) -> bool:
+    """이름이 더 긴 한글 이름에 끼어 있으면 불일치. 메탕은 메탕구가 아니고, 코일은 레어코일이 아니다."""
+    name = (name or "").strip()
+    if len(name) < 2 or not text:
+        return False
+    start = 0
+    while True:
+        i = text.find(name, start)
+        if i < 0:
+            return False
+        if i > 0 and _is_hangul_char(text[i - 1]):
+            start = i + 1
+            continue
+        if _hangul_tail_allowed(text[i + len(name):]):
+            return True
+        start = i + 1
+
+
 def _title_matches_name(title: str, name_kr: str) -> bool:
     name = normalize_mega_spelling(name_kr.strip())
     if not name:
@@ -552,17 +766,19 @@ def _title_matches_name(title: str, name_kr: str) -> bool:
         if core.endswith(suf):
             core = core[: -len(suf)].strip()
             break
-    if len(core) >= 2 and core in title:
+    if len(core) >= 2 and name_token_in_text(title, core):
         return True
-    if name in title:
+    if name != core and name_token_in_text(title, name):
         return True
     # "메가 제라오라"처럼 띄어쓰기·대소문자만 다른 경우
-    if len(core) >= 2 and _compact_match_text(core) in _compact_match_text(title):
+    compact_title = _compact_match_text(title)
+    if len(core) >= 2 and name_token_in_text(compact_title, _compact_match_text(core)):
         return True
     if core.startswith("메가") and len(core) > 2:
         short = core[len("메가") :].strip()
         if len(short) >= 2 and (
-            short in title or _compact_match_text(short) in _compact_match_text(title)
+            name_token_in_text(title, short)
+            or name_token_in_text(compact_title, _compact_match_text(short))
         ):
             return True
     return False
@@ -642,6 +858,22 @@ def _is_graded_listing(title: str) -> bool:
     return any(k.upper() in t for k in GRADED_KEYWORDS)
 
 
+_SLAB_IN_TEXT_RE = re.compile(
+    r"(PSA|BGS|CGC|SGC|BRG|ARS|PCG|HGA|KSA|GRAAD|GEM)\s*\d"
+    r"|슬랩|그레이딩|채점|실물감정"
+    r"|등급\s*\d"
+    r"|\d+(?:\.\d+)?\s*점",
+    re.I,
+)
+
+
+def text_has_slab_grade(text: str) -> bool:
+    """상세 설명의 감정 점수. 제목의 S급·A급이나 'AR 등급' 문장은 해당하지 않는다."""
+    if not text:
+        return False
+    return _SLAB_IN_TEXT_RE.search(text) is not None
+
+
 def parse_listing_quantity(title: str) -> int:
     """제목에서 동일 카드 매수 추정 (2장·3매·x3 등). 없으면 1."""
     scrubbed = CARD_NUMBER_RE.sub(" ", title)
@@ -717,8 +949,8 @@ def _is_goods_listing(title: str) -> bool:
     return any(k in title for k in GOODS_EXCLUDE_KEYWORDS)
 
 
-def _promo_listing_valid(title: str, card_number: str) -> bool:
-    """M-P 등 프로모 번호 — 오매칭(30주년·빛나는 등) 제외."""
+def promo_mp_kr_listing_valid(title: str, card_number: str) -> bool:
+    """M-P 프로모 KR 제목 검증 (TRADE_CRAWL_CRITERIA.md §16.3, §17.4)."""
     num = (card_number or "").strip().upper()
     if "/M-P" not in num:
         return True
@@ -749,6 +981,12 @@ def is_raw_kr_listing(
         return False
     if _is_graded_listing(title):
         return False
+    if title_is_other_commemorative(title, set_code):
+        return False
+    if not title_has_card_form(title, name_kr):
+        return False
+    if not title_matches_set_discriminator(title, name_kr, rarity, card_number, set_code):
+        return False
     if _is_japanese_listing(title):
         return False
     if _is_bundle_listing(title, name_kr):
@@ -757,7 +995,7 @@ def is_raw_kr_listing(
         return False
     if not title_has_commemorative_year(title, set_code):
         return False
-    if not title_has_sl_reprint(title, rarity):
+    if not title_has_cc_reprint(title, rarity):
         return False
     if not _title_matches_name(title, name_kr):
         return False
@@ -776,7 +1014,7 @@ def is_raw_kr_listing(
                 return False
         else:
             return False
-    if not _promo_listing_valid(title, card_number):
+    if not promo_mp_kr_listing_valid(title, card_number):
         return False
 
     from lib.trainer_item_cards import skip_card_number_in_title  # noqa: PLC0415
@@ -788,7 +1026,18 @@ def is_raw_kr_listing(
             if not promo_matches or num.upper() not in [m.upper() for m in promo_matches]:
                 return False
 
+    from lib.art_split import title_matches_split_art  # noqa: PLC0415
+
+    if not title_matches_split_art(
+        title, name_kr, rarity, card_number, set_code, set_name_kr
+    ):
+        return False
+
     return True
+
+
+# 하위 호환
+_promo_listing_valid = promo_mp_kr_listing_valid
 
 
 def filter_bunjang_listings(
@@ -853,7 +1102,7 @@ def filter_prices_by_rarity_band(prices: list[int], rarity: str) -> list[int]:
         "ACE": (5_000, 150_000),
         "HR": (3_000, 150_000),
         "SSR": (5_000, 150_000),
-        "SL": (5_000, 500_000),
+        "CC": (5_000, 500_000),
         "PKR": (500, 50_000),
         "P": (1_000, 500_000),
     }

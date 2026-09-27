@@ -7,18 +7,52 @@ alwaysApply: false
 
 # 시세 크롤 규칙
 
-`crawler/PRICING.md`가 기준.
+`crawler/TRADE_CRAWL_CRITERIA.md`가 **유일한 기준**이다.
 
-## JP 확장팩
+사용자가 「크롤 돌려」「시세 수집」 등을 요청하면 **반드시** 아래 번개장터 배치만 **순서대로** 실행한다. `--catch-up` 사용(마지막 크롤일~오늘 누락분 전부).
 
-- **매일:** Collectory JP + 번개 일판 (KR와 동일 체결→호가)
-- **유유테i:** `--fallback` only — 미등록 카드 1장씩, 세트 전체 스크랩 금지
-- 일일 배치: `crawl_prices_batch_jp.py --apply --all --fallback`
+## 소스
 
-## 프로모
+- **번개장터만** 사용 (Collectory · 유유테이 · SNKRDUNK · KREAM 시세 수집 금지)
+- 이미지 비교로 시세 판별하지 않음
 
-KR/JP 카드 배치 끝에 통합. 별도 promo 단계 없음.
+## 일일 배치 (한 번 돌릴 때 이 순서)
 
-## 박스
+| 순서 | 작업 | 스크립트 |
+|------|------|----------|
+| 0 | 180일 초과 상세 행 정리 | `purge_stale_trade_details.py --apply` |
+| 0.5 | 호가→거래완료 PID 백필 (§13) | `reconcile_listing_to_sold.py --apply` |
+| 1 | KR 카드 (+ §17 프로모 P) | `crawl_prices_batch.py --apply --daily --all --catch-up` — 성공 시 `batch_promo` KR (`CEL25PK`, `PRM-MISC`) |
+| 2 | JP 카드 (+ §17 프로모 P) | `crawl_prices_batch_jp.py --apply --all --catch-up` — 성공 시 `batch_promo` JP |
+| 3 | KR 박스 | `crawl_box_prices_batch.py --apply --all --catch-up` |
+| 4 | JP 박스 | `crawl_box_prices_batch.py --apply --all --region JP --catch-up` |
 
-번개 + 크림(`KREAM_WEB_TOKEN`). 토큰 없으면 번개만.
+4번 JP 박스 성공 시 `last_crawl_kst`가 오늘로 갱신됨 (`_trade_crawl_state.json`).
+
+## catch-up (§14)
+
+- 마지막 크롤(KST) 다음날 ~ 오늘까지 모든 일자를 한 번에 수집
+- 예: 마지막 9/20, 오늘 9/25 → 9/21~9/25
+
+## 등급 코드 (§3.1)
+
+- 영문 등급은 코드 전체만 인정한다. `BW`는 `BWR`이 아니다.
+- 띄어쓰기 없는 검색어(`이름BWR`)가 BW 매물을 돌려줘도 제목에 `BWR`이 없으면 저장하지 않는다.
+- 대상은 `BOUNDED_RARITY_CODES` (`BWR`). 한국판·일본판 필터가 같은 함수를 쓴다.
+
+## 평균 시세
+
+- 거래완료 + 호가 **함께 평균** (한 종류만 있으면 해당 가격 평균)
+- 이상치: 중앙값 대비 65~150%, 4건 이상일 때만
+
+## 미등록 source
+
+- 거래·호가 없음: `bunjang:none`
+- 상세 행 없이 양수 요약 불가: `bunjang:none:no_detail`
+
+## 기념·프로모 세트
+
+- CEL / CEL30 / CEL25PK — `TRADE_CRAWL_CRITERIA.md` §16 준수
+- 프로모(P) CEL25PK·PRM-MISC — §17, `crawl_promo_prices.py` / `batch_promo.py`
+- 한국 한정 프로모(`lib/promo_exclusive.py`) — JP 크롤·검색·저장 금지, `prices_jp` → `bunjang:none`
+- JP 프로모 — §2 KR 대비 하한 (`lib/kr_reference_prices.py` + `filter_jp_*_by_kr_floor`)

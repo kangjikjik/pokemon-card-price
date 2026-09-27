@@ -24,7 +24,8 @@ export async function fetchRecentBoxPricesBySet(
   // Supabase 기본 응답 제한을 피하되, 세트마다 요청하지 않고
   // 1000행 단위로만 페이지 조회해 서버 렌더링 시간을 제한한다.
   const rows: Record<string, unknown>[] = [];
-  for (let offset = 0; ; offset += 1000) {
+  const maxRows = opts?.maxRows ?? 1500;
+  for (let offset = 0; offset < maxRows; offset += 1000) {
     const { data } = await supabase
       .from('prices_box')
       .select('set_id, region, price_krw, fetched_at, source')

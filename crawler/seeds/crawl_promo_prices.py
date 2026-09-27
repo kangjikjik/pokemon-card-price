@@ -1,11 +1,14 @@
 """
 프로모(P) 카드 시세 — KR/JP 모두 번개장터 전용.
 
+기준: crawler/TRADE_CRAWL_CRITERIA.md §16.3, §17
+대상 세트: promo_catalog.PROMO_SET_CODES (CEL25PK, PRM-MISC)
+
   python crawl_promo_prices.py --apply
   python crawl_promo_prices.py --set CEL25PK --apply --region KR
   python crawl_promo_prices.py --apply --region JP
 
-일일 배치: KR/JP 확장팩 배치 끝에 --region KR|JP 로 자동 호출.
+일일 배치: batch_promo.run_promo_for_region — KR/JP 확장팩 배치 직후.
 """
 from __future__ import annotations
 
@@ -36,6 +39,7 @@ from lib.rarity_rank import is_promo_rarity  # noqa: E402
 from crawl_set_prices import (  # noqa: E402
     APPLY,
     DAILY_INCREMENTAL,
+    INCREMENTAL_DAYS,
     MISSING_ONLY,
     QUIET,
     WORKERS,
@@ -44,7 +48,15 @@ from crawl_set_prices import (  # noqa: E402
     crawl_card,
     get_arg,
 )
+from lib.trade_reconcile import build_historical_by_card  # noqa: E402
+from lib.trade_sources import BUNJANG_NONE, BUNJANG_NONE_NO_DETAIL  # noqa: E402
 from crawl_set_prices_jp import get_exchange_rate  # noqa: E402
+from lib.jp_price_search import (  # noqa: E402
+    filter_jp_items_by_kr_floor,
+    filter_jp_prices_by_kr_floor,
+)
+from lib.kr_reference_prices import load_kr_reference_prices  # noqa: E402
+from lib.promo_exclusive import is_kr_exclusive_promo  # noqa: E402
 from promo_catalog import PROMO_BY_CODE, PROMO_SET_CODES  # noqa: E402
 from utils.db import get_supabase  # noqa: E402
 
@@ -119,16 +131,7 @@ def crawl_promo_kr(set_code: str, set_name: str, cards: list[dict]) -> int:
             .data
             or []
         )
-        for row in history_rows:
-            source = str(row.get("source") or "")
-            if not (source.startswith("sold:bunjang:") or source.startswith("listing:bunjang:")):
-                continue
-            cid = int(row["card_id"])
-            sold_history, listing_history = historical_by_card.setdefault(cid, ([], []))
-            if source.startswith("sold:"):
-                sold_history.append(int(row["price_krw"]))
-            else:
-                listing_history.append(int(row["price_krw"]))
+        historical_by_card = build_historical_by_card(history_rows)
 
     prefetch = prefetch_bunjang_kr(
         cards,
@@ -136,7 +139,7 @@ def crawl_promo_kr(set_code: str, set_name: str, cards: list[dict]) -> int:
         set_code,
         build_queries_fn=_build_promo_queries,
         workers=WORKERS,
-        previous_day_only=DAILY_INCREMENTAL,
+        incremental_days=INCREMENTAL_DAYS,
     )
     print(f"  번개 조회: {len(prefetch)}/{len(cards)}장 매칭")
 
@@ -147,7 +150,7 @@ def crawl_promo_kr(set_code: str, set_name: str, cards: list[dict]) -> int:
         pair = prefetch.get(card["id"])
         if DAILY_INCREMENTAL and pair is None:
             continue
-        price, count, source, sold_items, listing_items = crawl_card(
+        price, count, source, sold_items, listing_items, no_detail = crawl_card(
             card,
             set_name,
             set_code,
@@ -159,17 +162,24 @@ def crawl_promo_kr(set_code: str, set_name: str, cards: list[dict]) -> int:
             _log(f"  => {price:,}원 ({count}건, {tier})")
         else:
             _log("  => 미등록")
-        if APPLY and price > 0:
-            # 일반 확장팩과 동일하게 대표 시세 요약 행을 먼저 저장한다.
-            # 개별 거래 행은 상세 링크·실제 거래일 표시용으로 함께 저장한다.
-            priced_rows.append({
-                "card_id": card["id"],
-                "price_krw": price,
-                "source": source,
-            })
-            _append_bunjang_rows(priced_rows, sold_items, "sold", card["id"])
-            _append_bunjang_rows(priced_rows, listing_items, "listing", card["id"])
-            ok += 1
+        if APPLY:
+            card_rows: list[dict] = []
+            if price > 0:
+                card_rows.append({
+                    "card_id": card["id"],
+                    "price_krw": price,
+                    "source": source,
+                })
+                _append_bunjang_rows(card_rows, sold_items, "sold", card["id"])
+                _append_bunjang_rows(card_rows, listing_items, "listing", card["id"])
+                ok += 1
+            else:
+                card_rows.append({
+                    "card_id": card["id"],
+                    "price_krw": 0,
+                    "source": BUNJANG_NONE_NO_DETAIL if no_detail else BUNJANG_NONE,
+                })
+            priced_rows.extend(card_rows)
 
     if APPLY and cards:
         all_ids = (
@@ -191,6 +201,7 @@ def crawl_promo_jp(set_code: str, set_name: str, cards: list[dict]) -> int:
 
     rate = get_exchange_rate()
     print(f"  JP: 번개장터 전용, 환율 JPY→KRW {rate}")
+    kr_refs = load_kr_reference_prices(sb, [c["id"] for c in cards])
 
     def _build_promo_jp_queries(
         set_name_kr: str,
@@ -212,6 +223,7 @@ def crawl_promo_jp(set_code: str, set_name: str, cards: list[dict]) -> int:
         set_code,
         build_queries_fn=_build_promo_jp_queries,
         workers=WORKERS,
+        incremental_days=INCREMENTAL_DAYS,
     )
     print(f"  번개 조회: {len(bunjang_prefetch)}/{len(cards)}장")
 
@@ -219,14 +231,34 @@ def crawl_promo_jp(set_code: str, set_name: str, cards: list[dict]) -> int:
     ok = 0
     for card in cards:
         cid = card["id"]
+        card_number = card.get("card_number") or ""
+        if is_kr_exclusive_promo(set_code, card_number):
+            _log(
+                f"  JP [{card.get('card_number')}] {card.get('name_kr')} => 스킵 (한국 한정, 일본판 없음)"
+            )
+            if APPLY:
+                rows.append({
+                    "card_id": cid,
+                    "price_krw": 0,
+                    "price_jpy": 0,
+                    "source": BUNJANG_NONE,
+                })
+            continue
         if cid in bunjang_prefetch:
-            b_sold, b_listing, b_sold_items, _b_listing_items = bunjang_prefetch[cid]
+            b_sold, b_listing, b_sold_items, b_listing_items = bunjang_prefetch[cid]
         else:
-            b_sold, b_listing, b_sold_items = [], [], []
+            b_sold, b_listing, b_sold_items, b_listing_items = [], [], [], []
+        kr_floor = kr_refs.get(cid, 0)
+        if kr_floor > 0:
+            b_sold_items = filter_jp_items_by_kr_floor(b_sold_items, kr_floor)
+            b_listing_items = filter_jp_items_by_kr_floor(b_listing_items, kr_floor)
+            b_sold = filter_jp_prices_by_kr_floor(b_sold, kr_floor)
+            b_listing = filter_jp_prices_by_kr_floor(b_listing, kr_floor)
         rarity = card.get("rarity") or "P"
         b_sold = filter_prices_by_rarity_band(b_sold, rarity)
         b_listing = filter_prices_by_rarity_band(b_listing, rarity)
         b_sold_items = [it for it in b_sold_items if filter_prices_by_rarity_band([it["price"]], rarity)]
+        b_listing_items = [it for it in b_listing_items if filter_prices_by_rarity_band([it["price"]], rarity)]
         price_krw, count, source = resolve_card_price(b_sold, b_listing)
         if count > 0:
             price_jpy = round(price_krw / rate) if rate else 0

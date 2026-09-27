@@ -16,7 +16,6 @@ export function isTradeDetailSource(source?: string | null): boolean {
   if (!source) return false;
   return (
     /^(sold|listing):bunjang:\d+/.test(source) ||
-    /^sold:snkrdunk:\d+/.test(source) ||
     /^bunjang(-jp)?:(sold|listing):\d+/.test(source)
   );
 }
@@ -33,7 +32,7 @@ export function isListingSummarySource(source?: string | null): boolean {
   return source.startsWith('listing:') || source === 'bunjang-jp:listing' || source === 'bunjang:listing';
 }
 
-/** 체결 summary — sold:bunjang, sold:bunjang+snkrdunk 등 */
+/** 체결 summary — sold+listing:bunjang, sold:bunjang 등 */
 export function isSoldSummarySource(source?: string | null): boolean {
   if (!source) return false;
   if (isTradeDetailSource(source) || isListingSummarySource(source)) return false;
@@ -91,6 +90,82 @@ function kstDateKey(iso: string): string {
   return new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
 }
 
+function extractBunjangTradeTs(source?: string | null): number | null {
+  if (!source) return null;
+  const parts = source.split(':');
+  if (parts.length >= 4 && parts[1] === 'bunjang') {
+    const ts = parseInt(parts[3], 10);
+    return Number.isNaN(ts) || ts <= 0 ? null : ts;
+  }
+  return null;
+}
+
+function dayPriceFromRows(rows: PriceRecord[]): number {
+  const vals = rows.map((p) => p.price_krw).filter((v) => v > 0);
+  if (!vals.length) return 0;
+  const useAvg = rows.some(
+    (p) => isSoldDetailSource(p.source) || (isListingSummarySource(p.source) && !isTradeDetailSource(p.source)),
+  );
+  const raw = useAvg
+    ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+    : median(vals);
+  return roundDisplayPrice(raw);
+}
+
+/** 일별 요약 + (요약 없는 날) 상세 fetched_at/traded_at 보조로 7일 추이 구성 */
+function buildPriceHistory(allPrices: PriceRecord[]): { date: string; price: number }[] {
+  const summaries = allPrices.filter(
+    (p) => !isTradeDetailSource(p.source) && p.fetched_at && p.price_krw > 0,
+  );
+  const details = allPrices.filter(
+    (p) => isTradeDetailSource(p.source) && p.price_krw > 0,
+  );
+
+  const byDate: Record<string, PriceRecord[]> = {};
+  const labels: Record<string, string> = {};
+
+  for (const p of summaries) {
+    const key = kstDateKey(p.fetched_at!);
+    if (!byDate[key]) byDate[key] = [];
+    byDate[key].push(p);
+    labels[key] = kstDateLabel(p.fetched_at!);
+  }
+
+  // 요약 없는 날 — 크롤 당일 상세 PID fetched_at으로 보조
+  for (const p of details) {
+    if (!p.fetched_at) continue;
+    const key = kstDateKey(p.fetched_at);
+    if (byDate[key]?.length) continue;
+    if (!byDate[key]) byDate[key] = [];
+    byDate[key].push(p);
+    labels[key] = kstDateLabel(p.fetched_at);
+  }
+
+  // 요약·fetched_at 둘 다 없는 날 — 번개 거래 시각(traded_at)으로 보조
+  for (const p of details) {
+    const ts = extractBunjangTradeTs(p.source);
+    if (!ts) continue;
+    const iso = new Date(ts * 1000).toISOString();
+    const key = kstDateKey(iso);
+    if (byDate[key]?.length) continue;
+    if (!byDate[key]) byDate[key] = [];
+    byDate[key].push(p);
+    labels[key] = kstDateLabel(iso);
+  }
+
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 7);
+  const cutoffKey = kstDateKey(cutoff.toISOString());
+
+  const sortedKeys = Object.keys(byDate)
+    .filter((key) => key >= cutoffKey)
+    .sort();
+  return sortedKeys.slice(-7).map((key) => ({
+    date: labels[key],
+    price: dayPriceFromRows(byDate[key]),
+  }));
+}
+
 /** 표시용 MM-DD (KST) */
 function kstDateLabel(iso: string): string {
   return new Date(iso)
@@ -108,42 +183,27 @@ function kstDateLabel(iso: string): string {
  * 트렌드 = 최근일 vs 직전 수집일 (%).
  * history = 최근 7개 수집일.
  */
-export function calcRepresentativePrice(prices: PriceRecord[]): {
+export function calcRepresentativePrice(allPrices: PriceRecord[]): {
   price: number;
   trend: number;
   history: { date: string; price: number }[];
 } {
-  prices = pricesForDisplay(prices);
-  if (prices.length === 0) return { price: 0, trend: 0, history: [] };
+  if (allPrices.length === 0) return { price: 0, trend: 0, history: [] };
 
-  const byDate: Record<string, number[]> = {};
-  const labels: Record<string, string> = {};
+  const displayPrices = pricesForDisplay(allPrices);
+  if (displayPrices.length === 0) return { price: 0, trend: 0, history: [] };
 
-  for (const p of prices) {
-    if (!p.fetched_at || !(p.price_krw > 0)) continue;
-    const key = kstDateKey(p.fetched_at);
-    if (!byDate[key]) byDate[key] = [];
-    byDate[key].push(p.price_krw);
-    labels[key] = kstDateLabel(p.fetched_at);
-  }
-
-  const sortedKeys = Object.keys(byDate).sort();
-  if (sortedKeys.length === 0) {
-    const vals = prices.map((p) => p.price_krw).filter((v) => v > 0);
+  const history = buildPriceHistory(allPrices);
+  if (history.length === 0) {
+    const vals = displayPrices.map((p) => p.price_krw).filter((v) => v > 0);
     if (!vals.length) return { price: 0, trend: 0, history: [] };
     const price = roundDisplayPrice(
-      isTradeDetailSource(prices[0]?.source) ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : median(vals),
+      isTradeDetailSource(displayPrices[0]?.source)
+        ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
+        : median(vals),
     );
     return { price, trend: 0, history: price ? [{ date: '시세', price }] : [] };
   }
-
-  const history = sortedKeys.slice(-7).map((key) => {
-    const vals = byDate[key];
-    const dayRows = prices.filter((p) => p.fetched_at && kstDateKey(p.fetched_at) === key);
-    const useAvg = dayRows.some((p) => isSoldDetailSource(p.source) || isListingSummarySource(p.source));
-    const raw = useAvg ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : median(vals);
-    return { date: labels[key], price: roundDisplayPrice(raw) };
-  });
 
   const price = history[history.length - 1]?.price || 0;
 
@@ -159,36 +219,12 @@ export function calcRepresentativePrice(prices: PriceRecord[]): {
   return { price, trend, history };
 }
 
-/** 최신 수집일(KST) 기준 price_krw. 해당일 스냅샷이 0이면 미등록. */
+/**
+ * 목록·홈에 보여줄 시세. 카드 상세와 같이 최근 수집일의 대표가다.
+ * 예전 거래완료 요약이 있어도, 그 뒤의 호가 요약을 가리지 않는다.
+ */
 export function latestPriceKrw(
   prices: { price_krw: number; fetched_at?: string; source?: string }[],
 ): number {
-  prices = pricesForDisplay(prices);
-  if (!prices.length) return 0;
-
-  const byDate: Record<string, { price_krw: number; t: number }> = {};
-  for (const p of prices) {
-    if (!p.fetched_at) continue;
-    const key = kstDateKey(p.fetched_at);
-    const t = new Date(p.fetched_at).getTime();
-    const cur = byDate[key];
-    if (!cur || t >= cur.t) {
-      byDate[key] = { price_krw: p.price_krw, t };
-    }
-  }
-
-  const datedKeys = Object.keys(byDate).sort();
-  if (datedKeys.length > 0) {
-    const latest = byDate[datedKeys[datedKeys.length - 1]];
-    return latest.price_krw > 0 ? latest.price_krw : 0;
-  }
-
-  // fetched_at 없는 레거시 — 양수만
-  let best: { price_krw: number; t: number } | null = null;
-  for (const p of prices) {
-    if (!(p.price_krw > 0)) continue;
-    const t = p.fetched_at ? new Date(p.fetched_at).getTime() : 0;
-    if (!best || t >= best.t) best = { price_krw: p.price_krw, t };
-  }
-  return best?.price_krw || 0;
+  return calcRepresentativePrice(prices).price;
 }

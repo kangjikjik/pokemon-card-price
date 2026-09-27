@@ -1,11 +1,10 @@
 import { getSupabaseServer } from '@/lib/supabase';
 import { type Card } from '@/lib/data';
 import { calcRepresentativePrice, latestPriceKrw } from '@/lib/price-calc';
-import { EXPANSION_SET_CODES, WEEKLY_HOT_CARD, CARDS_LIST_SET_CODES } from '@/lib/constants';
+import { FEATURED_SET_IDS, WEEKLY_HOT_CARD, TRENDING_CARD_IDS } from '@/lib/constants';
 import { getSetShortName } from '@/lib/set-names';
 import { mapRawSet } from '@/lib/set-map';
 import type { SetData } from '@/lib/data';
-import { viewCountFromRow } from '@/lib/card-sort-helpers';
 import { fetchRecentPricesByCard } from '@/lib/fetch-recent-prices';
 import { fetchRecentBoxPricesBySet } from '@/lib/fetch-recent-box-prices';
 
@@ -24,21 +23,6 @@ const CARD_SELECT = `
   id, name_kr, name_en, name_jp, rarity, rarity_rank, image_url, image_color, card_number,
   card_sets ( id, set_code, name_kr )
 `;
-
-const CARD_SELECT_WITH_VIEWS = `
-  id, name_kr, name_en, name_jp, rarity, rarity_rank, image_url, image_color, card_number, view_count,
-  card_sets ( id, set_code, name_kr )
-`;
-
-function isMissingViewCountError(err: unknown): boolean {
-  if (err && typeof err === 'object') {
-    const e = err as { code?: string; message?: string };
-    if (e.code === '42703') return true;
-    if (e.message?.includes('view_count')) return true;
-  }
-  const msg = String(err);
-  return msg.includes('view_count') && (msg.includes('42703') || msg.includes('does not exist'));
-}
 
 function mapRawToCard(
   raw: Record<string, unknown>,
@@ -94,49 +78,30 @@ async function fetchWeeklyHotCard(supabase: ReturnType<typeof getSupabaseServer>
   const priceMap = await fetchRecentPricesByCard(
     supabase,
     [WEEKLY_HOT_CARD.cardId],
-    { daysBack: 90 },
+    { daysBack: 14 },
   );
   return mapRawToCard(data as Record<string, unknown>, priceMap);
 }
 
 async function fetchTrendingCards(
   supabase: ReturnType<typeof getSupabaseServer>,
-  featuredSetIds: number[],
   excludeId: number,
-  limit = 4,
 ): Promise<Card[]> {
-  if (featuredSetIds.length === 0) return [];
+  const ids = TRENDING_CARD_IDS.filter(id => id !== excludeId);
+  if (ids.length === 0) return [];
 
-  let rows: Record<string, unknown>[] | null = null;
-
-  const tryViewSort = await supabase
+  const { data, error } = await supabase
     .from('cards')
-    .select(CARD_SELECT_WITH_VIEWS)
-    .in('set_id', featuredSetIds)
-    .neq('id', excludeId)
-    .order('view_count', { ascending: false })
-    .limit(limit + 8);
+    .select(CARD_SELECT)
+    .in('id', [...ids]);
 
-  if (tryViewSort.error) {
-    if (!isMissingViewCountError(tryViewSort.error)) throw tryViewSort.error;
-    const fallback = await supabase
-      .from('cards')
-      .select(CARD_SELECT)
-      .in('set_id', featuredSetIds)
-      .neq('id', excludeId)
-      .order('rarity_rank', { ascending: false })
-      .limit(limit + 8);
-    if (fallback.error) throw fallback.error;
-    rows = (fallback.data || []) as Record<string, unknown>[];
-  } else {
-    rows = (tryViewSort.data || []) as Record<string, unknown>[];
-    rows.sort((a, b) => viewCountFromRow(b) - viewCountFromRow(a));
-  }
+  if (error) throw error;
 
-  const slice = rows.slice(0, limit);
-  const ids = slice.map(r => r.id as number);
-  const priceMap = await fetchRecentPricesByCard(supabase, ids);
-  return slice.map(r => mapRawToCard(r, priceMap));
+  const byId = new Map((data || []).map(r => [r.id as number, r as Record<string, unknown>]));
+  const ordered = ids.map(id => byId.get(id)).filter((r): r is Record<string, unknown> => r != null);
+
+  const priceMap = await fetchRecentPricesByCard(supabase, ordered.map(r => r.id as number));
+  return ordered.map(r => mapRawToCard(r, priceMap));
 }
 
 export async function getHomePageData(): Promise<{
@@ -146,30 +111,25 @@ export async function getHomePageData(): Promise<{
 }> {
   const supabase = getSupabaseServer();
 
-  const { data: listSets } = await supabase
-    .from('card_sets')
-    .select('id')
-    .in('set_code', [...CARDS_LIST_SET_CODES]);
-  const featuredSetIds = (listSets || []).map(s => s.id);
-
   const highlight = await fetchWeeklyHotCard(supabase);
   if (!highlight) throw new Error('weekly hot card not found');
 
   const [trending, setsResult] = await Promise.all([
-    fetchTrendingCards(supabase, featuredSetIds, WEEKLY_HOT_CARD.cardId),
+    fetchTrendingCards(supabase, WEEKLY_HOT_CARD.cardId),
     supabase
       .from('card_sets')
       .select(`id, set_code, name_kr, name_en, released_at, image_url`)
-      .in('set_code', [...EXPANSION_SET_CODES])
-      .order('released_at', { ascending: false })
-      .limit(4),
+      .in('id', [...FEATURED_SET_IDS]),
   ]);
 
   if (setsResult.error) throw setsResult.error;
 
-  const setIds = (setsResult.data || []).map(s => s.id as number);
-  const boxMap = await fetchRecentBoxPricesBySet(supabase, setIds);
-  const sets = (setsResult.data || []).map(raw =>
+  const bySetId = new Map((setsResult.data || []).map(s => [s.id as number, s]));
+  const orderedSets = FEATURED_SET_IDS.map(id => bySetId.get(id)).filter(
+    (s): s is NonNullable<typeof s> => s != null,
+  );
+  const boxMap = await fetchRecentBoxPricesBySet(supabase, [...FEATURED_SET_IDS]);
+  const sets = orderedSets.map(raw =>
     mapRawSet({ ...raw, prices_box: boxMap.get(raw.id as number) ?? [] }),
   );
   return { highlight, trending, sets };

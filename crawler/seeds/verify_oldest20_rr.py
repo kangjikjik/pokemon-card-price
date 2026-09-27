@@ -25,7 +25,7 @@ from seed_from_collectory import (  # noqa: E402
 # RR(14) 이상 + 과거 하이엔드 등급
 RR_PLUS = {
     "RR", "SR", "AR", "SAR", "UR", "ACE", "BWR", "MUR", "MA", "FUR",
-    "SSR", "HR", "CSR", "CHR", "RRR", "A", "K", "S", "PR", "TR", "H", "SL", "P",
+    "SSR", "HR", "CSR", "CHR", "RRR", "A", "K", "S", "PR", "TR", "H", "CC", "P",
 }
 
 LIMIT_SETS = 20

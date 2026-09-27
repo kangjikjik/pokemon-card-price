@@ -1,4 +1,8 @@
-"""프로모 시세 — 확장팩 KR/JP 일일 배치 마지막에 함께 실행."""
+"""프로모(P) 시세 — 확장팩 KR/JP `--all` 배치 성공 직후 실행 (TRADE_CRAWL_CRITERIA.md §17.1).
+
+`crawl_prices_batch.py` / `crawl_prices_batch_jp.py`에서 import.
+대상: promo_catalog.PROMO_SET_CODES → crawl_promo_prices.py --set … --region KR|JP
+"""
 from __future__ import annotations
 
 import subprocess
@@ -38,8 +42,8 @@ def run_promo_for_region(
             cmd.append("--apply")
         if quiet:
             cmd.append("--quiet")
-        if previous_day_only:
-            cmd.append("--previous-day")
+        from lib.crawl_incremental import forward_incremental_flags  # noqa: E402
+        forward_incremental_flags(cmd)
         print(f">>> promo {code} ({region})")
         if subprocess.call(cmd, cwd=str(SEEDS_DIR)) != 0:
             failed.append(code)

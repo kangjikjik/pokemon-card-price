@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 
-from lib.price_search import _compact_match_text, normalize_mega_spelling
+from lib.price_search import _compact_match_text, name_token_in_text, normalize_mega_spelling
 
 # DB/시드에 잘못 들어간 name_kr → 공식 한글명
 KR_DISPLAY_FIXUPS: dict[str, str] = {
@@ -31,6 +31,17 @@ JP_BUNJANG_ALIASES: dict[str, list[str]] = {
 
 _EX_SUFFIXES = (" ex", " EX", " VSTAR", " VMAX", " V", " GX")
 MEGA_PREFIX = "메가"
+
+
+def _dedupe_hangul_queries(queries: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for q in queries:
+        q = re.sub(r"\s+", " ", q).strip()
+        if q and q not in seen and _has_hangul(q):
+            seen.add(q)
+            out.append(q)
+    return out
 
 
 def fix_display_name_kr(name_kr: str) -> str:
@@ -138,13 +149,53 @@ def build_bunjang_jp_queries(
 
     r = (rarity or "").upper()
     names = bunjang_search_names(name_kr, name_jp, name_en, rarity, card_number, set_code)
+    code = (set_code or "").upper()
+    fixed_name = fix_display_name_kr(name_kr)
+
+    def finish_jp(found: list[str]) -> list[str]:
+        from lib.art_split import extra_split_art_queries  # noqa: PLC0415
+
+        merged = list(found)
+        merged.extend(
+            extra_split_art_queries(
+                set_name_kr, fixed_name, r, card_number, set_code, jp=True
+            )
+        )
+        return _dedupe_hangul_queries(merged)
+
+    if r == "S" and fixed_name:
+        from lib.price_search import shiny_s_search_queries  # noqa: PLC0415
+
+        return finish_jp([f"{q} 일판" for q in shiny_s_search_queries(fixed_name)])
+
+    if code == "SV4M" and "무쇠무인" in fixed_name and r == "SAR":
+        return finish_jp([
+            "미래의 일섬 무쇠무인 ex sar 일판",
+            "미래의 일섬 무쇠무인ex sar 일판",
+        ])
+
+    if code == "SV8" and "무쇠무인" in fixed_name and r == "SAR":
+        return finish_jp([
+            "테라스탈 페스타 무쇠무인 ex sar 일판",
+            "테라스탈페스타 무쇠무인 ex sar 일판",
+            "테라스텔 페스타 무쇠무인 ex sar 일판",
+        ])
+
+    if code == "SV4" and "팬텀" in fixed_name and r == "RR":
+        queries_phantom = [
+            "와일드 포스 팬텀 ex rr 일판",
+            "와일드포스 팬텀 ex rr 일판",
+            "포켓몬카드 와일드 포스 팬텀 ex rr 일판",
+        ]
+    else:
+        queries_phantom = []
 
     commemorative_prefix = COMMEMORATIVE_YEAR_IN_TITLE.get((set_code or "").upper())
-    queries: list[str] = []
+    queries: list[str] = list(queries_phantom)
     limit = 12 if r == "MUR" else 8
 
     if commemorative_prefix:
-        from lib.price_search import commemorative_card_search_queries, is_cel30_sl  # noqa: PLC0415
+        from lib.price_search import commemorative_card_search_queries, is_cel30_cc  # noqa: PLC0415
 
         for base in names[:limit]:
             for q in commemorative_card_search_queries(
@@ -154,7 +205,7 @@ def build_bunjang_jp_queries(
                 if "일판" not in q:
                     queries.append(q)
             compact = re.sub(r"\s+", "", base)
-            if is_cel30_sl(set_code, r):
+            if is_cel30_cc(set_code, r):
                 queries.append(f"{commemorative_prefix} 복각 {compact}일판")
             else:
                 queries.append(f"{commemorative_prefix} {compact}{r}일판")
@@ -165,7 +216,7 @@ def build_bunjang_jp_queries(
             if q and q not in seen and _has_hangul(q):
                 seen.add(q)
                 out.append(q)
-        return out
+        return finish_jp(out)
 
     for base in names[:limit]:
         compact = re.sub(r"\s+", "", base)
@@ -187,7 +238,7 @@ def build_bunjang_jp_queries(
         if q and q not in seen and _has_hangul(q):
             seen.add(q)
             out.append(q)
-    return out
+    return finish_jp(out)
 
 
 def title_matches_bunjang_name(
@@ -211,8 +262,8 @@ def title_matches_bunjang_name(
         name_kr, name_jp, name_en, rarity, card_number, set_code
     ):
         c = _strip_ex(cand)
-        if len(c) >= 2 and c in title:
+        if len(c) >= 2 and name_token_in_text(title, c):
             return True
-        if _compact_match_text(c) in t_compact:
+        if name_token_in_text(t_compact, _compact_match_text(c)):
             return True
     return False

@@ -58,7 +58,7 @@ def process_code(set_code: str, region: str):
         items = fetch_bunjang(q)
         before = len(sold_quotes) + len(listing_quotes)
         # pass verifier=None to include items regardless of image
-        sold, listings = filter_fn(items, set_name, set_code, msrp, pack_msrp, verifier=None)
+        sold, listings = filter_fn(items, set_name, set_code, msrp, pack_msrp)
         # merge unique pids
         for s in sold:
             if s.pid not in seen:

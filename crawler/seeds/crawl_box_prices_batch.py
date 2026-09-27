@@ -20,6 +20,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.stdout.reconfigure(encoding="utf-8")
 
 from kr_sets import KR_SETS  # noqa: E402
+from lib.crawl_incremental import (  # noqa: E402
+    exit_if_caught_up,
+    forward_incremental_flags,
+    get_incremental_days,
+    mark_crawl_kst_complete,
+    print_incremental_banner,
+    read_last_crawl_kst,
+)
 from utils.db import get_supabase  # noqa: E402
 
 load_dotenv()
@@ -73,8 +81,7 @@ def run_set(set_code: str, apply: bool, region: str = "KR") -> int:
         cmd.extend(["--region", "JP"])
     if apply:
         cmd.append("--apply")
-    if "--previous-day" in sys.argv:
-        cmd.append("--previous-day")
+    forward_incremental_flags(cmd)
     cmd.append("--quiet")
     label = "JP" if region.upper() == "JP" else "KR"
     print(f"\n{'=' * 60}\n>>> {set_code} {label} 박스 시세\n{'=' * 60}")
@@ -82,6 +89,12 @@ def run_set(set_code: str, apply: bool, region: str = "KR") -> int:
 
 
 def main() -> None:
+    incr = get_incremental_days(sys.argv, sb)
+    if incr is not None:
+        last = read_last_crawl_kst(sb)
+        print_incremental_banner(incr, last_crawl=last)
+        exit_if_caught_up(incr, last_crawl=last)
+
     apply = "--apply" in sys.argv
     list_only = "--list" in sys.argv
     single_set = get_arg("--set", "").upper()
@@ -140,6 +153,16 @@ def main() -> None:
     if failed:
         print(f"\n실패: {', '.join(failed)}")
         sys.exit(1)
+
+    if (
+        apply
+        and "--catch-up" in sys.argv
+        and "--all" in sys.argv
+        and region == "JP"
+        and not failed
+    ):
+        mark_crawl_kst_complete()
+        print("catch-up 완료 → last_crawl_kst 갱신")
 
     print("\n배치 완료.")
 

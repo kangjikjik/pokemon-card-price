@@ -1,10 +1,9 @@
 """
 JP 확장팩 카드 시세 — 번개장터 전용.
 
-정책 (crawler/PRICING.md):
-  1) 번개장터 거래완료(status=3, 90일 이내) → 평균가
-  2) 체결 없으면 번개장터 판매중(status=0) 최저가
-  3) 단품 싱글만 (일본판 표기, qty=1)
+정책: crawler/TRADE_CRAWL_CRITERIA.md
+  - 번개장터 거래완료(180일) + 판매중 호가를 함께 평균
+  - 일본판 표기·KR 대비 하한·단품 싱글(qty=1)
 
   python crawl_set_prices_jp.py --set MG6
   python crawl_set_prices_jp.py --set MG6 --apply
@@ -33,7 +32,13 @@ from lib.jp_price_search import (  # noqa: E402
     filter_jp_items_by_kr_floor,
     filter_jp_prices_by_kr_floor,
 )
-from lib.price_search import MIN_SOLD_FOR_AGGREGATE, filter_prices_pipeline  # noqa: E402
+from lib.kr_reference_prices import load_kr_reference_prices  # noqa: E402
+from lib.trade_reconcile import (  # noqa: E402
+    apply_outlier_filter,
+    build_historical_by_card,
+    outlier_detail_ids_to_drop,
+)
+from lib.trade_sources import BUNJANG_NONE, BUNJANG_NONE_NO_DETAIL  # noqa: E402
 from lib.rarity_rank import is_displayable_rarity  # noqa: E402
 from lib.trainer_item_cards import is_trainer_or_item_card  # noqa: E402
 from kr_sets import KR_BY_CODE, KR_SETS  # noqa: E402
@@ -45,7 +50,16 @@ sb = get_supabase()
 APPLY = "--apply" in sys.argv
 QUIET = "--quiet" in sys.argv
 TRAINER_ITEM_ONLY = "--trainer-item-only" in sys.argv
-DAILY_INCREMENTAL = "--previous-day" in sys.argv
+from lib.crawl_incremental import (  # noqa: E402
+    exit_if_caught_up,
+    get_incremental_days,
+    is_incremental_mode,
+    print_incremental_banner,
+    read_last_crawl_kst,
+)
+
+INCREMENTAL_DAYS = get_incremental_days(sys.argv, sb)
+DAILY_INCREMENTAL = is_incremental_mode(INCREMENTAL_DAYS)
 WORKERS = 16          # 번개장터 병렬
 MAX_SOLD_ROWS = 100
 
@@ -102,28 +116,6 @@ def _log(msg: str) -> None:
         print(msg)
 
 
-def load_kr_reference_prices(card_ids: list[int]) -> dict[int, int]:
-    """카드별 한국판 대표 시세(요약 행). 상세 PID 행은 제외."""
-    if not card_ids:
-        return {}
-    rows = (
-        sb.table("prices_kr")
-        .select("card_id,price_krw,source")
-        .in_("card_id", card_ids)
-        .gt("price_krw", 0)
-        .execute()
-        .data
-        or []
-    )
-    refs: dict[int, int] = {}
-    for row in rows:
-        source = str(row.get("source") or "")
-        if source.startswith("sold:bunjang:") or source.startswith("listing:bunjang:"):
-            continue
-        refs[int(row["card_id"])] = int(row["price_krw"])
-    return refs
-
-
 def resolve_set_code(raw: str) -> str:
     key = raw.strip().upper()
     for code in KR_BY_CODE:
@@ -170,14 +162,14 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
     print(f"=== {set_name}({set_code}) JP 시세 [번개장터 전용]{suffix} ===")
     print(f"대상: {len(cards)}장")
 
-    kr_refs = load_kr_reference_prices([c["id"] for c in cards])
+    kr_refs = load_kr_reference_prices(sb, [c["id"] for c in cards])
 
     bunjang_prefetch = prefetch_bunjang_jp(
         cards,
         set_name,
         set_code,
         workers=WORKERS,
-        previous_day_only=DAILY_INCREMENTAL,
+        incremental_days=INCREMENTAL_DAYS,
     )
     print(f"번개 조회 완료: {len(bunjang_prefetch)}/{len(cards)}장 매칭")
 
@@ -185,23 +177,25 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
     if DAILY_INCREMENTAL:
         history_rows = (
             sb.table("prices_jp")
-            .select("card_id,price_krw,source")
+            .select("id,card_id,price_krw,source")
             .in_("card_id", [c["id"] for c in cards])
             .gt("price_krw", 0)
             .execute()
             .data
             or []
         )
-        for row in history_rows:
-            source = str(row.get("source") or "")
-            if not (source.startswith("sold:bunjang:") or source.startswith("listing:bunjang:")):
-                continue
-            cid = int(row["card_id"])
-            sold_history, listing_history = historical_by_card.setdefault(cid, ([], []))
-            if source.startswith("sold:"):
-                sold_history.append(int(row["price_krw"]))
-            else:
-                listing_history.append(int(row["price_krw"]))
+        if APPLY:
+            drop_ids = outlier_detail_ids_to_drop(
+                history_rows,
+                {int(c["id"]): c.get("rarity") or "" for c in cards},
+                kr_floor_by_card=kr_refs,
+            )
+            for i in range(0, len(drop_ids), 200):
+                sb.table("prices_jp").delete().in_("id", drop_ids[i : i + 200]).execute()
+            if drop_ids:
+                print(f"이상치 상세 삭제: {len(drop_ids)}건")
+                history_rows = [row for row in history_rows if row.get("id") not in set(drop_ids)]
+        historical_by_card = build_historical_by_card(history_rows)
 
     rows: list[dict] = []
     ok = 0
@@ -225,19 +219,18 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
             historical_listing = filter_jp_prices_by_kr_floor(historical_listing, kr_floor)
             b_sold = [it["price"] for it in b_sold_items]
             b_listing = [it["price"] for it in b_listing_items]
-        allowed = filter_prices_pipeline(
-            historical_sold + historical_listing + b_sold + b_listing,
+        b_sold, b_listing, b_sold_items, b_listing_items = apply_outlier_filter(
+            historical_sold,
+            historical_listing,
+            b_sold_items,
+            b_listing_items,
             rarity,
         )
-        sold_ok = set(allowed)
-        list_ok = set(allowed)
-        b_sold_items = [it for it in b_sold_items if it["price"] in sold_ok]
-        b_listing_items = [it for it in b_listing_items if it["price"] in list_ok]
-        b_sold = historical_sold + [it["price"] for it in b_sold_items]
-        b_listing = historical_listing + [it["price"] for it in b_listing_items]
 
         price_krw, count, source = resolve_card_price(b_sold, b_listing)
+        no_detail = False
         if price_krw > 0 and not b_sold_items and not b_listing_items:
+            no_detail = True
             price_krw, count, source = 0, 0, "none"
 
         if count > 0:
@@ -267,7 +260,7 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
                     "card_id": card["id"],
                     "price_krw": 0,
                     "price_jpy": 0,
-                    "source": "bunjang:none",
+                    "source": BUNJANG_NONE_NO_DETAIL if no_detail else BUNJANG_NONE,
                 })
             if card_rows:
                 rows.extend(card_rows)
@@ -278,7 +271,7 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
                     "card_id": card["id"],
                     "price_krw": 0,
                     "price_jpy": 0,
-                    "source": "bunjang:none",
+                    "source": BUNJANG_NONE_NO_DETAIL if no_detail else BUNJANG_NONE,
                 })
             _log(
                 f"  [{card.get('card_number')}] {card.get('name_jp') or card.get('name_kr')}"
@@ -301,6 +294,10 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
 
 
 def main() -> None:
+    if not QUIET and INCREMENTAL_DAYS is not None:
+        print_incremental_banner(INCREMENTAL_DAYS, last_crawl=read_last_crawl_kst(sb))
+    exit_if_caught_up(INCREMENTAL_DAYS, last_crawl=read_last_crawl_kst(sb))
+
     targets: list[str] = []
     set_code = resolve_set_code(get_arg("--set", ""))
     if set_code:

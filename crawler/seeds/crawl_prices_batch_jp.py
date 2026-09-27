@@ -16,10 +16,23 @@ import time
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.stdout.reconfigure(encoding="utf-8")
 
 from kr_sets import KR_SETS  # noqa: E402
+from lib.crawl_incremental import (  # noqa: E402
+    exit_if_caught_up,
+    forward_incremental_flags,
+    get_incremental_days,
+    print_incremental_banner,
+    read_last_crawl_kst,
+)
+from utils.db import get_supabase  # noqa: E402
+
+load_dotenv()
+sb = get_supabase()
 
 SEEDS_DIR = Path(__file__).resolve().parent
 STATE_PATH = SEEDS_DIR / "_batch_state_jp.json"
@@ -59,13 +72,18 @@ def run_set(set_code: str, apply: bool, quiet: bool = True) -> int:
         cmd.append("--apply")
     if quiet:
         cmd.append("--quiet")
-    if "--previous-day" in sys.argv:
-        cmd.append("--previous-day")
+    forward_incremental_flags(cmd)
     print(f"\n{'=' * 60}\n>>> JP {set_code}\n{'=' * 60}")
     return subprocess.call(cmd, cwd=str(SEEDS_DIR))
 
 
 def main() -> None:
+    incr = get_incremental_days(sys.argv, sb)
+    if incr is not None:
+        last = read_last_crawl_kst(sb)
+        print_incremental_banner(incr, last_crawl=last)
+        exit_if_caught_up(incr, last_crawl=last)
+
     apply = "--apply" in sys.argv
     quiet = "--verbose" not in sys.argv
     list_only = "--list" in sys.argv

@@ -128,7 +128,7 @@ def parse_rarity(card: dict) -> str | None:
     mapped = normalize_rarity(rarity)
     if mapped in SKIP_RARITIES:
         return None
-    if mapped in ("MUR", "MA", "BWR", "FUR", "SAR", "UR", "HR", "SR", "CSR", "CHR", "AR", "ACE", "RRR", "RR", "A", "K", "PR", "SSR", "TR", "S", "H", "SL", "P"):
+    if mapped in ("MUR", "MA", "BWR", "FUR", "SAR", "UR", "HR", "SR", "CSR", "CHR", "AR", "ACE", "RRR", "RR", "A", "K", "PR", "SSR", "TR", "S", "H", "CC", "P"):
         return mapped
     return mapped if mapped and mapped not in SKIP_RARITIES else None
 

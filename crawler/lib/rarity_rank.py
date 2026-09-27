@@ -3,9 +3,6 @@
 RARITY_ALIASES: dict[str, str] = {
     "UR-ex": "SR",
     "IR": "AR",
-    "RM": "RR",
-    "Shining": "SL",
-    "SHINING": "SL",
     "Futuristic Rare": "FUR",
     "Pikachu Rare": "PKR",
 }
@@ -13,28 +10,28 @@ RARITY_ALIASES: dict[str, str] = {
 # 히트: UR/HR/… > PR > SR > … > RR
 RARITY_RANK: dict[str, int] = {
     "FUR": 32,
-    "PKR": 21,
-    "MA": 29,
-    "MUR": 28,
-    "BWR": 27,
-    "ACE": 26,
-    "UR": 25,
-    "SSR": 24,
-    "HR": 23,
-    "SAR": 22,
-    "CSR": 21,
-    "PR": 20,
-    "SR": 19,
-    "AR": 18,
-    "CHR": 17,
-    "RRR": 16,
-    "A": 15,
-    "K": 14,
-    "S": 13,
-    "TR": 12,
-    "SL": 11,
-    "H": 10,
-    "RR": 9,
+    "MUR": 30,
+    "UR": 29,
+    "BWR": 28,
+    "SAR": 27,
+    "CC": 27,
+    "PKR": 26,
+    "MA": 25,
+    "SR": 24,
+    "ACE": 23,
+    "AR": 22,
+    "SSR": 22,
+    "HR": 21,
+    "CSR": 20,
+    "PR": 19,
+    "CHR": 18,
+    "RRR": 17,
+    "A": 16,
+    "K": 15,
+    "S": 14,
+    "TR": 13,
+    "H": 11,
+    "RR": 10,
     "R": 3,
     "U": 2,
     "C": 1,
@@ -54,8 +51,8 @@ def rank_for_rarity(rarity: str | None) -> int:
 
 
 # web/lib/rarity.ts MIN_DISPLAY_RARITY_RANK 와 동기화
-MIN_DISPLAY_RARITY_RANK = 9
-_SKIP_DISPLAY = {"U", "C", "SA", "N", "CM", "UM", "PROMO", "R", "M"}
+MIN_DISPLAY_RARITY_RANK = 10
+_SKIP_DISPLAY = {"U", "C", "SA", "N", "CM", "UM", "PROMO", "R", "M", "RM"}
 
 
 def is_promo_rarity(rarity: str | None) -> bool:

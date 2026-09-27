@@ -13,7 +13,7 @@ from utils.db import get_supabase
 sb = get_supabase()
 
 VALID_KR = re.compile(r"^(sold|listing):bunjang:\d+")
-VALID_JP = re.compile(r"^(sold|listing):bunjang:\d+|^sold:snkrdunk:\d+")
+VALID_JP = re.compile(r"^(sold|listing):bunjang:\d+")
 VALID_BOX = re.compile(r"^bunjang:(sold|listing):\d+")
 
 

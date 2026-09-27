@@ -12,7 +12,6 @@ from lib.box_price_search import (
     filter_bunjang_jp_box_quotes,
     is_jp_box_listing,
 )
-from lib.box_image_verify import BoxImageVerifier
 from kr_sets import KR_BY_CODE
 
 # crawl_box_prices.fetch_bunjang inline
@@ -70,15 +69,10 @@ def main() -> None:
         ok = is_jp_box_listing(title, meta.name_kr, code, msrp, price, pack, allow_opened=True)
         print(f"  {'OK' if ok else 'NO'} {price:,} {title[:75]}")
 
-    with BoxImageVerifier(code, meta.box_image_kr or "") as v:
-        sold_s, list_s = filter_bunjang_jp_box_quotes(
-            all_items, meta.name_kr, code, msrp, pack, v
-        )
-        sold_r, list_r = filter_bunjang_jp_box_quotes(
-            all_items, meta.name_kr, code, msrp, pack, None, allow_opened=True
-        )
-    print(f"strict+img sold={len(sold_s)} listing={len(list_s)}")
-    print(f"relaxed sold={len(sold_r)} listing={len(list_r)}")
+    sold_q, list_q = filter_bunjang_jp_box_quotes(
+        all_items, meta.name_kr, code, msrp, pack, allow_opened=True
+    )
+    print(f"filtered sold={len(sold_q)} listing={len(list_q)}")
 
 
 if __name__ == "__main__":

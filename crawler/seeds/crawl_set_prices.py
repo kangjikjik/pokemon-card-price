@@ -1,10 +1,9 @@
 """
 KR 확장팩 카드 시세 — 번개장터 전용.
 
-정책 (crawler/PRICING.md):
-  1) 번개장터 거래완료(status=3, 90일 이내) → 평균가
-  2) 없으면 번개장터 판매중(status=0) 최저가
-  3) 단품 싱글만 (묶음·다량·다종 제외, qty=1 한 장만)
+정책: crawler/TRADE_CRAWL_CRITERIA.md
+  - 번개장터 거래완료(180일) + 판매중 호가를 함께 평균
+  - 단품 싱글만 (묶음·다량·다종 제외, qty=1)
 
   python crawl_set_prices.py --set MG6
   python crawl_set_prices.py --set MG6 --apply
@@ -15,8 +14,6 @@ from __future__ import annotations
 
 import os
 import sys
-from collections import Counter
-
 from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -34,11 +31,15 @@ from lib.price_history import (  # noqa: E402
     save_incremental_snapshots,
 )
 from lib.price_search import (  # noqa: E402
-    MIN_SOLD_FOR_AGGREGATE,
     build_search_queries,
-    filter_prices_pipeline,
     is_legacy_set,
 )
+from lib.trade_reconcile import (  # noqa: E402
+    apply_outlier_filter,
+    build_historical_by_card,
+    outlier_detail_ids_to_drop,
+)
+from lib.trade_sources import BUNJANG_NONE, BUNJANG_NONE_NO_DETAIL  # noqa: E402
 from kr_sets import KR_BY_CODE  # noqa: E402
 from lib.rarity_rank import is_displayable_rarity  # noqa: E402
 from lib.trainer_item_cards import is_trainer_or_item_card  # noqa: E402
@@ -51,7 +52,16 @@ APPLY = "--apply" in sys.argv
 QUIET = "--quiet" in sys.argv
 MISSING_ONLY = "--missing-only" in sys.argv
 TRAINER_ITEM_ONLY = "--trainer-item-only" in sys.argv
-DAILY_INCREMENTAL = "--previous-day" in sys.argv
+from lib.crawl_incremental import (  # noqa: E402
+    exit_if_caught_up,
+    get_incremental_days,
+    is_incremental_mode,
+    print_incremental_banner,
+    read_last_crawl_kst,
+)
+
+INCREMENTAL_DAYS = get_incremental_days(sys.argv, sb)
+DAILY_INCREMENTAL = is_incremental_mode(INCREMENTAL_DAYS)
 WORKERS = 16
 MAX_SOLD_ROWS = 100
 
@@ -81,6 +91,7 @@ def get_arg(flag: str, default: str = "") -> str:
 
 
 ONLY_RARITY = get_arg("--rarity", "").upper()
+ONLY_CARD_NUMBER = get_arg("--card-number", "")
 
 
 def _build_queries(
@@ -115,8 +126,8 @@ def crawl_card(
     *,
     prefetched: tuple[list[int], list[int], list[dict], list[dict]] | None = None,
     historical: tuple[list[int], list[int]] | None = None,
-) -> tuple[int, int, str, list[dict], list[dict]]:
-    """(price, count, source, sold_items, listing_items)"""
+) -> tuple[int, int, str, list[dict], list[dict], bool]:
+    """(price, count, source, sold_items, listing_items, no_detail)"""
     name_kr = card.get("name_kr") or ""
     rarity = card.get("rarity") or ""
     card_number = card.get("card_number") or ""
@@ -136,38 +147,28 @@ def crawl_card(
         listing_items = listing_items_raw
 
     historical_sold, historical_listing = historical or ([], [])
-    # 기존 상세 내역과 새 내역을 합친 전체 가격에서 이상치를 필터링한다.
-    filtered_prices = filter_prices_pipeline(
-        historical_sold + historical_listing + sold + listing,
+    # 기존 상세도 같이 판정한다. 탈락한 과거 가격은 평균에 다시 넣지 않는다.
+    sold_filtered, listing_filtered, sold_items, listing_items = apply_outlier_filter(
+        historical_sold,
+        historical_listing,
+        sold_items,
+        listing_items,
         rarity,
     )
-    remaining = Counter(filtered_prices)
-
-    def take_filtered(items: list[dict]) -> list[dict]:
-        kept: list[dict] = []
-        for item in items:
-            price_value = int(item["price"])
-            if remaining[price_value] > 0:
-                kept.append(item)
-                remaining[price_value] -= 1
-        return kept
-
-    # 기존 내역을 먼저 소비해 새 상세 행의 중복 가격도 판정한다.
-    for old_price in historical_sold + historical_listing:
-        if remaining[old_price] > 0:
-            remaining[old_price] -= 1
-    sold_items = take_filtered(sold_items)
-    listing_items = take_filtered(listing_items)
-    sold_filtered = historical_sold + [it["price"] for it in sold_items]
-    listing_filtered = historical_listing + [it["price"] for it in listing_items]
 
     price, count, source = resolve_card_price(sold_filtered, listing_filtered)
+    no_detail = False
     if price > 0 and not sold_items and not listing_items:
+        no_detail = True
         price, count, source = 0, 0, "none"
-    return price, count, source, sold_items, listing_items
+    return price, count, source, sold_items, listing_items, no_detail
 
 
 def main() -> None:
+    if not QUIET and INCREMENTAL_DAYS is not None:
+        print_incremental_banner(INCREMENTAL_DAYS, last_crawl=read_last_crawl_kst(sb))
+    exit_if_caught_up(INCREMENTAL_DAYS, last_crawl=read_last_crawl_kst(sb))
+
     set_code = resolve_set_code(get_arg("--set", ""))
     if not set_code:
         print("사용법: python crawl_set_prices.py --set MG6 [--apply]")
@@ -197,6 +198,8 @@ def main() -> None:
         ]
     if ONLY_RARITY:
         cards = [c for c in cards if (c.get("rarity") or "").upper() == ONLY_RARITY]
+    if ONLY_CARD_NUMBER:
+        cards = [c for c in cards if (c.get("card_number") or "") == ONLY_CARD_NUMBER]
     if MISSING_ONLY:
         priced_ids = {
             r["card_id"]
@@ -229,23 +232,26 @@ def main() -> None:
     if DAILY_INCREMENTAL:
         history_rows = (
             sb.table("prices_kr")
-            .select("card_id,price_krw,source")
+            .select("id,card_id,price_krw,source")
             .in_("card_id", [c["id"] for c in cards])
             .gt("price_krw", 0)
             .execute()
             .data
             or []
         )
-        for row in history_rows:
-            source = str(row.get("source") or "")
-            if not (source.startswith("sold:bunjang:") or source.startswith("listing:bunjang:")):
-                continue
-            cid = int(row["card_id"])
-            sold_history, listing_history = historical_by_card.setdefault(cid, ([], []))
-            if source.startswith("sold:"):
-                sold_history.append(int(row["price_krw"]))
-            else:
-                listing_history.append(int(row["price_krw"]))
+        historical_by_card = build_historical_by_card(history_rows)
+        if APPLY:
+            drop_ids = outlier_detail_ids_to_drop(
+                history_rows,
+                {int(c["id"]): c.get("rarity") or "" for c in cards},
+            )
+            for i in range(0, len(drop_ids), 200):
+                sb.table("prices_kr").delete().in_("id", drop_ids[i : i + 200]).execute()
+            if drop_ids:
+                print(f"이상치 상세 삭제: {len(drop_ids)}건")
+                historical_by_card = build_historical_by_card(
+                    [row for row in history_rows if row.get("id") not in set(drop_ids)]
+                )
 
     prefetch = prefetch_bunjang_kr(
         cards,
@@ -253,7 +259,7 @@ def main() -> None:
         set_code,
         build_queries_fn=_build_queries,
         workers=WORKERS,
-        previous_day_only=DAILY_INCREMENTAL,
+        incremental_days=INCREMENTAL_DAYS,
     )
     print(f"조회 완료: {len(prefetch)}/{len(cards)}장 매칭")
 
@@ -265,7 +271,7 @@ def main() -> None:
         if DAILY_INCREMENTAL and quad is None:
             continue
         _log(f"\n[{card['card_number']}] {card['name_kr']} ({card['rarity']})")
-        price, count, source, sold_items, listing_items = crawl_card(
+        price, count, source, sold_items, listing_items, no_detail = crawl_card(
             card, set_name, set_code, prefetched=quad,
             historical=historical_by_card.get(card["id"]),
         )
@@ -292,7 +298,7 @@ def main() -> None:
                 card_rows.append({
                     "card_id": card["id"],
                     "price_krw": 0,
-                    "source": "bunjang:none",
+                    "source": BUNJANG_NONE_NO_DETAIL if no_detail else BUNJANG_NONE,
                 })
             priced_rows.extend(card_rows)
 

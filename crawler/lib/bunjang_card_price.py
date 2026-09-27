@@ -2,21 +2,27 @@
 번개장터 전용 카드 시세 수집 — KR / JP 공용.
 
 정책:
-  1) 거래완료(status=3, 90일 이내)와 판매중(status=0) 호가를 함께 평균
+  1) 거래완료(status=3, 180일 이내)와 판매중(status=0) 호가를 함께 평균
   2) 한 종류만 있으면 해당 가격으로 평균
   3) 단품 싱글만 (묶음·다량·다종 제외, 1장 판매만)
+  4) 사진 3장 이상은 제외 (TRADE_CRAWL_CRITERIA.md §4)
 """
 from __future__ import annotations
 
 import json
+import threading
 import urllib.parse
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Callable
 
-SOLD_MAX_AGE_DAYS = 90
+from lib.trade_sources import SOLD_MAX_AGE_DAYS
 KST = timezone(timedelta(hours=9))
+# 사진 1~2장은 단품으로 본다. 3장 이상은 다른 카드와 함께 올린 매물일 수 있다.
+MAX_SINGLE_CARD_PHOTOS = 2
+_image_count_cache: dict[str, dict | None] = {}
+_image_count_lock = threading.Lock()
 
 _HEADERS = {
     "User-Agent": (
@@ -52,8 +58,72 @@ def fetch_bunjang_items(
         return []
 
 
+def bunjang_product_detail(pid: str) -> dict | None:
+    """상품 상세. imageCount·description. 검색 목록에는 둘 다 없다."""
+    pid = str(pid or "").strip()
+    if not pid.isdigit():
+        return None
+    with _image_count_lock:
+        if pid in _image_count_cache:
+            return _image_count_cache[pid]
+    detail: dict | None
+    try:
+        url = f"https://api.bunjang.co.kr/api/pms/v1/products/{pid}/detail/web"
+        req = urllib.request.Request(url, headers=_HEADERS)
+        raw = urllib.request.urlopen(req, timeout=8).read()
+        product = (json.loads(raw).get("data") or {}).get("product") or {}
+        raw_count = product.get("imageCount")
+        detail = {
+            "imageCount": int(raw_count) if raw_count is not None else None,
+            "description": str(product.get("description") or ""),
+            "name": str(product.get("name") or ""),
+        }
+    except Exception:
+        detail = None
+    with _image_count_lock:
+        _image_count_cache[pid] = detail
+    return detail
+
+
+def bunjang_product_image_count(pid: str) -> int | None:
+    detail = bunjang_product_detail(pid)
+    if not detail:
+        return None
+    count = detail.get("imageCount")
+    return int(count) if count is not None else None
+
+
+def listing_has_too_many_photos(item: dict) -> bool:
+    """사진 3장 이상이면 True. 1~2장은 False. 장수를 모르면 제외하지 않는다."""
+    raw = item.get("imageCount")
+    if raw is None:
+        raw = item.get("image_count")
+    if raw is not None:
+        try:
+            return int(raw) >= MAX_SINGLE_CARD_PHOTOS + 1
+        except (TypeError, ValueError):
+            pass
+    count = bunjang_product_image_count(str(item.get("pid") or ""))
+    if count is None:
+        return False
+    return count >= MAX_SINGLE_CARD_PHOTOS + 1
+
+
+def listing_blocked_by_product(item: dict) -> bool:
+    """사진 3장 이상, 또는 상세 설명에만 있는 감정 점수면 제외."""
+    from lib.price_search import text_has_slab_grade  # noqa: PLC0415
+
+    if listing_has_too_many_photos(item):
+        return True
+    detail = bunjang_product_detail(str(item.get("pid") or ""))
+    if not detail:
+        return False
+    blob = f"{detail.get('name') or ''}\n{detail.get('description') or ''}"
+    return text_has_slab_grade(blob)
+
+
 def _is_recent_sold(update_time: int) -> bool:
-    """거래완료 시각이 90일 이내인지."""
+    """게시·거래 시각이 180일 이내인지. 시각이 없으면 유지한다."""
     if not update_time:
         return True
     now = datetime.now(timezone.utc).timestamp()
@@ -76,6 +146,23 @@ def is_previous_kst_day(update_time: int) -> bool:
     return start <= int(update_time) < end
 
 
+def filter_items_by_incremental_days(
+    items: list[dict],
+    incremental_days: list[date] | None,
+) -> list[dict]:
+    """incremental_days가 None이면 필터 없음, []이면 전부 제외."""
+    if incremental_days is None:
+        return items
+    if not incremental_days:
+        return []
+    from lib.crawl_incremental import is_in_incremental_days  # noqa: PLC0415
+
+    return [
+        item for item in items
+        if is_in_incremental_days(int(item.get("update_time", 0) or 0), incremental_days)
+    ]
+
+
 # ──────────────────────────────────────────────────
 # KR 매물 분류
 # ──────────────────────────────────────────────────
@@ -94,7 +181,7 @@ def split_by_status_kr(
     통과 기준:
       - is_raw_kr_listing (미등급·한글판·단품)
       - qty == 1 (2장 이상 묶음 제외)
-      - sold : status=3, 90일 이내
+      - sold : status=3, 180일 이내
       - listing : status=0
     """
     sold_items, listing_items = split_by_status_kr_with_items(
@@ -143,6 +230,8 @@ def split_by_status_kr_with_items(
                 continue
             if parse_listing_quantity(title) > 1:
                 continue
+            if listing_blocked_by_product(item):
+                continue
 
             status = str(item.get("status", ""))
             update_time = int(item.get("update_time", 0) or 0)
@@ -151,7 +240,7 @@ def split_by_status_kr_with_items(
 
             if status == "3" and _is_recent_sold(update_time):
                 sold.append(detail)
-            elif status == "0":
+            elif status == "0" and _is_recent_sold(update_time):
                 listing.append(detail)
 
     return sold, listing
@@ -211,7 +300,8 @@ def split_by_status_jp_with_items(
                 continue
             if parse_listing_quantity(title) > 1:
                 continue
-
+            if listing_blocked_by_product(item):
+                continue
             status = str(item.get("status", ""))
             update_time = int(item.get("update_time", 0) or 0)
             pid = str(item.get("pid", ""))
@@ -219,7 +309,7 @@ def split_by_status_jp_with_items(
 
             if status == "3" and _is_recent_sold(update_time):
                 sold.append(detail)
-            elif status == "0":
+            elif status == "0" and _is_recent_sold(update_time):
                 listing.append(detail)
 
     return sold, listing
@@ -280,8 +370,6 @@ def resolve_card_price(
     sold: list[int],
     listing: list[int],
     source_suffix: str = "bunjang",
-    *,
-    min_sold_for_aggregate: int | None = None,
 ) -> tuple[int, int, str]:
     """
     (price, count, source).
@@ -289,10 +377,6 @@ def resolve_card_price(
     - 거래완료와 판매중 호가가 있으면 두 가격을 함께 평균
     - 한 종류만 있으면 해당 가격으로 평균
     """
-    from lib.price_search import MIN_SOLD_FOR_AGGREGATE  # noqa: PLC0415
-
-    if min_sold_for_aggregate is None:
-        min_sold_for_aggregate = MIN_SOLD_FOR_AGGREGATE
     sold = [p for p in sold if p > 0]
     listing = [p for p in listing if p > 0]
     values = sold + listing
@@ -314,12 +398,20 @@ def prefetch_bunjang_kr(
     *,
     build_queries_fn: Callable[[str, str, str, str, str], list[str]],
     workers: int = 8,
+    incremental_days: list[date] | None = None,
     previous_day_only: bool = False,
 ) -> dict[int, tuple[list[int], list[int], list[dict], list[dict]]]:
     """카드 목록을 병렬로 번개장터 조회.
 
+    incremental_days: None=전체, [date]=해당 KST 일자만 (catch-up·전날).
+    previous_day_only: deprecated — incremental_days=[어제]와 동일.
+
     Returns: {card_id: (sold_prices, listing_prices, sold_items, listing_items)}
     """
+    if previous_day_only and incremental_days is None:
+        incremental_days = [
+            datetime.now(KST).date() - timedelta(days=1)
+        ]
     if not cards:
         return {}
 
@@ -332,11 +424,7 @@ def prefetch_bunjang_kr(
             set_code,
         )
         all_items = collect_bunjang_items(queries)
-        if previous_day_only:
-            all_items = [
-                item for item in all_items
-                if is_previous_kst_day(int(item.get("update_time", 0) or 0))
-            ]
+        all_items = filter_items_by_incremental_days(all_items, incremental_days)
         sold_items, listing_items = split_by_status_kr_with_items(
             all_items,
             card.get("name_kr") or "",
@@ -371,9 +459,14 @@ def prefetch_bunjang_jp(
     *,
     build_queries_fn: Callable[..., list[str]] | None = None,
     workers: int = 8,
+    incremental_days: list[date] | None = None,
     previous_day_only: bool = False,
 ) -> dict[int, tuple[list[int], list[int], list[dict], list[dict]]]:
     """JP 카드 목록 → {card_id: (sold_prices, listing_prices, sold_items, listing_items)}."""
+    if previous_day_only and incremental_days is None:
+        incremental_days = [
+            datetime.now(KST).date() - timedelta(days=1)
+        ]
     from lib.jp_price_search import build_jp_search_queries  # noqa: PLC0415
     from lib.price_search import is_legacy_set  # noqa: PLC0415
 
@@ -403,11 +496,7 @@ def prefetch_bunjang_jp(
                 name_en=card.get("name_en") or "",
             )
         all_items = collect_bunjang_items(queries)
-        if previous_day_only:
-            all_items = [
-                item for item in all_items
-                if is_previous_kst_day(int(item.get("update_time", 0) or 0))
-            ]
+        all_items = filter_items_by_incremental_days(all_items, incremental_days)
         sold_items, listing_items = split_by_status_jp_with_items(
             all_items,
             card.get("name_jp") or "",

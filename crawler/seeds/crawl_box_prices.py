@@ -6,9 +6,9 @@
 
 정책:
 
-  - 제목·가격·묶음 필터 + 기준 박스 이미지 유사도 검증
+  - 제목·가격·묶음 필터 (TRADE_CRAWL_CRITERIA.md §5)
 
-  - 최근 거래완료(status=3) 우선 (90일 이내)
+  - 최근 거래완료(status=3) 우선 (180일 이내)
 
   - 거래완료가 없거나 너무 오래됐으면 판매중(status=0) 호가
 
@@ -81,7 +81,8 @@ from lib.box_price_search import (  # noqa: E402
     resolve_bunjang_box_price,
 
 )
-from lib.bunjang_card_price import is_previous_kst_day  # noqa: E402
+from lib.trade_reconcile import build_box_historical_quotes  # noqa: E402
+from lib.trade_sources import box_none_source  # noqa: E402
 
 from lib.price_history import (  # noqa: E402
     save_daily_box_snapshots,
@@ -116,8 +117,18 @@ HEADERS = {
 
 
 
+from lib.crawl_incremental import (  # noqa: E402
+    exit_if_caught_up,
+    get_incremental_days,
+    is_incremental_mode,
+    is_in_incremental_days,
+    print_incremental_banner,
+    read_last_crawl_kst,
+)
+
 APPLY = "--apply" in sys.argv
-DAILY_INCREMENTAL = "--previous-day" in sys.argv
+INCREMENTAL_DAYS = get_incremental_days(sys.argv, sb)
+DAILY_INCREMENTAL = is_incremental_mode(INCREMENTAL_DAYS)
 
 QUIET = "--quiet" in sys.argv
 
@@ -244,8 +255,6 @@ def _merge_quotes(
 
     pack_msrp: int,
 
-    verifier: Any,
-
     *,
     sold_trades_out: list[VerifiedBoxQuote] | None = None,
     seen_trade_pids: set[str] | None = None,
@@ -253,8 +262,9 @@ def _merge_quotes(
 ) -> None:
 
     for item in items:
-        if DAILY_INCREMENTAL and not is_previous_kst_day(
-            int(item.get("update_time", 0) or 0)
+        if INCREMENTAL_DAYS is not None and not is_in_incremental_days(
+            int(item.get("update_time", 0) or 0),
+            INCREMENTAL_DAYS,
         ):
             continue
 
@@ -268,7 +278,7 @@ def _merge_quotes(
 
         sold, listings = filter_fn(
 
-            [item], set_name, set_code, msrp, pack_msrp, verifier
+            [item], set_name, set_code, msrp, pack_msrp
 
         )
 
@@ -287,7 +297,7 @@ def _merge_quotes(
         # 거래내역용 — 이미지 검증·개봉 필터 완화, 미개봉 표기 없어도 포함
         if sold_trades_out is not None:
             trade_sold, _ = filter_fn(
-                [item], set_name, set_code, msrp, pack_msrp, None,
+                [item], set_name, set_code, msrp, pack_msrp,
                 allow_opened=True,
             )
             trade_pids = seen_trade_pids if seen_trade_pids is not None else seen_pids
@@ -433,8 +443,6 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
 
 
 
-    # 이미지 비교 없이 제목·언어·가격·수량 기준만 적용한다.
-    verifier = None
     for q in queries:
         before = len(sold_quotes) + len(listing_quotes)
         for page in range(3):
@@ -451,7 +459,6 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
                 set_code,
                 msrp,
                 pack_msrp,
-                verifier,
                 sold_trades_out=sold_trades,
                 seen_trade_pids=seen_trade_pids,
             )
@@ -477,16 +484,9 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
             .data
             or []
         )
-        historical_sold = [
-            VerifiedBoxQuote(price=int(row["price_krw"]), updated_at=0, pid="")
-            for row in history_rows
-            if str(row.get("source") or "").startswith(f"{source_prefix}:sold:")
-        ]
-        historical_listing = [
-            VerifiedBoxQuote(price=int(row["price_krw"]), updated_at=0, pid="")
-            for row in history_rows
-            if str(row.get("source") or "").startswith(f"{source_prefix}:listing:")
-        ]
+        historical_sold, historical_listing = build_box_historical_quotes(
+            history_rows, source_prefix,
+        )
     current_sold = sold_trades if sold_trades else sold_quotes
     if DAILY_INCREMENTAL and not current_sold and not listing_quotes:
         _log("  전날 신규 거래 없음 — 기존 박스 내역·평균 유지")
@@ -494,7 +494,9 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
     effective_sold = historical_sold + current_sold
     listing_quotes = historical_listing + listing_quotes
     price, count, tier = resolve_bunjang_box_price(effective_sold, listing_quotes)
+    no_detail = False
     if price > 0 and not effective_sold and not listing_quotes:
+        no_detail = True
         price, count, tier = 0, 0, ""
 
     source = f"{source_prefix}:{tier}" if count > 0 else ""
@@ -534,9 +536,22 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
                 continue
             src = f"{source_prefix}:{detail_tier}:{q.pid}:{q.updated_at}"
             rows.append({"set_id": set_id, "region": region, "price_krw": q.price, "source": src})
+        if price > 0 and len(rows) == 1:
+            no_detail = True
+            rows = [{
+                "set_id": set_id,
+                "region": region,
+                "price_krw": 0,
+                "source": box_none_source(source_prefix, no_detail=True),
+            }]
         # 아무것도 없으면 미등록 row
-        if not rows:
-            rows.append({"set_id": set_id, "region": region, "price_krw": 0, "source": f"{source_prefix}:none"})
+        elif not rows:
+            rows.append({
+                "set_id": set_id,
+                "region": region,
+                "price_krw": 0,
+                "source": box_none_source(source_prefix, no_detail=no_detail),
+            })
 
         save_fn = (
             save_incremental_box_snapshots
@@ -574,6 +589,9 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
 
 
 def main() -> None:
+    if not QUIET and INCREMENTAL_DAYS is not None:
+        print_incremental_banner(INCREMENTAL_DAYS, last_crawl=read_last_crawl_kst(sb))
+    exit_if_caught_up(INCREMENTAL_DAYS, last_crawl=read_last_crawl_kst(sb))
 
     region = get_region()
 

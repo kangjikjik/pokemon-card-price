@@ -16,7 +16,7 @@ def debug_set(code):
         print("-- query:", q)
         items = fetch_bunjang(q)
         print(" fetched items:", len(items))
-        sold, listings = filter_bunjang_kr_box_quotes(items, name, code, meta.msrp_box_kr, meta.msrp_pack_kr, verifier=None)
+        sold, listings = filter_bunjang_kr_box_quotes(items, name, code, meta.msrp_box_kr, meta.msrp_pack_kr)
         print(" matched sold:", len(sold), " matched listings:", len(listings))
         if sold:
             print(" SOLD items:")

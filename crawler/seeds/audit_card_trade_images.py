@@ -21,7 +21,9 @@ OUT = Path("_audit_out/card_trade_image_audit.json")
 def _cards(sb) -> list[dict]:
     sets = sb.table("card_sets").select("id,set_code,name_kr").execute().data or []
     out: list[dict] = []
-    cutoff = (datetime.now(timezone.utc) - timedelta(days=90)).isoformat()
+    from lib.trade_sources import SOLD_MAX_AGE_DAYS  # noqa: PLC0415
+
+    cutoff = (datetime.now(timezone.utc) - timedelta(days=SOLD_MAX_AGE_DAYS)).isoformat()
     for meta in sets:
         if meta["set_code"] not in KR_BY_CODE:
             continue
