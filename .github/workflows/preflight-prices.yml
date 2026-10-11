@@ -1,0 +1,30 @@
+# 전체 시세 크롤 전에 시크릿, DB, 번개장터 검색만 확인한다.
+# 가격은 저장하지 않는다. 수동 실행만.
+
+name: Price crawl preflight
+
+on:
+  workflow_dispatch:
+
+jobs:
+  preflight:
+    name: Secrets, database, Bunjang search
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install -r crawler/requirements.txt
+
+      - name: Check secrets, database, and Bunjang search
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        working-directory: crawler
+        run: python scripts/actions_preflight.py
