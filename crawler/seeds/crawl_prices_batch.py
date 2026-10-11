@@ -8,7 +8,7 @@
   python crawl_prices_batch.py --apply --set MG4
   python crawl_prices_batch.py --list --daily
 
-자동 실행: 4일 간격 (§15). GitHub Actions schedule은 아직 꺼 둠.
+자동 실행: 4일 간격 (§15). GitHub Actions schedule이 그때 돈다.
 로컬: crawler/scripts/run_daily_price_batch.ps1
 """
 from __future__ import annotations

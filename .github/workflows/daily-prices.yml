@@ -3,16 +3,14 @@
 #
 # 자동 실행은 4일 간격: 매월 1, 5, 9, 13, 17, 21, 25, 29일 KST 00:00 (UTC 15:00)
 # catch-up이 마지막 크롤 다음날~오늘을 채운다. 기준: crawler/TRADE_CRAWL_CRITERIA.md §15
-# 예약은 아직 켜지 않음. 수동 실행만 workflow_dispatch.
 # Secrets: SUPABASE_URL, SUPABASE_SERVICE_KEY, EXCHANGE_RATE_API_KEY (선택)
 
 name: Daily price batch
 
 on:
   workflow_dispatch:
-  # schedule: 아직 예약하지 않음 (2026-09 Actions 2,000분 소진. 켤 때는 아래 4일 cron)
-  # schedule:
-  #   - cron: "0 15 */4 * *"   # UTC 15:00 = KST 00:00, 매월 1·5·9·13·17·21·25·29일
+  schedule:
+    - cron: "0 15 */4 * *"   # UTC 15:00 = KST 00:00, 매월 1·5·9·13·17·21·25·29일
 
 concurrency:
   group: daily-price-crawl

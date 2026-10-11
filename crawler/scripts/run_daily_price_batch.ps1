@@ -1,6 +1,6 @@
 # KR/JP 확장팩+프로모+박스 시세 크롤 (catch-up, 마지막 크롤 다음날~오늘)
 # 번개장터 전용 (Collectory · 유유테이 제거)
-# 자동 간격은 4일 (§15). GitHub Actions schedule은 아직 꺼 둠.
+# 자동 간격은 4일 (§15). GitHub Actions schedule이 그때 돈다.
 # 로컬 예약은 register_price_schedule.ps1 을 실행할 때만 등록된다.
 
 $ErrorActionPreference = "Stop"

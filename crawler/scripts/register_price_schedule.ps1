@@ -1,5 +1,5 @@
 # 로컬 시세 크롤을 4일마다 자정(KST)에 등록하는 스크립트.
-# 이 파일을 실행하기 전에는 예약되지 않는다. GitHub Actions schedule도 아직 꺼 둠.
+# 이 파일을 실행하기 전에는 이 PC 예약은 등록되지 않는다. GitHub Actions 4일 예약은 켜 둔다.
 # 간격: TRADE_CRAWL_CRITERIA.md §15 (4일, catch-up으로 빈 날 보충)
 
 param(

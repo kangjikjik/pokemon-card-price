@@ -2,7 +2,7 @@
 Cardory 시세 크롤 진입점 (레거시).
 
 시세 수집은 seeds 배치 스크립트를 사용한다.
-자동 크롤은 4일 간격(§15)이며 GitHub Actions 예약은 아직 꺼 둠.
+자동 크롤은 4일 간격(§15)이며 GitHub Actions 예약이 그때 돈다.
 정책: crawler/TRADE_CRAWL_CRITERIA.md
 
   cd crawler/seeds

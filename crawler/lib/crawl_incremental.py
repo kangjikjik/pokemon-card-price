@@ -1,7 +1,7 @@
 """증분·catch-up 크롤 일자 (TRADE_CRAWL_CRITERIA.md §14).
 
 자동 크롤 간격은 4일(§15). 이 모듈은 마지막 크롤 다음날~오늘을 그대로 돌려주므로
-간격이 늘어나도 일자 계산을 따로 자르지 않는다. Actions schedule은 아직 꺼 둠.
+간격이 늘어나도 일자 계산을 따로 자르지 않는다. Actions schedule은 4일 cron이다.
 """
 from __future__ import annotations
 
