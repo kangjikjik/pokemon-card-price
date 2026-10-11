@@ -21,6 +21,7 @@ def run_promo_for_region(
     apply: bool,
     quiet: bool,
     previous_day_only: bool = False,
+    days: list | None = None,
 ) -> list[str]:
     """region: KR | JP. 실패한 set_code 목록 반환."""
     region = region.upper()
@@ -43,7 +44,7 @@ def run_promo_for_region(
         if quiet:
             cmd.append("--quiet")
         from lib.crawl_incremental import forward_incremental_flags  # noqa: E402
-        forward_incremental_flags(cmd)
+        forward_incremental_flags(cmd, days=days)
         print(f">>> promo {code} ({region})")
         if subprocess.call(cmd, cwd=str(SEEDS_DIR)) != 0:
             failed.append(code)

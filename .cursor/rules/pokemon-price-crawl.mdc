@@ -29,7 +29,7 @@ alwaysApply: false
 | 3 | KR 박스 | `crawl_box_prices_batch.py --apply --all --catch-up` |
 | 4 | JP 박스 | `crawl_box_prices_batch.py --apply --all --region JP --catch-up` |
 
-4번 JP 박스 성공 시 `last_crawl_kst`가 오늘로 갱신됨 (`_trade_crawl_state.json`).
+카드·박스가 모두 끝난 뒤 홈 순서 단계에서만 `last_crawl_kst`를 오늘로 저장한다. 시세를 저장한 시각으로는 올리지 않는다.
 
 ## catch-up (§14)
 

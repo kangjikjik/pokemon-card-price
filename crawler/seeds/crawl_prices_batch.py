@@ -115,7 +115,7 @@ def batch_sets(need: list[tuple[str, str, int, int]], batch_size: int) -> list[l
     return [codes[i : i + batch_size] for i in range(0, len(codes), batch_size)]
 
 
-def run_set(set_code: str, apply: bool, thorough: bool, quiet: bool = True) -> int:
+def run_set(set_code: str, apply: bool, thorough: bool, quiet: bool = True, days: list | None = None) -> int:
     cmd = [sys.executable, str(CRAWLER), "--set", set_code]
     if apply:
         cmd.append("--apply")
@@ -124,7 +124,7 @@ def run_set(set_code: str, apply: bool, thorough: bool, quiet: bool = True) -> i
     if quiet:
         cmd.append("--quiet")
     from lib.crawl_incremental import forward_incremental_flags  # noqa: E402
-    forward_incremental_flags(cmd)
+    forward_incremental_flags(cmd, days=days)
     print(f"\n{'=' * 60}\n>>> {set_code} 시작: {' '.join(cmd)}\n{'=' * 60}")
     return subprocess.call(cmd, cwd=str(SEEDS_DIR))
 
@@ -181,7 +181,7 @@ def main() -> None:
     failed: list[str] = []
 
     for code in targets:
-        rc = run_set(code, apply=apply, thorough=thorough, quiet=quiet)
+        rc = run_set(code, apply=apply, thorough=thorough, quiet=quiet, days=incr)
         if rc != 0:
             failed.append(code)
 
@@ -207,6 +207,7 @@ def main() -> None:
             "KR",
             apply=apply,
             quiet=quiet,
+            days=incr,
         )
         if promo_failed:
             print(f"\n프로모 KR 실패: {', '.join(promo_failed)}")

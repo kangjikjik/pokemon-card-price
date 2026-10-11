@@ -49,37 +49,80 @@ def save_crawl_state(state: dict) -> None:
     STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+# 홈 순서 표에 같이 둔다. period_end 는 1970-01-01 이라 조회 구간 계산에 안 쓰인다.
+CRAWL_KST_KIND = "crawl_kst"
+_CRAWL_KST_UNUSED_END = "1970-01-01"
+
+
+def _arg_value(argv: list[str], flag: str) -> str | None:
+    if flag not in argv:
+        return None
+    index = argv.index(flag)
+    if index + 1 >= len(argv):
+        return None
+    return argv[index + 1]
+
+
+def explicit_catch_up_days(argv: list[str] | None = None) -> list[date] | None:
+    """`--catch-up-from` ~ `--catch-up-to` 가 있으면 그 구간. 없으면 None."""
+    argv = argv if argv is not None else sys.argv
+    start_s = _arg_value(argv, "--catch-up-from")
+    end_s = _arg_value(argv, "--catch-up-to")
+    if not start_s and not end_s:
+        return None
+    if not start_s or not end_s:
+        raise SystemExit("--catch-up-from 과 --catch-up-to 는 함께 필요합니다.")
+    start = date.fromisoformat(start_s)
+    end = date.fromisoformat(end_s)
+    if end < start:
+        return []
+    out: list[date] = []
+    day = start
+    while day <= end:
+        out.append(day)
+        day += timedelta(days=1)
+    return out
+
+
+def read_db_last_crawl_kst(sb: Any) -> date | None:
+    """가격 저장 시각이 아니라, 파이프라인이 끝나며 적어 둔 마지막 크롤일."""
+    try:
+        rows = (
+            sb.table("home_highlights")
+            .select("period_start")
+            .eq("kind", CRAWL_KST_KIND)
+            .limit(1)
+            .execute()
+            .data
+            or []
+        )
+    except Exception:
+        return None
+    if not rows or not rows[0].get("period_start"):
+        return None
+    try:
+        return date.fromisoformat(str(rows[0]["period_start"])[:10])
+    except ValueError:
+        return None
+
+
 def read_last_crawl_kst(sb: Any | None = None) -> date | None:
-    """상태 파일 → 없으면 DB fetched_at 최대값(KST)으로 추정."""
+    """DB에 적어 둔 마지막 크롤일 → 없으면 상태 파일.
+
+    시세 `fetched_at` 은 카드를 저장한 시각이라 마지막 크롤일로 쓰지 않는다.
+    한 장이라도 오늘 저장되면 나머지 세트가 건너뛰어지기 때문이다.
+    """
+    if sb is not None:
+        stored = read_db_last_crawl_kst(sb)
+        if stored is not None:
+            return stored
     raw = load_crawl_state().get("last_crawl_kst")
     if raw:
         try:
             return date.fromisoformat(str(raw))
         except ValueError:
             pass
-    if sb is None:
-        return None
-    latest: date | None = None
-    for table in ("prices_kr", "prices_jp", "prices_box"):
-        rows = (
-            sb.table(table)
-            .select("fetched_at")
-            .order("fetched_at", desc=True)
-            .limit(1)
-            .execute()
-            .data
-            or []
-        )
-        if not rows or not rows[0].get("fetched_at"):
-            continue
-        try:
-            iso = str(rows[0]["fetched_at"]).replace("Z", "+00:00")
-            dt = datetime.fromisoformat(iso).astimezone(KST).date()
-        except ValueError:
-            continue
-        if latest is None or dt > latest:
-            latest = dt
-    return latest
+    return None
 
 
 def compute_catch_up_days(sb: Any, *, today: date | None = None) -> list[date]:
@@ -105,6 +148,9 @@ def get_incremental_days(argv: list[str] | None = None, sb: Any | None = None) -
     [date, ...] — 해당 KST 일자만 수집
     """
     argv = argv if argv is not None else sys.argv
+    explicit = explicit_catch_up_days(argv)
+    if explicit is not None:
+        return explicit
     if "--catch-up" in argv:
         if sb is None:
             from utils.db import get_supabase  # noqa: PLC0415
@@ -144,17 +190,57 @@ def exit_if_caught_up(days: list[date] | None, last_crawl: date | None = None) -
         sys.exit(0)
 
 
-def mark_crawl_kst_complete(today: date | None = None) -> None:
-    """파이프라인 성공 후 last_crawl_kst = today."""
+def write_db_last_crawl_kst(sb: Any, day: date) -> None:
+    sb.table("home_highlights").delete().eq("kind", CRAWL_KST_KIND).execute()
+    sb.table("home_highlights").insert({
+        "kind": CRAWL_KST_KIND,
+        "rank": 1,
+        "card_id": None,
+        "set_id": None,
+        "view_count": 0,
+        "period_start": day.isoformat(),
+        "period_end": _CRAWL_KST_UNUSED_END,
+    }).execute()
+
+
+def mark_crawl_kst_complete(today: date | None = None, sb: Any | None = None) -> None:
+    """카드·박스 전부가 끝난 뒤에만 last_crawl_kst = today."""
     today = today or kst_today()
     state = load_crawl_state()
     state["last_crawl_kst"] = today.isoformat()
     state["updated_at"] = datetime.now(KST).isoformat(timespec="seconds")
     save_crawl_state(state)
+    if sb is None:
+        from utils.db import get_supabase  # noqa: PLC0415
+        sb = get_supabase()
+    write_db_last_crawl_kst(sb, today)
 
 
-def forward_incremental_flags(cmd: list[str], argv: list[str] | None = None) -> None:
+def forward_incremental_flags(
+    cmd: list[str],
+    argv: list[str] | None = None,
+    days: list[date] | None = None,
+) -> None:
+    """자식 프로세스에는 이미 정한 날짜만 넘긴다. 저장 뒤에 다시 계산하지 않는다."""
+    if days is not None:
+        if days:
+            cmd.extend([
+                "--catch-up-from",
+                days[0].isoformat(),
+                "--catch-up-to",
+                days[-1].isoformat(),
+            ])
+        return
     argv = argv if argv is not None else sys.argv
+    explicit = explicit_catch_up_days(argv)
+    if explicit:
+        cmd.extend([
+            "--catch-up-from",
+            explicit[0].isoformat(),
+            "--catch-up-to",
+            explicit[-1].isoformat(),
+        ])
+        return
     if "--catch-up" in argv:
         cmd.append("--catch-up")
     elif "--previous-day" in argv:

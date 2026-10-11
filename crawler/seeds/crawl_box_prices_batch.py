@@ -24,7 +24,6 @@ from lib.crawl_incremental import (  # noqa: E402
     exit_if_caught_up,
     forward_incremental_flags,
     get_incremental_days,
-    mark_crawl_kst_complete,
     print_incremental_banner,
     read_last_crawl_kst,
 )
@@ -75,13 +74,13 @@ def batch_sets(codes: list[str], batch_size: int) -> list[list[str]]:
     return [codes[i : i + batch_size] for i in range(0, len(codes), batch_size)]
 
 
-def run_set(set_code: str, apply: bool, region: str = "KR") -> int:
+def run_set(set_code: str, apply: bool, region: str = "KR", days: list | None = None) -> int:
     cmd = [sys.executable, str(CRAWLER), "--set", set_code]
     if region.upper() == "JP":
         cmd.extend(["--region", "JP"])
     if apply:
         cmd.append("--apply")
-    forward_incremental_flags(cmd)
+    forward_incremental_flags(cmd, days=days)
     cmd.append("--quiet")
     label = "JP" if region.upper() == "JP" else "KR"
     print(f"\n{'=' * 60}\n>>> {set_code} {label} 박스 시세\n{'=' * 60}")
@@ -136,7 +135,7 @@ def main() -> None:
     failed: list[str] = []
 
     for code in targets:
-        rc = run_set(code, apply=apply, region=region)
+        rc = run_set(code, apply=apply, region=region, days=incr)
         if rc != 0:
             failed.append(code)
 
@@ -153,16 +152,6 @@ def main() -> None:
     if failed:
         print(f"\n실패: {', '.join(failed)}")
         sys.exit(1)
-
-    if (
-        apply
-        and "--catch-up" in sys.argv
-        and "--all" in sys.argv
-        and region == "JP"
-        and not failed
-    ):
-        mark_crawl_kst_complete()
-        print("catch-up 완료 → last_crawl_kst 갱신")
 
     print("\n배치 완료.")
 

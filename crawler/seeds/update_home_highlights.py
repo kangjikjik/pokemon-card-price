@@ -16,7 +16,7 @@ from datetime import date, timedelta
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.stdout.reconfigure(encoding="utf-8")
 
-from lib.crawl_incremental import kst_today  # noqa: E402
+from lib.crawl_incremental import CRAWL_KST_KIND, kst_today, mark_crawl_kst_complete  # noqa: E402
 from utils.db import get_supabase  # noqa: E402
 
 APPLY = "--apply" in sys.argv
@@ -86,6 +86,7 @@ def _period_start(sb) -> date | None:
     rows = (
         sb.table("home_highlights")
         .select("period_end")
+        .neq("kind", CRAWL_KST_KIND)
         .order("period_end", desc=True)
         .limit(1)
         .execute()
@@ -116,7 +117,7 @@ def main() -> int:
 
     if start is not None and start > today:
         print(f"홈 순서는 이미 {today.isoformat()}까지 반영되어 있습니다.")
-        return 0
+        return _finish(sb)
 
     try:
         card_rows = _rows(sb, "card_view_days", "card_id", start, today)
@@ -134,7 +135,7 @@ def main() -> int:
 
     if not card_totals and not set_totals:
         print("이 구간에 조회가 없어 홈 순서를 유지합니다.")
-        return 0
+        return _finish(sb)
 
     dates = [str(row["view_date"]) for row in [*card_rows, *set_rows] if row.get("view_date")]
     period_start = start or date.fromisoformat(min(dates))
@@ -194,8 +195,15 @@ def main() -> int:
     else:
         print("세트 조회가 없어 주요 세트는 유지합니다.")
 
+    return _finish(sb)
+
+
+def _finish(sb) -> int:
     if not APPLY:
         print("저장하지 않았습니다. 반영하려면 --apply")
+        return 0
+    mark_crawl_kst_complete(sb=sb)
+    print(f"마지막 크롤일 {kst_today().isoformat()} 저장")
     return 0
 
 

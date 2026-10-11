@@ -67,13 +67,13 @@ def batch_sets(codes: list[str], batch_size: int) -> list[list[str]]:
     return [codes[i : i + batch_size] for i in range(0, len(codes), batch_size)]
 
 
-def run_set(set_code: str, apply: bool, quiet: bool = True) -> int:
+def run_set(set_code: str, apply: bool, quiet: bool = True, days: list | None = None) -> int:
     cmd = [sys.executable, str(CRAWLER), "--set", set_code]
     if apply:
         cmd.append("--apply")
     if quiet:
         cmd.append("--quiet")
-    forward_incremental_flags(cmd)
+    forward_incremental_flags(cmd, days=days)
     print(f"\n{'=' * 60}\n>>> JP {set_code}\n{'=' * 60}")
     return subprocess.call(cmd, cwd=str(SEEDS_DIR))
 
@@ -124,7 +124,7 @@ def main() -> None:
     failed: list[str] = []
 
     for index, code in enumerate(targets):
-        rc = run_set(code, apply=apply, quiet=quiet)
+        rc = run_set(code, apply=apply, quiet=quiet, days=incr)
         if rc != 0:
             failed.append(code)
             if run_all:
@@ -153,7 +153,7 @@ def main() -> None:
     if run_all:
         from batch_promo import run_promo_for_region
 
-        promo_failed = run_promo_for_region("JP", apply=apply, quiet=quiet)
+        promo_failed = run_promo_for_region("JP", apply=apply, quiet=quiet, days=incr)
         if promo_failed:
             print(f"\n프로모 JP 실패: {', '.join(promo_failed)}")
             sys.exit(1)
