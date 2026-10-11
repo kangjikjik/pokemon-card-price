@@ -5,6 +5,8 @@ import re
 from datetime import datetime, timedelta, timezone
 
 SOLD_MAX_AGE_DAYS = 180
+# 카드 한 장·한 지역에서 거래완료와 판매중 호가를 합친 상세 행 상한.
+MAX_CARD_TRADE_ROWS = 50
 
 BUNJANG_NONE = "bunjang:none"
 BUNJANG_NONE_NO_DETAIL = "bunjang:none:no_detail"

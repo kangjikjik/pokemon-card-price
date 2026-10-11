@@ -181,14 +181,14 @@ export const PROMO_EVENT_SET_CODES = [] as const;
 
 export const PROMO_MISC_SET_CODE = 'PRM-MISC' as const;
 
-/** 주간 핫카드 — 프로모 잉어킹 (040/M-P) */
+/** 주간 핫카드 폴백 — 조회 기록이 없을 때. 크롤이 home_highlights를 쓰면 그 순서가 우선이다. */
 export const WEEKLY_HOT_CARD = {
   setCode: PROMO_MISC_SET_CODE,
   cardNumber: '040/M-P',
   cardId: 9150,
 } as const;
 
-/** GA 인기 조회 순 (2026-09) — 주간 핫카드(9150) 제외, 앞에서부터 표시 */
+/** 인기 급상승 폴백 (2026-09 GA) — 주간 핫카드(9150) 제외. home_highlights가 있으면 그 순서가 우선이다. */
 export const TRENDING_CARD_IDS = [
   11554, // CEL30 뮤 EX (135/103) — 13
   11553, // CEL30 뮤츠 EX (134/103) — 8
@@ -196,7 +196,7 @@ export const TRENDING_CARD_IDS = [
   11551, // CEL30 피카츄 ex SAR (126/103) — 5
 ] as const;
 
-/** GA 세트 상세 조회 순 (2026-09) — card_sets.id */
+/** 주요 세트 폴백 (2026-09 GA) — card_sets.id. home_highlights가 있으면 그 순서가 우선이다. */
 export const FEATURED_SET_IDS = [
   256, // CEL30 30주년 기념 — 24
   252, // MG7 스톰에메랄da — 19

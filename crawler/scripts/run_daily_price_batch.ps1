@@ -1,8 +1,7 @@
-# 매일 1회 — KR/JP 확장팩+프로모+박스 시세 크롤 (일별 스냅샷 누적)
+# KR/JP 확장팩+프로모+박스 시세 크롤 (catch-up, 마지막 크롤 다음날~오늘)
 # 번개장터 전용 (Collectory · 유유테이 제거)
-# 주 실행: GitHub Actions (KST 00:00 자동) — PC 오프라인 시에도 동작
-# 보조 실행: Task Scheduler (register_price_schedule.ps1 등록 시 로컬 PC 백업용)
-# Task Scheduler 등록: register_price_schedule.ps1
+# 자동 간격은 4일 (§15). GitHub Actions schedule은 아직 꺼 둠.
+# 로컬 예약은 register_price_schedule.ps1 을 실행할 때만 등록된다.
 
 $ErrorActionPreference = "Stop"
 $env:PYTHONIOENCODING = "utf-8"
@@ -59,6 +58,10 @@ try {
     "" | Tee-Object -FilePath $LogFile -Append
     "===== JP box prices (all 82 sets) =====" | Tee-Object -FilePath $LogFile -Append
     Invoke-Logged @($Python, "crawl_box_prices_batch.py", "--apply", "--all", "--region", "JP")
+
+    "" | Tee-Object -FilePath $LogFile -Append
+    "===== Home highlights from views =====" | Tee-Object -FilePath $LogFile -Append
+    Invoke-Logged @($Python, "update_home_highlights.py", "--apply")
 } finally {
     Pop-Location
 }

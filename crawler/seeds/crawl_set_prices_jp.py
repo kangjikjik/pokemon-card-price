@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.stdout.reconfigure(encoding="utf-8")
 
 from lib.bunjang_card_price import (  # noqa: E402
+    cap_card_trade_items,
     prefetch_bunjang_jp,
     resolve_card_price,
     sort_sold_items_by_time,
@@ -36,6 +37,7 @@ from lib.kr_reference_prices import load_kr_reference_prices  # noqa: E402
 from lib.trade_reconcile import (  # noqa: E402
     apply_outlier_filter,
     build_historical_by_card,
+    enforce_stored_card_trade_cap,
     outlier_detail_ids_to_drop,
 )
 from lib.trade_sources import BUNJANG_NONE, BUNJANG_NONE_NO_DETAIL  # noqa: E402
@@ -61,7 +63,6 @@ from lib.crawl_incremental import (  # noqa: E402
 INCREMENTAL_DAYS = get_incremental_days(sys.argv, sb)
 DAILY_INCREMENTAL = is_incremental_mode(INCREMENTAL_DAYS)
 WORKERS = 16          # 번개장터 병렬
-MAX_SOLD_ROWS = 100
 
 
 def get_arg(flag: str, default: str = "") -> str:
@@ -83,7 +84,7 @@ def _append_bunjang_jp_rows(
     card_id: int,
     rate: float,
 ) -> None:
-    for it in sort_sold_items_by_time(items)[:MAX_SOLD_ROWS]:
+    for it in sort_sold_items_by_time(items):
         pid = it.get("pid", "")
         if not pid:
             continue
@@ -226,6 +227,9 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
             b_listing_items,
             rarity,
         )
+        b_sold_items, b_listing_items = cap_card_trade_items(b_sold_items, b_listing_items)
+        b_sold = [int(it["price"]) for it in b_sold_items if int(it.get("price") or 0) > 0]
+        b_listing = [int(it["price"]) for it in b_listing_items if int(it.get("price") or 0) > 0]
 
         price_krw, count, source = resolve_card_price(b_sold, b_listing)
         no_detail = False
@@ -286,7 +290,8 @@ def crawl_one(set_code: str, rate: float) -> tuple[int, int]:
         )
         save_fn = save_incremental_snapshots if DAILY_INCREMENTAL else save_daily_snapshots
         deleted, inserted = save_fn(sb, "prices_jp", ids, rows)
-        print(f"완료: {ok}/{len(cards)}장 저장 (교체 {deleted}→{inserted})")
+        trimmed, repriced = enforce_stored_card_trade_cap(sb, "prices_jp", ids)
+        print(f"완료: {ok}/{len(cards)}장 저장 (교체 {deleted}→{inserted}, 상한 삭제 {trimmed}, 평균 수정 {repriced})")
     else:
         print(f"드라이런: {ok}/{len(cards)}장 매칭")
 

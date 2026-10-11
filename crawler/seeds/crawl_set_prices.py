@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.stdout.reconfigure(encoding="utf-8")
 
 from lib.bunjang_card_price import (  # noqa: E402
+    cap_card_trade_items,
     collect_bunjang_items,
     prefetch_bunjang_kr,
     resolve_card_price,
@@ -37,6 +38,7 @@ from lib.price_search import (  # noqa: E402
 from lib.trade_reconcile import (  # noqa: E402
     apply_outlier_filter,
     build_historical_by_card,
+    enforce_stored_card_trade_cap,
     outlier_detail_ids_to_drop,
 )
 from lib.trade_sources import BUNJANG_NONE, BUNJANG_NONE_NO_DETAIL  # noqa: E402
@@ -63,7 +65,6 @@ from lib.crawl_incremental import (  # noqa: E402
 INCREMENTAL_DAYS = get_incremental_days(sys.argv, sb)
 DAILY_INCREMENTAL = is_incremental_mode(INCREMENTAL_DAYS)
 WORKERS = 16
-MAX_SOLD_ROWS = 100
 
 
 def _append_bunjang_rows(
@@ -73,7 +74,7 @@ def _append_bunjang_rows(
     card_id: int,
 ) -> None:
     """tier: sold | listing — sold:bunjang:PID:TS 또는 listing:bunjang:PID:TS"""
-    for it in sort_sold_items_by_time(items)[:MAX_SOLD_ROWS]:
+    for it in sort_sold_items_by_time(items):
         pid = it.get("pid", "")
         if not pid:
             continue
@@ -148,15 +149,17 @@ def crawl_card(
 
     historical_sold, historical_listing = historical or ([], [])
     # 기존 상세도 같이 판정한다. 탈락한 과거 가격은 평균에 다시 넣지 않는다.
-    sold_filtered, listing_filtered, sold_items, listing_items = apply_outlier_filter(
+    _sold_prices, _listing_prices, sold_items, listing_items = apply_outlier_filter(
         historical_sold,
         historical_listing,
         sold_items,
         listing_items,
         rarity,
     )
-
-    price, count, source = resolve_card_price(sold_filtered, listing_filtered)
+    sold_items, listing_items = cap_card_trade_items(sold_items, listing_items)
+    sold = [int(it["price"]) for it in sold_items if int(it.get("price") or 0) > 0]
+    listing = [int(it["price"]) for it in listing_items if int(it.get("price") or 0) > 0]
+    price, count, source = resolve_card_price(sold, listing)
     no_detail = False
     if price > 0 and not sold_items and not listing_items:
         no_detail = True
@@ -310,10 +313,11 @@ def main() -> None:
         )
         save_fn = save_incremental_snapshots if DAILY_INCREMENTAL else save_daily_snapshots
         deleted, inserted = save_fn(sb, "prices_kr", all_ids, priced_rows)
+        trimmed, repriced = enforce_stored_card_trade_cap(sb, "prices_kr", all_ids)
         unpriced = len(cards) - ok
         print(
             f"\n완료: {ok}장 저장"
-            f" (교체 {deleted}→{inserted}"
+            f" (교체 {deleted}→{inserted}, 상한 삭제 {trimmed}, 평균 수정 {repriced})"
             + (f", 미등록 {unpriced}장" if unpriced else ")")
         )
     else:

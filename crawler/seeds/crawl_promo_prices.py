@@ -8,7 +8,7 @@
   python crawl_promo_prices.py --set CEL25PK --apply --region KR
   python crawl_promo_prices.py --apply --region JP
 
-일일 배치: batch_promo.run_promo_for_region — KR/JP 확장팩 배치 직후.
+배치: batch_promo.run_promo_for_region — KR/JP 확장팩 배치 직후.
 """
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 sys.stdout.reconfigure(encoding="utf-8")
 
 from lib.bunjang_card_price import (  # noqa: E402
+    cap_card_trade_items,
     prefetch_bunjang_jp,
     prefetch_bunjang_kr,
     resolve_card_price,
@@ -48,7 +49,10 @@ from crawl_set_prices import (  # noqa: E402
     crawl_card,
     get_arg,
 )
-from lib.trade_reconcile import build_historical_by_card  # noqa: E402
+from lib.trade_reconcile import (  # noqa: E402
+    build_historical_by_card,
+    enforce_stored_card_trade_cap,
+)
 from lib.trade_sources import BUNJANG_NONE, BUNJANG_NONE_NO_DETAIL  # noqa: E402
 from crawl_set_prices_jp import get_exchange_rate  # noqa: E402
 from lib.jp_price_search import (  # noqa: E402
@@ -189,7 +193,11 @@ def crawl_promo_kr(set_code: str, set_name: str, cards: list[dict]) -> int:
         )
         save_fn = save_incremental_snapshots if DAILY_INCREMENTAL else save_daily_snapshots
         deleted, inserted = save_fn(sb, "prices_kr", all_ids, priced_rows)
-        print(f"\n{set_code} KR 완료: {ok}/{len(cards)}장 (오늘 교체 {deleted}→{inserted})")
+        trimmed, repriced = enforce_stored_card_trade_cap(sb, "prices_kr", all_ids)
+        print(
+            f"\n{set_code} KR 완료: {ok}/{len(cards)}장"
+            f" (오늘 교체 {deleted}→{inserted}, 상한 삭제 {trimmed}, 평균 수정 {repriced})"
+        )
     else:
         print(f"\n{set_code} KR 드라이런: {ok}/{len(cards)}장 매칭")
     return ok
@@ -259,6 +267,9 @@ def crawl_promo_jp(set_code: str, set_name: str, cards: list[dict]) -> int:
         b_listing = filter_prices_by_rarity_band(b_listing, rarity)
         b_sold_items = [it for it in b_sold_items if filter_prices_by_rarity_band([it["price"]], rarity)]
         b_listing_items = [it for it in b_listing_items if filter_prices_by_rarity_band([it["price"]], rarity)]
+        b_sold_items, b_listing_items = cap_card_trade_items(b_sold_items, b_listing_items)
+        b_sold = [int(it["price"]) for it in b_sold_items if int(it.get("price") or 0) > 0]
+        b_listing = [int(it["price"]) for it in b_listing_items if int(it.get("price") or 0) > 0]
         price_krw, count, source = resolve_card_price(b_sold, b_listing)
         if count > 0:
             price_jpy = round(price_krw / rate) if rate else 0
@@ -273,13 +284,13 @@ def crawl_promo_jp(set_code: str, set_name: str, cards: list[dict]) -> int:
                 "price_jpy": price_jpy,
                 "source": source,
             })
-            if source.startswith("sold:"):
-                for it in sort_sold_items_by_time(b_sold_items)[:10]:
+            for tier, items in (("sold", b_sold_items), ("listing", b_listing_items)):
+                for it in sort_sold_items_by_time(items):
                     pid = it.get("pid", "")
                     ts = it.get("update_time", 0)
                     if not pid:
                         continue
-                    src = f"sold:bunjang:{pid}:{ts}" if ts else f"sold:bunjang:{pid}"
+                    src = f"{tier}:bunjang:{pid}:{ts}" if ts else f"{tier}:bunjang:{pid}"
                     rows.append({
                         "card_id": card["id"],
                         "price_jpy": round(it["price"] / rate) if rate else 0,
@@ -293,7 +304,11 @@ def crawl_promo_jp(set_code: str, set_name: str, cards: list[dict]) -> int:
     if APPLY and cards:
         all_ids = [c["id"] for c in cards]
         deleted, inserted = save_daily_snapshots(sb, "prices_jp", all_ids, rows)
-        print(f"  {set_code} JP 완료: {ok}/{len(cards)}장 (오늘 교체 {deleted}→{inserted})")
+        trimmed, repriced = enforce_stored_card_trade_cap(sb, "prices_jp", all_ids)
+        print(
+            f"  {set_code} JP 완료: {ok}/{len(cards)}장"
+            f" (오늘 교체 {deleted}→{inserted}, 상한 삭제 {trimmed}, 평균 수정 {repriced})"
+        )
     return ok
 
 

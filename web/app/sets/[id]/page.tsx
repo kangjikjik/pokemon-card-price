@@ -7,6 +7,7 @@ import { FEATURED_SET_CODES, isViewableSetCode } from '@/lib/constants';
 import { mapRawSet } from '@/lib/set-map';
 import { SetPackImage } from '@/components/set-pack-image';
 import { SetBoxPriceRows } from '@/components/set-box-price';
+import { RecordSetView } from '@/components/record-set-view';
 import { ScrollFab } from '@/components/scroll-fab';
 import { ScrollRestore } from '@/components/scroll-restore';
 import { compareCardsByRarity, isDisplayableRarity } from '@/lib/rarity';
@@ -105,6 +106,7 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
   return (
     <>
     <ScrollRestore />
+    {Number.isFinite(numericId) && <RecordSetView setId={String(numericId)} />}
     <div className="max-w-6xl mx-auto px-4 py-8">
       <Link href="/sets" className="inline-flex items-center text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white mb-6 transition-colors">
         <ChevronLeft className="w-4 h-4 mr-1" /> 목록으로 돌아가기

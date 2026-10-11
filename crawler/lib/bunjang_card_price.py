@@ -17,7 +17,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta, timezone
 from typing import Callable
 
-from lib.trade_sources import SOLD_MAX_AGE_DAYS
+from lib.trade_sources import MAX_CARD_TRADE_ROWS, SOLD_MAX_AGE_DAYS
 KST = timezone(timedelta(hours=9))
 # 사진 1~2장은 단품으로 본다. 3장 이상은 다른 카드와 함께 올린 매물일 수 있다.
 MAX_SINGLE_CARD_PHOTOS = 2
@@ -28,7 +28,19 @@ _HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    )
+    ),
+    "Referer": "https://m.bunjang.co.kr/",
+}
+_SEARCH_URL = "https://api.bunjang.co.kr/api/search/v8/web/search"
+_SEARCH_POLICY = "mw.product.keyword"
+# 새 검색은 페이지당 최대 60건이다. 5페이지면 예전 3페이지×100건과 같다.
+SEARCH_PAGE_SIZE = 60
+SEARCH_MAX_PAGES = 5
+_STATUS_TO_LEGACY = {
+    "SELLING": "0",
+    "RESERVED": "1",
+    "DELETED": "2",
+    "SOLD_OUT": "3",
 }
 
 
@@ -36,26 +48,107 @@ _HEADERS = {
 # API 조회
 # ──────────────────────────────────────────────────
 
+def _legacy_status(status: object) -> str:
+    text = str(status or "")
+    return _STATUS_TO_LEGACY.get(text, text)
+
+
+def _update_time_of(item: dict) -> int:
+    raw = item.get("update_time")
+    if raw:
+        try:
+            return int(raw)
+        except (TypeError, ValueError):
+            pass
+    text = str(item.get("updatedAt") or "")
+    if not text:
+        return 0
+    try:
+        return int(datetime.fromisoformat(text.replace("Z", "+00:00")).timestamp())
+    except ValueError:
+        return 0
+
+
+def _normalize_search_item(item: dict) -> dict | None:
+    """새 검색 응답을 기존 매물 필드(status 0/3, update_time)로 맞춘다."""
+    if str(item.get("type") or "PRODUCT") != "PRODUCT":
+        return None
+    pid = str(item.get("pid") or "")
+    if not pid:
+        return None
+    return {
+        "pid": pid,
+        "name": str(item.get("name") or ""),
+        "price": item.get("price") or 0,
+        "status": _legacy_status(item.get("status")),
+        "update_time": _update_time_of(item),
+    }
+
+
+def _fetch_search_page(
+    keyword: str,
+    cursor: str | None,
+    timeout: int,
+) -> tuple[list[dict], str | None]:
+    params: dict[str, str | list[str]] = {
+        "policyKey": _SEARCH_POLICY,
+        "q": keyword,
+        "sort": "latest",
+        "status": ["SELLING", "SOLD_OUT"],
+        "size": str(SEARCH_PAGE_SIZE),
+    }
+    if cursor:
+        params["cursor"] = cursor
+    url = _SEARCH_URL + "?" + urllib.parse.urlencode(params, doseq=True)
+    req = urllib.request.Request(url, headers=_HEADERS)
+    raw = urllib.request.urlopen(req, timeout=timeout).read().decode("utf-8")
+    data = json.loads(raw)
+    search = (
+        ((data.get("data") or {}).get("responses") or {})
+        .get("mainGrid", {})
+        .get("searchResponse")
+        or {}
+    )
+    items: list[dict] = []
+    for row in search.get("data") or []:
+        normalized = _normalize_search_item(row)
+        if normalized:
+            items.append(normalized)
+    next_cursor = search.get("nextCursor") or None
+    return items, next_cursor
+
+
 def fetch_bunjang_items(
     keyword: str,
     n: int = 100,
     *,
     page: int = 0,
-    timeout: int = 5,
+    timeout: int = 8,
 ) -> list[dict]:
-    """번개장터 검색 결과 (판매중 + 거래완료 모두 포함)."""
-    encoded = urllib.parse.quote(keyword)
-    url = (
-        f"https://api.bunjang.co.kr/api/1/find_v2.json"
-        f"?q={encoded}&n={n}&page={page}&order=date"
-    )
-    try:
-        req = urllib.request.Request(url, headers=_HEADERS)
-        res = urllib.request.urlopen(req, timeout=timeout).read().decode("utf-8")
-        return json.loads(res).get("list", [])
-    except Exception as e:
-        print(f"[번개] {keyword[:30]!r} p{page} 오류: {e}")
+    """번개장터 검색 결과 (판매중 + 거래완료, 최신순, 최대 300건).
+
+    n·page는 예전 find_v2 호출 호환용이다. 페이지는 이 함수 안에서 이어서 받는다.
+    """
+    del n, page
+    if not keyword:
         return []
+    items: list[dict] = []
+    seen: set[str] = set()
+    cursor: str | None = None
+    for _ in range(SEARCH_MAX_PAGES):
+        try:
+            batch, cursor = _fetch_search_page(keyword, cursor, timeout)
+        except Exception as e:
+            print(f"[번개] {keyword[:30]!r} 오류: {e}")
+            break
+        fresh = [it for it in batch if it["pid"] not in seen]
+        if not fresh:
+            break
+        seen.update(it["pid"] for it in fresh)
+        items.extend(fresh)
+        if not cursor:
+            break
+    return items
 
 
 def bunjang_product_detail(pid: str) -> dict | None:
@@ -320,6 +413,20 @@ def sort_sold_items_by_time(items: list[dict]) -> list[dict]:
     return sorted(items, key=lambda x: int(x.get("update_time") or 0), reverse=True)
 
 
+def cap_card_trade_items(
+    sold_items: list[dict],
+    listing_items: list[dict],
+    limit: int = MAX_CARD_TRADE_ROWS,
+) -> tuple[list[dict], list[dict]]:
+    """거래완료와 호가를 합쳐 최근 limit건만 남긴다."""
+    ranked = [("sold", it) for it in sold_items] + [("listing", it) for it in listing_items]
+    ranked.sort(key=lambda pair: int(pair[1].get("update_time") or 0), reverse=True)
+    kept = ranked[:limit]
+    sold = [it for tier, it in kept if tier == "sold"]
+    listing = [it for tier, it in kept if tier == "listing"]
+    return sold, listing
+
+
 # ──────────────────────────────────────────────────
 # 가격 결정
 # ──────────────────────────────────────────────────
@@ -339,25 +446,19 @@ def collect_bunjang_items(
     seen_pids: set[str] = set()
     sold_count = 0
 
-    max_pages = 3
     for q in queries:
         if not q:
             continue
-        for page in range(max_pages):
-            batch = fetch_bunjang_items(q, n=n, page=page)
-            if not batch:
-                break
-            for it in batch:
-                pid = str(it.get("pid", ""))
-                if pid and pid in seen_pids:
-                    continue
-                if pid:
-                    seen_pids.add(pid)
-                all_items.append(it)
-                if str(it.get("status", "")) == "3":
-                    sold_count += 1
-            if len(batch) < n:
-                break
+        batch = fetch_bunjang_items(q, n=n)
+        for it in batch:
+            pid = str(it.get("pid", ""))
+            if pid and pid in seen_pids:
+                continue
+            if pid:
+                seen_pids.add(pid)
+            all_items.append(it)
+            if str(it.get("status", "")) == "3":
+                sold_count += 1
 
         # 충분한 거래완료가 모이면 나머지 쿼리 스킵
         if early_stop_sold > 0 and sold_count >= early_stop_sold:

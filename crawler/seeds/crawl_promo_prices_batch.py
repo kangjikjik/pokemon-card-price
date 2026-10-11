@@ -1,7 +1,7 @@
 """
-프로모 시세 수동 배치 (일일 자동 배치에는 사용하지 않음).
+프로모 시세 수동 배치 (자동 파이프라인에서는 이 파일을 직접 돌리지 않음).
 
-일일 자동: run_daily_price_batch.ps1 → KR/JP 확장팩 배치 끝에 batch_promo.py 로 통합.
+자동 파이프라인: run_daily_price_batch.ps1 → KR/JP 확장팩 배치 끝에 batch_promo.py 로 통합.
 이 스크립트는 수동·부분 재수집용.
 
   python crawl_promo_prices_batch.py --list

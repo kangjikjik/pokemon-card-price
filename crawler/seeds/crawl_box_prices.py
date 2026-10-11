@@ -210,26 +210,13 @@ def _log(msg: str) -> None:
 
 def fetch_bunjang(keyword: str, page: int = 0) -> list[dict]:
 
-    encoded = urllib.parse.quote(keyword)
-
-    url = (
-        f"https://api.bunjang.co.kr/api/1/find_v2.json"
-        f"?q={encoded}&n=100&page={page}&order=date"
-    )
-
-    try:
-
-        req = urllib.request.Request(url, headers=HEADERS)
-
-        res = urllib.request.urlopen(req, timeout=10).read().decode("utf-8")
-
-        return json.loads(res).get("list", [])
-
-    except Exception as e:
-
-        print(f"    [번개장터] {e}")
-
+    # 페이지는 fetch_bunjang_items 안에서 최대 5페이지까지 이어서 받는다.
+    if page > 0:
         return []
+
+    from lib.bunjang_card_price import fetch_bunjang_items
+
+    return fetch_bunjang_items(keyword, timeout=10)
 
 
 

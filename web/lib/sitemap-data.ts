@@ -113,3 +113,27 @@ export async function loadSitemapPart(id: number, now: string): Promise<Metadata
     priority: 0.65,
   }));
 }
+
+export async function sitemapIndexResponse(): Promise<Response> {
+  const lastmod = new Date().toISOString();
+  const ids = await listSitemapIds();
+  const entries = ids
+    .map(
+      id => `  <sitemap>
+    <loc>${SITEMAP_BASE}/sitemap/${id}.xml</loc>
+    <lastmod>${lastmod}</lastmod>
+  </sitemap>`,
+    )
+    .join('\n');
+  const body = `<?xml version="1.0" encoding="UTF-8"?>
+<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${entries}
+</sitemapindex>`;
+
+  return new Response(body, {
+    headers: {
+      'Content-Type': 'application/xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=3600, s-maxage=3600',
+    },
+  });
+}

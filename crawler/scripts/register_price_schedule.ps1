@@ -1,5 +1,6 @@
-# Register the local daily price crawl at midnight (KST).
-# Primary scheduler — GitHub Actions cron is disabled (403 from cloud IPs).
+# 로컬 시세 크롤을 4일마다 자정(KST)에 등록하는 스크립트.
+# 이 파일을 실행하기 전에는 예약되지 않는다. GitHub Actions schedule도 아직 꺼 둠.
+# 간격: TRADE_CRAWL_CRITERIA.md §15 (4일, catch-up으로 빈 날 보충)
 
 param(
     [string]$At = "00:00",
@@ -10,14 +11,14 @@ $Script = Join-Path $PSScriptRoot "run_daily_price_batch.ps1"
 $Argument = '-NoProfile -ExecutionPolicy Bypass -File "{0}"' -f $Script
 $Action = New-ScheduledTaskAction -Execute "powershell.exe" `
     -Argument $Argument
-$Trigger = New-ScheduledTaskTrigger -Daily -At $At
+$Trigger = New-ScheduledTaskTrigger -Daily -DaysInterval 4 -At $At
 $Settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries `
     -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 8)
 
 Register-ScheduledTask -TaskName $TaskName -Action $Action -Trigger $Trigger `
-    -Settings $Settings -Description "Pokemon prices - daily KR/JP cards+promo+box crawl" -Force
+    -Settings $Settings -Description "Pokemon prices - every 4 days KR/JP cards+promo+box crawl" -Force
 
-Write-Host "Registered: $TaskName at $At daily"
+Write-Host "Registered: $TaskName at $At every 4 days"
 Write-Host "Inspect: Get-ScheduledTask -TaskName $TaskName"
 Write-Host ('Remove: Unregister-ScheduledTask -TaskName {0} -Confirm:$false' -f $TaskName)
-Write-Host "GitHub Actions cron is disabled; this local task is the primary scheduler."
+Write-Host "GitHub Actions schedule is still off. This script only registers a local task when run."

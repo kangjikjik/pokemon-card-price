@@ -13,6 +13,10 @@
 # testing
 /coverage
 
+# generated for Google; Next routes are rejected by Search Console
+/public/sitemap-index.xml
+/public/sitemap-part-*.xml
+
 # next.js
 /.next/
 /out/

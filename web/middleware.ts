@@ -1,7 +1,8 @@
 // Edge 미들웨어 — IP 기반 레이트 리밋
 // 보호 대상:
 //   POST /api/community/**          (글쓰기·수정·삭제·따봉) — 분당 20회
-//   POST /api/cards/:id/view        (조회수 카운트)          — 분당 60회
+//   POST /api/cards/:id/view        (카드 조회수)            — 분당 60회
+//   POST /api/sets/:id/view         (세트·박스 조회수)       — 분당 60회
 // 인메모리 Map, Cloudflare Workers 기준으로 충분한 수준
 // 더 강한 제한: Cloudflare Dashboard > Rate Limiting 규칙 추가
 
@@ -31,6 +32,12 @@ const RULES: { pattern: RegExp; method: string; max: number; windowMs: number }[
   },
   {
     pattern: /^\/api\/cards\/\d+\/view$/,
+    method: 'POST',
+    max: 60,
+    windowMs: WINDOW,
+  },
+  {
+    pattern: /^\/api\/sets\/\d+\/view$/,
     method: 'POST',
     max: 60,
     windowMs: WINDOW,
@@ -83,7 +90,13 @@ function canonicalHostRedirect(req: NextRequest): NextResponse | null {
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   // sitemap·robots는 미들웨어를 타면 구글 서치 콘솔이 가져오기에 실패한다.
-  if (pathname === '/robots.txt' || pathname === '/sitemap.xml' || pathname.startsWith('/sitemap/')) {
+  if (
+    pathname === '/robots.txt' ||
+    pathname === '/sitemap.xml' ||
+    pathname === '/sitemap-index.xml' ||
+    pathname.startsWith('/sitemap-part-') ||
+    pathname.startsWith('/sitemap/')
+  ) {
     return NextResponse.next();
   }
 
@@ -122,6 +135,6 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|sitemap\\.xml|robots\\.txt|sitemap/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    '/((?!_next/static|_next/image|sitemap-index\\.xml|sitemap-part-|sitemap\\.xml|robots\\.txt|sitemap/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 };

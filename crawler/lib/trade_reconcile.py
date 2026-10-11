@@ -5,7 +5,9 @@ from collections import Counter, defaultdict
 from typing import Any
 
 from lib.trade_sources import (
+    MAX_CARD_TRADE_ROWS,
     extract_bunjang_pid,
+    extract_bunjang_update_time,
     is_card_detail_row,
     is_listing_detail_source,
     is_sold_detail_source,
@@ -473,3 +475,118 @@ def purge_box_listing_rows_with_sold_duplicate(sb: Any) -> int:
         )
     ]
     return _delete_ids(sb, "prices_box", delete_ids)
+
+
+def _load_price_rows(sb: Any, table: str, card_ids: list[int] | None) -> list[dict]:
+    cols = "id,card_id,price_krw,source,fetched_at"
+    if table == "prices_jp":
+        cols += ",price_jpy"
+    rows: list[dict] = []
+
+    def _page(query_fn) -> None:
+        offset = 0
+        while True:
+            batch = query_fn(offset).execute().data or []
+            rows.extend(batch)
+            if len(batch) < 1000:
+                break
+            offset += 1000
+
+    if not card_ids:
+        _page(
+            lambda offset: sb.table(table)
+            .select(cols)
+            .order("id")
+            .range(offset, offset + 999)
+        )
+        return rows
+
+    for i in range(0, len(card_ids), 20):
+        chunk = card_ids[i : i + 20]
+        _page(
+            lambda offset, c=chunk: sb.table(table)
+            .select(cols)
+            .in_("card_id", c)
+            .order("id")
+            .range(offset, offset + 999)
+        )
+    return rows
+
+
+def _summary_source(kept: list[dict]) -> str:
+    has_sold = any(is_sold_detail_source(str(row.get("source") or "")) for row in kept)
+    has_listing = any(is_listing_detail_source(str(row.get("source") or "")) for row in kept)
+    if has_sold and has_listing:
+        return "sold+listing:bunjang"
+    if has_sold:
+        return "sold:bunjang"
+    return "listing:bunjang"
+
+
+def enforce_stored_card_trade_cap(
+    sb: Any,
+    table: str,
+    card_ids: list[int] | None = None,
+    limit: int = MAX_CARD_TRADE_ROWS,
+) -> tuple[int, int]:
+    """카드별 상세 행을 최근 limit건만 남기고, 최신 요약 시세를 그 평균으로 고친다.
+
+    Returns: (삭제한 상세 행 수, 고친 요약 행 수)
+    """
+    rows = _load_price_rows(sb, table, card_ids)
+    by_card: dict[int, list[dict]] = defaultdict(list)
+    for row in rows:
+        by_card[int(row["card_id"])].append(row)
+
+    delete_ids: list[int] = []
+    summary_updates: list[tuple[int, dict]] = []
+    for card_rows in by_card.values():
+        details = [row for row in card_rows if is_card_detail_row(str(row.get("source") or ""))]
+        details.sort(
+            key=lambda row: (
+                extract_bunjang_update_time(str(row.get("source") or "")),
+                int(row["id"]),
+            ),
+            reverse=True,
+        )
+        kept = details[:limit]
+        delete_ids.extend(int(row["id"]) for row in details[limit:])
+        if not kept:
+            continue
+        prices = [int(row.get("price_krw") or 0) for row in kept if int(row.get("price_krw") or 0) > 0]
+        if not prices:
+            continue
+        avg = round(sum(prices) / len(prices))
+        payload: dict = {"price_krw": avg, "source": _summary_source(kept)}
+        if table == "prices_jp":
+            jpy = [int(row.get("price_jpy") or 0) for row in kept if int(row.get("price_jpy") or 0) > 0]
+            if jpy:
+                payload["price_jpy"] = round(sum(jpy) / len(jpy))
+        summaries = [
+            row for row in card_rows
+            if not is_card_detail_row(str(row.get("source") or ""))
+            and int(row.get("price_krw") or 0) > 0
+        ]
+        if not summaries:
+            continue
+        latest = max(summaries, key=lambda row: str(row.get("fetched_at") or ""))
+        changed = int(latest.get("price_krw") or 0) != avg or str(latest.get("source") or "") != payload["source"]
+        if table == "prices_jp" and "price_jpy" in payload:
+            changed = changed or int(latest.get("price_jpy") or 0) != payload["price_jpy"]
+        if changed:
+            summary_updates.append((int(latest["id"]), payload))
+
+    deleted = 0
+    for i in range(0, len(delete_ids), 200):
+        batch = delete_ids[i : i + 200]
+        sb.table(table).delete().in_("id", batch).execute()
+        deleted += len(batch)
+    updated = 0
+    for summary_id, payload in summary_updates:
+        sb.table(table).update(payload).eq("id", summary_id).execute()
+        updated += 1
+        if updated % 500 == 0:
+            print(f"  {table} 요약 {updated}장 수정 중", flush=True)
+    if delete_ids or summary_updates:
+        print(f"  {table} 상세 {deleted}건 삭제, 요약 {updated}장 수정", flush=True)
+    return deleted, updated

@@ -1,16 +1,18 @@
-# 일일 전팩 시세 크롤 — GitHub Actions
+# 전팩 시세 크롤 — GitHub Actions
 # 번개장터 전용 (Collectory · 유유테이 제거 → 클라우드 IP 차단 없음)
 #
-# KST 00:00 (UTC 15:00) 매일 자동 실행 + 수동 실행(workflow_dispatch)
+# 자동 실행은 4일 간격: 매월 1, 5, 9, 13, 17, 21, 25, 29일 KST 00:00 (UTC 15:00)
+# catch-up이 마지막 크롤 다음날~오늘을 채운다. 기준: crawler/TRADE_CRAWL_CRITERIA.md §15
+# 예약은 아직 켜지 않음. 수동 실행만 workflow_dispatch.
 # Secrets: SUPABASE_URL, SUPABASE_SERVICE_KEY, EXCHANGE_RATE_API_KEY (선택)
 
 name: Daily price batch
 
 on:
   workflow_dispatch:
-  # schedule: 일시 중지 (2026-09 Actions 2,000분 한도 소진 — 10/1 리셋 후 필요 시 주석 해제)
+  # schedule: 아직 예약하지 않음 (2026-09 Actions 2,000분 소진. 켤 때는 아래 4일 cron)
   # schedule:
-  #   - cron: "0 15 * * *"   # UTC 15:00 = KST 00:00
+  #   - cron: "0 15 */4 * *"   # UTC 15:00 = KST 00:00, 매월 1·5·9·13·17·21·25·29일
 
 concurrency:
   group: daily-price-crawl
@@ -156,3 +158,27 @@ jobs:
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         working-directory: crawler/seeds
         run: python crawl_box_prices_batch.py --apply --all --region JP --catch-up
+
+  # ─── 5. 홈 핫카드·급상승·주요 세트 (조회수) ──────────────
+  home-highlights:
+    name: Home highlights from views
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [kr-boxes, jp-boxes]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install deps
+        run: pip install -r crawler/requirements.txt
+
+      - name: Update home card and set order
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        working-directory: crawler/seeds
+        run: python update_home_highlights.py --apply

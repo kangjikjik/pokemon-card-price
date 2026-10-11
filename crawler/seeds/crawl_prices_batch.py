@@ -2,13 +2,14 @@
 확장팩(KR) 시세를 N팩씩 배치로 수집 — 번개장터 전용.
 상태 파일로 다음 배치 위치를 기억한다.
 
-  python crawl_prices_batch.py --apply --daily      # 전 팩 순환(일일 권장)
+  python crawl_prices_batch.py --apply --daily      # 전 팩 순환(배치 1회)
   python crawl_prices_batch.py --apply              # RECrawl_FROM 이후 재수집 모드
   python crawl_prices_batch.py --apply --batch 0
   python crawl_prices_batch.py --apply --set MG4
   python crawl_prices_batch.py --list --daily
 
-일일 자동 실행: crawler/scripts/run_daily_price_batch.ps1 / GitHub Actions
+자동 실행: 4일 간격 (§15). GitHub Actions schedule은 아직 꺼 둠.
+로컬: crawler/scripts/run_daily_price_batch.ps1
 """
 from __future__ import annotations
 

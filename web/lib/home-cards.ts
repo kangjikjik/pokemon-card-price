@@ -67,38 +67,76 @@ function mapRawToCard(
   };
 }
 
-async function fetchWeeklyHotCard(supabase: ReturnType<typeof getSupabaseServer>): Promise<Card | null> {
+type HomePicks = {
+  hotId: number;
+  trendingIds: number[];
+  setIds: number[];
+};
+
+async function loadHomePicks(supabase: ReturnType<typeof getSupabaseServer>): Promise<HomePicks> {
+  const fallback: HomePicks = {
+    hotId: WEEKLY_HOT_CARD.cardId,
+    trendingIds: [...TRENDING_CARD_IDS],
+    setIds: [...FEATURED_SET_IDS],
+  };
+  const { data, error } = await supabase
+    .from('home_highlights')
+    .select('kind, rank, card_id, set_id')
+    .order('rank', { ascending: true });
+  if (error || !data?.length) return fallback;
+
+  const ranked = (kind: string) =>
+    data
+      .filter(row => row.kind === kind)
+      .sort((a, b) => (a.rank as number) - (b.rank as number));
+
+  const hot = ranked('hot_card').find(row => typeof row.card_id === 'number');
+  const trending = ranked('trending_card')
+    .map(row => row.card_id)
+    .filter((id): id is number => typeof id === 'number');
+  const sets = ranked('featured_set')
+    .map(row => row.set_id)
+    .filter((id): id is number => typeof id === 'number');
+
+  return {
+    hotId: typeof hot?.card_id === 'number' ? hot.card_id : fallback.hotId,
+    trendingIds: trending.length > 0 ? trending : fallback.trendingIds,
+    setIds: sets.length > 0 ? sets : fallback.setIds,
+  };
+}
+
+async function fetchWeeklyHotCard(
+  supabase: ReturnType<typeof getSupabaseServer>,
+  cardId: number,
+): Promise<Card | null> {
   const { data, error } = await supabase
     .from('cards')
     .select(CARD_SELECT)
-    .eq('id', WEEKLY_HOT_CARD.cardId)
+    .eq('id', cardId)
     .maybeSingle();
 
   if (error || !data) return null;
-  const priceMap = await fetchRecentPricesByCard(
-    supabase,
-    [WEEKLY_HOT_CARD.cardId],
-    { daysBack: 14 },
-  );
+  const priceMap = await fetchRecentPricesByCard(supabase, [cardId], { daysBack: 14 });
   return mapRawToCard(data as Record<string, unknown>, priceMap);
 }
 
 async function fetchTrendingCards(
   supabase: ReturnType<typeof getSupabaseServer>,
+  ids: number[],
   excludeId: number,
 ): Promise<Card[]> {
-  const ids = TRENDING_CARD_IDS.filter(id => id !== excludeId);
-  if (ids.length === 0) return [];
+  const orderedIds = ids.filter(id => id !== excludeId);
+  if (orderedIds.length === 0) return [];
 
   const { data, error } = await supabase
     .from('cards')
     .select(CARD_SELECT)
-    .in('id', [...ids]);
+    .in('id', orderedIds);
 
   if (error) throw error;
 
   const byId = new Map((data || []).map(r => [r.id as number, r as Record<string, unknown>]));
-  const ordered = ids.map(id => byId.get(id)).filter((r): r is Record<string, unknown> => r != null);
+  const ordered = orderedIds.map(id => byId.get(id)).filter((r): r is Record<string, unknown> => r != null);
 
   const priceMap = await fetchRecentPricesByCard(supabase, ordered.map(r => r.id as number));
   return ordered.map(r => mapRawToCard(r, priceMap));
@@ -110,25 +148,26 @@ export async function getHomePageData(): Promise<{
   sets: SetData[];
 }> {
   const supabase = getSupabaseServer();
+  const picks = await loadHomePicks(supabase);
 
-  const highlight = await fetchWeeklyHotCard(supabase);
+  const highlight = await fetchWeeklyHotCard(supabase, picks.hotId);
   if (!highlight) throw new Error('weekly hot card not found');
 
   const [trending, setsResult] = await Promise.all([
-    fetchTrendingCards(supabase, WEEKLY_HOT_CARD.cardId),
+    fetchTrendingCards(supabase, picks.trendingIds, picks.hotId),
     supabase
       .from('card_sets')
       .select(`id, set_code, name_kr, name_en, released_at, image_url`)
-      .in('id', [...FEATURED_SET_IDS]),
+      .in('id', picks.setIds),
   ]);
 
   if (setsResult.error) throw setsResult.error;
 
   const bySetId = new Map((setsResult.data || []).map(s => [s.id as number, s]));
-  const orderedSets = FEATURED_SET_IDS.map(id => bySetId.get(id)).filter(
+  const orderedSets = picks.setIds.map(id => bySetId.get(id)).filter(
     (s): s is NonNullable<typeof s> => s != null,
   );
-  const boxMap = await fetchRecentBoxPricesBySet(supabase, [...FEATURED_SET_IDS]);
+  const boxMap = await fetchRecentBoxPricesBySet(supabase, picks.setIds);
   const sets = orderedSets.map(raw =>
     mapRawSet({ ...raw, prices_box: boxMap.get(raw.id as number) ?? [] }),
   );

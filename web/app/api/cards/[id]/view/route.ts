@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase';
+import { incrementDailyView } from '@/lib/view-days';
 
 function isMissingViewCountError(err: unknown): boolean {
   if (err && typeof err === 'object') {
@@ -49,6 +50,7 @@ export async function POST(
 
     if (updateError) throw updateError;
 
+    await incrementDailyView(supabase, 'card_view_days', 'card_id', id);
     return NextResponse.json({ ok: true, view_count: next });
   } catch (err) {
     console.error('[api/cards/view] error:', err);

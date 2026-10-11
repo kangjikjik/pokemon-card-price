@@ -65,7 +65,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#0B132B]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-colors duration-300">
-      <div className="max-w-6xl mx-auto px-4 h-16 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+      <div className="max-w-6xl mx-auto px-4 max-md:pr-14 h-16 grid grid-cols-[1fr_auto_1fr] items-center gap-4">
         <Link href="/" className="flex items-center gap-2 group shrink-0 justify-self-start">
           <KadoriMark size="lg" />
           <span className="text-xl font-extrabold text-slate-900 dark:text-white tracking-tight hidden sm:inline">
@@ -102,8 +102,9 @@ export function Navbar() {
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+              className="rounded-full bg-slate-100 p-2 text-slate-500 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-white"
               aria-label="검색"
+              title="검색"
             >
               <Search className="w-5 h-5" />
             </button>
@@ -116,15 +117,17 @@ export function Navbar() {
           >
             {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
-          <button
-            onClick={toggle}
-            className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors bg-slate-100 dark:bg-slate-800 rounded-full shrink-0"
-            title="테마 전환"
-          >
-            {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-500" />}
-          </button>
         </div>
       </div>
+      <button
+        type="button"
+        onClick={toggle}
+        className="absolute right-2 top-1/2 z-10 -translate-y-1/2 rounded-full bg-slate-100 p-2 text-slate-500 hover:text-slate-900 dark:bg-slate-800 dark:text-slate-400 dark:hover:text-white"
+        title="화면 밝기"
+        aria-label="화면 밝기"
+      >
+        {theme === 'dark' ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-indigo-500" />}
+      </button>
 
       {menuOpen && (
         <nav className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0B132B]/95 px-4 py-3 flex flex-col gap-1">
