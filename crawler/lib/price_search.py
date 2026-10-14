@@ -737,6 +737,22 @@ def _hangul_tail_allowed(rest: str) -> bool:
     return True
 
 
+def name_matches_spaced_title(title: str, name: str) -> bool:
+    """제목에 있는 띄어쓰기는 유지한다. 이름 안의 띄어쓰기만 무시한다."""
+    raw = re.sub(r"\s+", "", (name or "")).lower()
+    if len(raw) < 2 or not title:
+        return False
+    title_l = title.lower()
+    pattern = r"\s*".join(re.escape(ch) for ch in raw)
+    for match in re.finditer(pattern, title_l):
+        start = match.start()
+        if start > 0 and _is_hangul_char(title_l[start - 1]):
+            continue
+        if _hangul_tail_allowed(title_l[match.end() :].lstrip()):
+            return True
+    return False
+
+
 def name_token_in_text(text: str, name: str) -> bool:
     """이름이 더 긴 한글 이름에 끼어 있으면 불일치. 메탕은 메탕구가 아니고, 코일은 레어코일이 아니다."""
     name = (name or "").strip()
@@ -766,20 +782,13 @@ def _title_matches_name(title: str, name_kr: str) -> bool:
         if core.endswith(suf):
             core = core[: -len(suf)].strip()
             break
-    if len(core) >= 2 and name_token_in_text(title, core):
+    if len(core) >= 2 and name_matches_spaced_title(title, core):
         return True
-    if name != core and name_token_in_text(title, name):
-        return True
-    # "메가 제라오라"처럼 띄어쓰기·대소문자만 다른 경우
-    compact_title = _compact_match_text(title)
-    if len(core) >= 2 and name_token_in_text(compact_title, _compact_match_text(core)):
+    if name != core and name_matches_spaced_title(title, name):
         return True
     if core.startswith("메가") and len(core) > 2:
         short = core[len("메가") :].strip()
-        if len(short) >= 2 and (
-            name_token_in_text(title, short)
-            or name_token_in_text(compact_title, _compact_match_text(short))
-        ):
+        if len(short) >= 2 and name_matches_spaced_title(title, short):
             return True
     return False
 

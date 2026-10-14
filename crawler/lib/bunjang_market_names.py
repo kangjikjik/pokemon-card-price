@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 
-from lib.price_search import _compact_match_text, name_token_in_text, normalize_mega_spelling
+from lib.price_search import name_matches_spaced_title, normalize_mega_spelling
 
 # DB/시드에 잘못 들어간 name_kr → 공식 한글명
 KR_DISPLAY_FIXUPS: dict[str, str] = {
@@ -257,13 +257,12 @@ def title_matches_bunjang_name(
         return False
     if match_pikachu_pkr_name_in_title(title, name_kr):
         return True
-    t_compact = _compact_match_text(title)
     for cand in bunjang_search_names(
         name_kr, name_jp, name_en, rarity, card_number, set_code
     ):
-        c = _strip_ex(cand)
-        if len(c) >= 2 and name_token_in_text(title, c):
+        if name_matches_spaced_title(title, cand):
             return True
-        if name_token_in_text(t_compact, _compact_match_text(c)):
+        core = _strip_ex(cand)
+        if core != cand and len(core) >= 2 and name_matches_spaced_title(title, core):
             return True
     return False
