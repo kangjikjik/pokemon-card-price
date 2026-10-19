@@ -28,8 +28,10 @@ from lib.bunjang_card_price import (  # noqa: E402
     split_by_status_kr,
 )
 from lib.price_history import (  # noqa: E402
+    ensure_crawl_day_summaries,
     save_daily_snapshots,
     save_incremental_snapshots,
+    snapshot_day,
 )
 from lib.price_search import (  # noqa: E402
     build_search_queries,
@@ -64,6 +66,7 @@ from lib.crawl_incremental import (  # noqa: E402
 
 INCREMENTAL_DAYS = get_incremental_days(sys.argv, sb)
 DAILY_INCREMENTAL = is_incremental_mode(INCREMENTAL_DAYS)
+SNAPSHOT_DAY = snapshot_day(INCREMENTAL_DAYS)
 WORKERS = 16
 
 
@@ -312,12 +315,17 @@ def main() -> None:
             else [c["id"] for c in cards]
         )
         save_fn = save_incremental_snapshots if DAILY_INCREMENTAL else save_daily_snapshots
-        deleted, inserted = save_fn(sb, "prices_kr", all_ids, priced_rows)
+        deleted, inserted = save_fn(
+            sb, "prices_kr", all_ids, priced_rows, crawl_day=SNAPSHOT_DAY
+        )
         trimmed, repriced = enforce_stored_card_trade_cap(sb, "prices_kr", all_ids)
+        ensured = ensure_crawl_day_summaries(
+            sb, "prices_kr", [c["id"] for c in cards], SNAPSHOT_DAY
+        )
         unpriced = len(cards) - ok
         print(
             f"\n완료: {ok}장 저장"
-            f" (교체 {deleted}→{inserted}, 상한 삭제 {trimmed}, 평균 수정 {repriced})"
+            f" (교체 {deleted}→{inserted}, 상한 삭제 {trimmed}, 평균 수정 {repriced}, 크롤일 {ensured})"
             + (f", 미등록 {unpriced}장" if unpriced else ")")
         )
     else:

@@ -28,8 +28,10 @@ from lib.bunjang_card_price import (  # noqa: E402
     sort_sold_items_by_time,
 )
 from lib.price_history import (  # noqa: E402
+    ensure_crawl_day_summaries,
     save_daily_snapshots,
     save_incremental_snapshots,
+    snapshot_day,
 )
 from lib.price_search import (  # noqa: E402
     build_promo_jp_search_queries,
@@ -192,11 +194,16 @@ def crawl_promo_kr(set_code: str, set_name: str, cards: list[dict]) -> int:
             else [c["id"] for c in cards]
         )
         save_fn = save_incremental_snapshots if DAILY_INCREMENTAL else save_daily_snapshots
-        deleted, inserted = save_fn(sb, "prices_kr", all_ids, priced_rows)
+        deleted, inserted = save_fn(
+            sb, "prices_kr", all_ids, priced_rows, crawl_day=snapshot_day(INCREMENTAL_DAYS)
+        )
         trimmed, repriced = enforce_stored_card_trade_cap(sb, "prices_kr", all_ids)
+        ensured = ensure_crawl_day_summaries(
+            sb, "prices_kr", [c["id"] for c in cards], snapshot_day(INCREMENTAL_DAYS)
+        )
         print(
             f"\n{set_code} KR 완료: {ok}/{len(cards)}장"
-            f" (오늘 교체 {deleted}→{inserted}, 상한 삭제 {trimmed}, 평균 수정 {repriced})"
+            f" (오늘 교체 {deleted}→{inserted}, 상한 삭제 {trimmed}, 평균 수정 {repriced}, 크롤일 {ensured})"
         )
     else:
         print(f"\n{set_code} KR 드라이런: {ok}/{len(cards)}장 매칭")
@@ -303,11 +310,16 @@ def crawl_promo_jp(set_code: str, set_name: str, cards: list[dict]) -> int:
 
     if APPLY and cards:
         all_ids = [c["id"] for c in cards]
-        deleted, inserted = save_daily_snapshots(sb, "prices_jp", all_ids, rows)
+        deleted, inserted = save_daily_snapshots(
+            sb, "prices_jp", all_ids, rows, crawl_day=snapshot_day(INCREMENTAL_DAYS)
+        )
         trimmed, repriced = enforce_stored_card_trade_cap(sb, "prices_jp", all_ids)
+        ensured = ensure_crawl_day_summaries(
+            sb, "prices_jp", [c["id"] for c in cards], snapshot_day(INCREMENTAL_DAYS)
+        )
         print(
             f"  {set_code} JP 완료: {ok}/{len(cards)}장"
-            f" (오늘 교체 {deleted}→{inserted}, 상한 삭제 {trimmed}, 평균 수정 {repriced})"
+            f" (오늘 교체 {deleted}→{inserted}, 상한 삭제 {trimmed}, 평균 수정 {repriced}, 크롤일 {ensured})"
         )
     return ok
 

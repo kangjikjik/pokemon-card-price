@@ -87,6 +87,7 @@ from lib.trade_sources import box_none_source  # noqa: E402
 from lib.price_history import (  # noqa: E402
     save_daily_box_snapshots,
     save_incremental_box_snapshots,
+    snapshot_day,
 )
 
 from kr_sets import KR_BY_CODE, KR_SETS  # noqa: E402
@@ -129,6 +130,7 @@ from lib.crawl_incremental import (  # noqa: E402
 APPLY = "--apply" in sys.argv
 INCREMENTAL_DAYS = get_incremental_days(sys.argv, sb)
 DAILY_INCREMENTAL = is_incremental_mode(INCREMENTAL_DAYS)
+SNAPSHOT_DAY = snapshot_day(INCREMENTAL_DAYS)
 
 QUIET = "--quiet" in sys.argv
 
@@ -546,15 +548,11 @@ def crawl_set_box(set_code: str, region: str, rate: float = 9.5) -> tuple[int, i
             else save_daily_box_snapshots
         )
         deleted, inserted = save_fn(
-
             sb,
-
             [set_id],
-
             region,
-
             rows,
-
+            crawl_day=SNAPSHOT_DAY,
         )
 
         tier_label = "거래완료" if tier == "sold" else "호가"
