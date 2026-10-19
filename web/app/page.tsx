@@ -88,6 +88,11 @@ export default async function HomePage() {
                   <div className="text-3xl font-bold text-slate-900 dark:text-white">
                     {highlightCard.priceKR > 0 ? formatKRW(highlightCard.priceKR) : '미등록'}
                   </div>
+                  {highlightCard.priceKR > 0 && highlightCard.lowKR > 0 && (
+                    <p className="text-slate-500 text-sm mt-2">
+                      최저 {formatKRW(highlightCard.lowKR)} · 최고 {formatKRW(highlightCard.highKR)}
+                    </p>
+                  )}
                 </div>
                 <div className="bg-slate-50 dark:bg-slate-950/50 rounded-xl p-5 border border-slate-100 dark:border-slate-800/50">
                   <div className="flex items-center justify-between mb-2">
@@ -97,6 +102,11 @@ export default async function HomePage() {
                   <div className="text-3xl font-bold text-slate-900 dark:text-white">
                     {highlightCard.priceJP > 0 ? formatKRW(highlightCard.priceJP) : '미등록'}
                   </div>
+                  {highlightCard.priceJP > 0 && highlightCard.lowJP > 0 && (
+                    <p className="text-slate-500 text-sm mt-2">
+                      최저 {formatKRW(highlightCard.lowJP)} · 최고 {formatKRW(highlightCard.highJP)}
+                    </p>
+                  )}
                 </div>
               </div>
               <Link href={`/cards/${highlightCard.id}`} className="inline-flex items-center justify-center bg-slate-900 text-white dark:bg-white dark:text-slate-950 px-6 py-3 rounded-lg font-bold hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors w-full sm:w-auto shadow-sm">
