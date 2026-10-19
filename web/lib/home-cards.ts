@@ -60,6 +60,10 @@ function mapRawToCard(
       'from-slate-400 to-slate-600',
     priceKR: compact ? latestPriceKrw(pricesKR) : kr.price,
     priceJP: compact ? latestPriceKrw(pricesJP) : jp.price,
+    lowKR: kr.min,
+    highKR: kr.max,
+    lowJP: jp.min,
+    highJP: jp.max,
     trendKR: kr.trend,
     trendJP: jp.trend,
     historyKR: compact ? [] : kr.history,
@@ -116,7 +120,7 @@ async function fetchWeeklyHotCard(
     .maybeSingle();
 
   if (error || !data) return null;
-  const priceMap = await fetchRecentPricesByCard(supabase, [cardId], { daysBack: 14 });
+  const priceMap = await fetchRecentPricesByCard(supabase, [cardId], { history: true });
   return mapRawToCard(data as Record<string, unknown>, priceMap);
 }
 
@@ -138,7 +142,7 @@ async function fetchTrendingCards(
   const byId = new Map((data || []).map(r => [r.id as number, r as Record<string, unknown>]));
   const ordered = orderedIds.map(id => byId.get(id)).filter((r): r is Record<string, unknown> => r != null);
 
-  const priceMap = await fetchRecentPricesByCard(supabase, ordered.map(r => r.id as number));
+  const priceMap = await fetchRecentPricesByCard(supabase, ordered.map(r => r.id as number), { history: true });
   return ordered.map(r => mapRawToCard(r, priceMap));
 }
 

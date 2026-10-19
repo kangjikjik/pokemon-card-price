@@ -68,7 +68,6 @@ export default async function SetDetailPage({ params }: { params: Promise<{ id: 
     const priceMap = await fetchRecentPricesByCard(
       supabase,
       baseCards.map(c => c.id as number),
-      { daysBack: 14 },
     );
 
     cards = baseCards.map(c => {

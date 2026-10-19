@@ -47,7 +47,6 @@ export async function GET(
     const priceMap = await fetchRecentPricesByCard(
       supabase,
       cardIds,
-      { daysBack: 14 },
     );
     const cardsWithPrices = (cardsData || []).map(c => {
       const p = priceMap.get(c.id as number);

@@ -27,7 +27,7 @@ export function mapRawSet(raw: {
   const code = raw.set_code || '';
   const msrp = getSetMsrp(code);
 
-  // 여러 개별 거래 rows가 저장된 경우 최신일 중앙값 사용 (calcRepresentativePrice)
+  // 저장된 박스 거래 내역의 평균 (calcRepresentativePrice)
   const boxPriceKR = calcRepresentativePrice(prices.filter(p => p.region === 'KR')).price;
   const boxPriceJP = calcRepresentativePrice(prices.filter(p => p.region === 'JP')).price;
 

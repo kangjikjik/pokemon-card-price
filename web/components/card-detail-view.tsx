@@ -150,6 +150,11 @@ export function CardDetailView({ card }: { card: Card }) {
                 {card.priceKR > 0 ? formatKRW(card.priceKR) : '시세 미등록'}
               </div>
               <p className="text-slate-500 text-sm relative z-10">최근 거래 기준</p>
+              {card.priceKR > 0 && card.lowKR > 0 && (
+                <p className="text-slate-500 text-sm relative z-10 mt-2">
+                  최저 {formatKRW(card.lowKR)} · 최고 {formatKRW(card.highKR)}
+                </p>
+              )}
             </div>
 
             <div className="bg-gradient-to-br from-red-50 to-slate-50 dark:from-slate-900 dark:to-slate-950 border border-red-200 dark:border-red-900/30 rounded-xl p-6 relative overflow-hidden">
@@ -162,12 +167,17 @@ export function CardDetailView({ card }: { card: Card }) {
                 {card.priceJP > 0 ? formatKRW(card.priceJP) : '시세 미등록'}
               </div>
               <p className="text-slate-500 text-sm relative z-10">최근 거래 기준</p>
+              {card.priceJP > 0 && card.lowJP > 0 && (
+                <p className="text-slate-500 text-sm relative z-10 mt-2">
+                  최저 {formatKRW(card.lowJP)} · 최고 {formatKRW(card.highJP)}
+                </p>
+              )}
             </div>
           </div>
 
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-6 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-              <h2 className="text-lg font-bold text-slate-900 dark:text-white">시세 추이 (7일)</h2>
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white">시세 추이</h2>
               <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-lg">
                 <button
                   type="button"

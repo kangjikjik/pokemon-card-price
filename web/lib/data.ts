@@ -12,6 +12,10 @@ export interface Card {
   imageColor: string;
   priceKR: number;
   priceJP: number;
+  lowKR: number;
+  highKR: number;
+  lowJP: number;
+  highJP: number;
   trendKR: number;
   trendJP: number;
   historyKR: { date: string; price: number }[];
@@ -59,6 +63,10 @@ export const MOCK_CARDS: Card[] = [
     imageColor: "from-orange-500 via-red-600 to-rose-700",
     priceKR: 185000,
     priceJP: 240000,
+    lowKR: 185000,
+    highKR: 185000,
+    lowJP: 240000,
+    highJP: 240000,
     trendKR: 5.2,
     trendJP: -1.8,
     historyKR: generateHistory(185000),
@@ -78,6 +86,10 @@ export const MOCK_CARDS: Card[] = [
     imageColor: "from-fuchsia-500 via-purple-600 to-pink-500",
     priceKR: 45000,
     priceJP: 52000,
+    lowKR: 45000,
+    highKR: 45000,
+    lowJP: 52000,
+    highJP: 52000,
     trendKR: -2.1,
     trendJP: 0.5,
     historyKR: generateHistory(45000),
@@ -97,6 +109,10 @@ export const MOCK_CARDS: Card[] = [
     imageColor: "from-yellow-300 via-yellow-400 to-amber-500",
     priceKR: 12000,
     priceJP: 28000,
+    lowKR: 12000,
+    highKR: 12000,
+    lowJP: 28000,
+    highJP: 28000,
     trendKR: 12.5,
     trendJP: 8.4,
     historyKR: generateHistory(12000),
@@ -116,6 +132,10 @@ export const MOCK_CARDS: Card[] = [
     imageColor: "from-lime-400 via-emerald-500 to-teal-600",
     priceKR: 320000,
     priceJP: 850000,
+    lowKR: 320000,
+    highKR: 320000,
+    lowJP: 850000,
+    highJP: 850000,
     trendKR: -5.0,
     trendJP: -12.5,
     historyKR: generateHistory(320000),
@@ -135,6 +155,10 @@ export const MOCK_CARDS: Card[] = [
     imageColor: "from-slate-700 via-indigo-800 to-purple-900",
     priceKR: 280000,
     priceJP: 410000,
+    lowKR: 280000,
+    highKR: 280000,
+    lowJP: 410000,
+    highJP: 410000,
     trendKR: 2.1,
     trendJP: 4.5,
     historyKR: generateHistory(280000),
@@ -154,6 +178,10 @@ export const MOCK_CARDS: Card[] = [
     imageColor: "from-blue-300 via-blue-500 to-indigo-600",
     priceKR: 210000,
     priceJP: 350000,
+    lowKR: 210000,
+    highKR: 210000,
+    lowJP: 350000,
+    highJP: 350000,
     trendKR: 1.5,
     trendJP: 0.8,
     historyKR: generateHistory(210000),

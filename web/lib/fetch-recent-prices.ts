@@ -10,12 +10,23 @@ type RawPriceRow = {
   source: string | null;
 };
 
-/** 목록·상세가 같은 기간을 본다 */
-const PRICE_LOOKBACK_DAYS = 14;
-/** 7일 추이용 — 일별 요약 스냅샷 상한 */
-const MAX_SUMMARY_ROWS = 14;
-/** 상세 PID row 상한 (거래 내역 API와 별개) */
-const DEFAULT_DETAIL_MAX = 12;
+/** 거래 내역에 쓰는 상세 행. 수집일 14일로 자르지 않는다. */
+const DETAIL_SOURCE_OR =
+  'source.like.sold:bunjang:%,source.like.listing:bunjang:%,source.like.bunjang:sold:%,source.like.bunjang:listing:%,source.like.bunjang-jp:sold:%,source.like.bunjang-jp:listing:%';
+/** 카드당 저장된 거래 상한(50)보다 넉넉히 가져온다. */
+const DETAIL_MAX = 100;
+/** 시세 추이에 쓰는 요약. 매물 행이 아니다. */
+const SUMMARY_SOURCES = [
+  'sold+listing:bunjang',
+  'sold:bunjang',
+  'listing:bunjang',
+  'bunjang:sold',
+  'bunjang:listing',
+  'bunjang:sold+listing',
+  'bunjang-jp:sold',
+  'bunjang-jp:listing',
+  'bunjang-jp:sold+listing',
+];
 const FETCH_CHUNK = 25;
 
 function isBunjangSource(source?: string | null): boolean {
@@ -64,12 +75,8 @@ function splitSummaryDetail(rows: PriceRow[]): { summaries: PriceRow[]; details:
   return { summaries, details };
 }
 
-function mergeSummaryAndDetails(
-  summaries: PriceRow[],
-  details: PriceRow[],
-  detailMax: number,
-): PriceRow[] {
-  return [...summaries.slice(0, MAX_SUMMARY_ROWS), ...details.slice(0, detailMax)];
+function mergeSummaryAndDetails(summaries: PriceRow[], details: PriceRow[]): PriceRow[] {
+  return [...summaries, ...details.slice(0, DETAIL_MAX)];
 }
 
 function tradePid(source?: string | null): string | null {
@@ -79,7 +86,7 @@ function tradePid(source?: string | null): string | null {
 }
 
 /** 같은 그림 묶음의 거래를 상품 ID당 한 번만 남긴다. 카드별 요약은 넣지 않는다. */
-function sharedDetailRows(cardId: number, byCard: Map<number, PriceRow[]>, detailMax: number): PriceRow[] | null {
+function sharedDetailRows(cardId: number, byCard: Map<number, PriceRow[]>): PriceRow[] | null {
   const ids = sameArtPriceIds(cardId);
   if (ids.length < 2) return null;
   const byPid = new Map<string, PriceRow>();
@@ -92,7 +99,7 @@ function sharedDetailRows(cardId: number, byCard: Map<number, PriceRow[]>, detai
     }
   }
   if (byPid.size === 0) return null;
-  return [...byPid.values()].sort(comparePriceRows).slice(0, detailMax);
+  return [...byPid.values()].sort(comparePriceRows).slice(0, DETAIL_MAX);
 }
 
 function expandIds(cardIds: readonly number[]): number[] {
@@ -107,7 +114,6 @@ async function fetchPriceRowsForCards(
   supabase: SupabaseClient,
   table: 'prices_kr' | 'prices_jp',
   cardIds: number[],
-  sinceIso: string,
 ): Promise<RawPriceRow[]> {
   const rows: RawPriceRow[] = [];
   for (let i = 0; i < cardIds.length; i += FETCH_CHUNK) {
@@ -118,10 +124,35 @@ async function fetchPriceRowsForCards(
         .select('card_id, price_krw, fetched_at, source')
         .in('card_id', chunk)
         .gt('price_krw', 0)
-        .gte('fetched_at', sinceIso)
+        .or(DETAIL_SOURCE_OR)
         .order('fetched_at', { ascending: false })
         .range(offset, offset + 999);
 
+      const pageRows = (data || []) as RawPriceRow[];
+      rows.push(...pageRows);
+      if (pageRows.length < 1000) break;
+    }
+  }
+  return rows;
+}
+
+async function fetchSummaryRowsForCards(
+  supabase: SupabaseClient,
+  table: 'prices_kr' | 'prices_jp',
+  cardIds: number[],
+): Promise<RawPriceRow[]> {
+  const rows: RawPriceRow[] = [];
+  for (let i = 0; i < cardIds.length; i += FETCH_CHUNK) {
+    const chunk = cardIds.slice(i, i + FETCH_CHUNK);
+    for (let offset = 0, page = 0; page < 20; offset += 1000, page += 1) {
+      const { data } = await supabase
+        .from(table)
+        .select('card_id, price_krw, fetched_at, source')
+        .in('card_id', chunk)
+        .in('source', SUMMARY_SOURCES)
+        .gt('price_krw', 0)
+        .order('fetched_at', { ascending: false })
+        .range(offset, offset + 999);
       const pageRows = (data || []) as RawPriceRow[];
       rows.push(...pageRows);
       if (pageRows.length < 1000) break;
@@ -145,27 +176,33 @@ function bucketRows(rows: RawPriceRow[]): Map<number, PriceRow[]> {
   return byCard;
 }
 
-function rowsForCard(cardId: number, byCard: Map<number, PriceRow[]>, detailMax: number): PriceRow[] {
-  const shared = sharedDetailRows(cardId, byCard, detailMax);
-  if (shared) return shared;
-  const { summaries, details } = splitSummaryDetail(byCard.get(cardId) || []);
-  return mergeSummaryAndDetails(summaries, details, detailMax);
+function rowsForCard(cardId: number, byCard: Map<number, PriceRow[]>): PriceRow[] {
+  const ids = sameArtPriceIds(cardId);
+  const summaryIds = ids.length ? ids : [cardId];
+  const summaries: PriceRow[] = [];
+  for (const id of summaryIds) {
+    summaries.push(...splitSummaryDetail(byCard.get(id) || []).summaries);
+  }
+  const shared = sharedDetailRows(cardId, byCard);
+  if (shared) return mergeSummaryAndDetails(summaries, shared);
+  const { details } = splitSummaryDetail(byCard.get(cardId) || []);
+  return mergeSummaryAndDetails(summaries, details);
 }
 
-/** 카드 상세. 목록과 같은 조회·같은 계산을 쓴다. */
+/** 카드 상세. 저장된 크롤일 요약을 모두 가져와 추이를 그린다. */
 export async function fetchPricesForCardDetail(
   supabase: SupabaseClient,
   cardId: number,
 ): Promise<{ kr: PriceRow[]; jp: PriceRow[] }> {
-  const map = await fetchRecentPricesByCard(supabase, [cardId]);
+  const map = await fetchRecentPricesByCard(supabase, [cardId], { history: true });
   return map.get(cardId) ?? { kr: [], jp: [] };
 }
 
-/** 카드별 최근 시세. 목록·세트·상세가 같은 14일을 본다. */
+/** 카드별 시세. 목록·세트·상세가 저장된 거래 내역 전체를 본다. */
 export async function fetchRecentPricesByCard(
   supabase: SupabaseClient,
   cardIds: number[],
-  opts?: { daysBack?: number; perCardMax?: number },
+  options?: { history?: boolean },
 ): Promise<Map<number, { kr: PriceRow[]; jp: PriceRow[] }>> {
   const out = new Map<number, { kr: PriceRow[]; jp: PriceRow[] }>();
   if (!cardIds.length) return out;
@@ -174,25 +211,29 @@ export async function fetchRecentPricesByCard(
     out.set(id, { kr: [], jp: [] });
   }
 
-  const daysBack = opts?.daysBack ?? PRICE_LOOKBACK_DAYS;
-  const detailMax = opts?.perCardMax ?? DEFAULT_DETAIL_MAX;
-  const since = new Date();
-  since.setDate(since.getDate() - daysBack);
-  const sinceIso = since.toISOString();
   const fetchIds = expandIds(cardIds);
 
-  const [krRows, jpRows] = await Promise.all([
-    fetchPriceRowsForCards(supabase, 'prices_kr', fetchIds, sinceIso),
-    fetchPriceRowsForCards(supabase, 'prices_jp', fetchIds, sinceIso),
+  const summaryFetches = options?.history
+    ? [
+        fetchSummaryRowsForCards(supabase, 'prices_kr', fetchIds),
+        fetchSummaryRowsForCards(supabase, 'prices_jp', fetchIds),
+      ]
+    : [Promise.resolve([] as RawPriceRow[]), Promise.resolve([] as RawPriceRow[])];
+  const [krRows, jpRows, krSummaries, jpSummaries] = await Promise.all([
+    fetchPriceRowsForCards(supabase, 'prices_kr', fetchIds),
+    fetchPriceRowsForCards(supabase, 'prices_jp', fetchIds),
+    ...summaryFetches,
   ]);
+  krRows.push(...krSummaries);
+  jpRows.push(...jpSummaries);
 
   const krByCard = bucketRows(krRows);
   const jpByCard = bucketRows(jpRows);
 
   for (const id of cardIds) {
     out.set(id, {
-      kr: rowsForCard(id, krByCard, detailMax),
-      jp: rowsForCard(id, jpByCard, detailMax),
+      kr: rowsForCard(id, krByCard),
+      jp: rowsForCard(id, jpByCard),
     });
   }
 

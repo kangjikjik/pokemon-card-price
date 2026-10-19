@@ -85,8 +85,9 @@ export async function GET(
       .eq('set_id', numericId)
       .eq('region', region)
       .gt('price_krw', 0)
+      .or('source.like.bunjang:sold:%,source.like.bunjang:listing:%,source.like.bunjang-jp:sold:%,source.like.bunjang-jp:listing:%')
       .order('fetched_at', { ascending: false })
-      .limit(50);
+      .limit(30);
 
     const parsed: BoxTradeRecord[] = (data || [])
       .map((r) => {

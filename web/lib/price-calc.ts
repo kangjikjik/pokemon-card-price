@@ -90,16 +90,6 @@ function kstDateKey(iso: string): string {
   return new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
 }
 
-function extractBunjangTradeTs(source?: string | null): number | null {
-  if (!source) return null;
-  const parts = source.split(':');
-  if (parts.length >= 4 && parts[1] === 'bunjang') {
-    const ts = parseInt(parts[3], 10);
-    return Number.isNaN(ts) || ts <= 0 ? null : ts;
-  }
-  return null;
-}
-
 function dayPriceFromRows(rows: PriceRecord[]): number {
   const vals = rows.map((p) => p.price_krw).filter((v) => v > 0);
   if (!vals.length) return 0;
@@ -112,13 +102,10 @@ function dayPriceFromRows(rows: PriceRecord[]): number {
   return roundDisplayPrice(raw);
 }
 
-/** 일별 요약 + (요약 없는 날) 상세 fetched_at/traded_at 보조로 7일 추이 구성 */
+/** 저장된 크롤일 요약을 모두 이어 그린다. 최근 7일로 자르지 않는다. */
 function buildPriceHistory(allPrices: PriceRecord[]): { date: string; price: number }[] {
   const summaries = allPrices.filter(
     (p) => !isTradeDetailSource(p.source) && p.fetched_at && p.price_krw > 0,
-  );
-  const details = allPrices.filter(
-    (p) => isTradeDetailSource(p.source) && p.price_krw > 0,
   );
 
   const byDate: Record<string, PriceRecord[]> = {};
@@ -131,39 +118,12 @@ function buildPriceHistory(allPrices: PriceRecord[]): { date: string; price: num
     labels[key] = kstDateLabel(p.fetched_at!);
   }
 
-  // 요약 없는 날 — 크롤 당일 상세 PID fetched_at으로 보조
-  for (const p of details) {
-    if (!p.fetched_at) continue;
-    const key = kstDateKey(p.fetched_at);
-    if (byDate[key]?.length) continue;
-    if (!byDate[key]) byDate[key] = [];
-    byDate[key].push(p);
-    labels[key] = kstDateLabel(p.fetched_at);
-  }
-
-  // 요약·fetched_at 둘 다 없는 날 — 번개 거래 시각(traded_at)으로 보조
-  for (const p of details) {
-    const ts = extractBunjangTradeTs(p.source);
-    if (!ts) continue;
-    const iso = new Date(ts * 1000).toISOString();
-    const key = kstDateKey(iso);
-    if (byDate[key]?.length) continue;
-    if (!byDate[key]) byDate[key] = [];
-    byDate[key].push(p);
-    labels[key] = kstDateLabel(iso);
-  }
-
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - 7);
-  const cutoffKey = kstDateKey(cutoff.toISOString());
-
-  const sortedKeys = Object.keys(byDate)
-    .filter((key) => key >= cutoffKey)
-    .sort();
-  return sortedKeys.slice(-7).map((key) => ({
-    date: labels[key],
-    price: dayPriceFromRows(byDate[key]),
-  }));
+  return Object.keys(byDate)
+    .sort()
+    .map((key) => ({
+      date: labels[key],
+      price: dayPriceFromRows(byDate[key]),
+    }));
 }
 
 /** 표시용 MM-DD (KST) */
@@ -178,34 +138,68 @@ function kstDateLabel(iso: string): string {
     .replace('.', '');
 }
 
+function detailPid(source?: string | null): string | null {
+  if (!isTradeDetailSource(source)) return null;
+  const pid = (source || '').split(':')[2];
+  return pid && /^\d+$/.test(pid) ? pid : null;
+}
+
+function preferTradeRow(current: PriceRecord, next: PriceRecord): PriceRecord {
+  const currentSold = isSoldDetailSource(current.source);
+  const nextSold = isSoldDetailSource(next.source);
+  if (currentSold !== nextSold) return nextSold ? next : current;
+  return (next.fetched_at || '') > (current.fetched_at || '') ? next : current;
+}
+
+/** 거래 내역과 같은 기준으로 상품당 한 건만 남긴다. */
+function dedupedTradeDetails(prices: PriceRecord[]): PriceRecord[] {
+  const byPid = new Map<string, PriceRecord>();
+  for (const row of prices) {
+    if (!isTradeDetailSource(row.source) || row.price_krw <= 0) continue;
+    const pid = detailPid(row.source);
+    if (!pid) continue;
+    const prev = byPid.get(pid);
+    byPid.set(pid, prev ? preferTradeRow(prev, row) : row);
+  }
+  return [...byPid.values()];
+}
+
+/** 거래 내역에 남은 판매완료·호가의 평균. 날짜로 자르지 않는다. */
+export function averageTradeDetailPrice(prices: PriceRecord[]): number {
+  const rows = dedupedTradeDetails(prices);
+  if (!rows.length) return 0;
+  const raw = Math.round(rows.reduce((sum, row) => sum + row.price_krw, 0) / rows.length);
+  return roundDisplayPrice(raw);
+}
+
+/** 거래 내역에 남은 가격의 최저·최고. 날짜로 자르지 않는다. */
+export function tradeDetailBounds(prices: PriceRecord[]): { min: number; max: number } {
+  const rows = dedupedTradeDetails(prices);
+  if (!rows.length) return { min: 0, max: 0 };
+  const values = rows.map((row) => row.price_krw);
+  return { min: Math.min(...values), max: Math.max(...values) };
+}
+
 /**
- * 대표 시세 = 가장 최근 수집일 중앙값.
+ * 대표 시세 = 저장된 거래 내역 평균.
  * 트렌드 = 최근일 vs 직전 수집일 (%).
- * history = 최근 7개 수집일.
+ * history = 저장된 크롤일 전체.
  */
 export function calcRepresentativePrice(allPrices: PriceRecord[]): {
   price: number;
+  min: number;
+  max: number;
   trend: number;
   history: { date: string; price: number }[];
 } {
-  if (allPrices.length === 0) return { price: 0, trend: 0, history: [] };
-
-  const displayPrices = pricesForDisplay(allPrices);
-  if (displayPrices.length === 0) return { price: 0, trend: 0, history: [] };
+  const bounds = tradeDetailBounds(allPrices);
+  if (allPrices.length === 0) return { price: 0, min: 0, max: 0, trend: 0, history: [] };
 
   const history = buildPriceHistory(allPrices);
-  if (history.length === 0) {
-    const vals = displayPrices.map((p) => p.price_krw).filter((v) => v > 0);
-    if (!vals.length) return { price: 0, trend: 0, history: [] };
-    const price = roundDisplayPrice(
-      isTradeDetailSource(displayPrices[0]?.source)
-        ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)
-        : median(vals),
-    );
-    return { price, trend: 0, history: price ? [{ date: '시세', price }] : [] };
+  const price = averageTradeDetailPrice(allPrices);
+  if (price <= 0 && history.length === 0) {
+    return { price: 0, min: 0, max: 0, trend: 0, history: [] };
   }
-
-  const price = history[history.length - 1]?.price || 0;
 
   let trend = 0;
   if (history.length >= 2) {
@@ -216,12 +210,17 @@ export function calcRepresentativePrice(allPrices: PriceRecord[]): {
     }
   }
 
-  return { price, trend, history };
+  return {
+    price,
+    min: bounds.min,
+    max: bounds.max,
+    trend,
+    history: history.length > 0 ? history : price > 0 ? [{ date: '시세', price }] : [],
+  };
 }
 
 /**
- * 목록·홈에 보여줄 시세. 카드 상세와 같이 최근 수집일의 대표가다.
- * 예전 거래완료 요약이 있어도, 그 뒤의 호가 요약을 가리지 않는다.
+ * 목록·홈에 보여줄 시세. 카드 상세와 같이 거래 내역 평균이다.
  */
 export function latestPriceKrw(
   prices: { price_krw: number; fetched_at?: string; source?: string }[],
