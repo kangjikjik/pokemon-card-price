@@ -113,8 +113,12 @@ export function buildCardDetailTitle(card: Card): string {
   return `${card.name}${rarity} 시세${priceLabel}`;
 }
 
-export function buildCardDetailJsonLd(card: Card) {
-  const url = `${SITE_URL}/cards/${card.id}`;
+/**
+ * Product 구조화 데이터.
+ * Google은 offers / review / aggregateRating 중 하나를 요구한다.
+ * 가격이 없으면 null을 반환해 스키마 자체를 출력하지 않는다.
+ */
+export function buildCardDetailJsonLd(card: Card): Record<string, unknown> | null {
   const offers: Record<string, unknown>[] = [];
   if (card.priceKR > 0) {
     offers.push({
@@ -135,6 +139,10 @@ export function buildCardDetailJsonLd(card: Card) {
     });
   }
 
+  // offers 없으면 Google Product 스니펫 필수 조건 미충족 → 스키마 미출력
+  if (!offers.length) return null;
+
+  const url = `${SITE_URL}/cards/${card.id}`;
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -145,7 +153,7 @@ export function buildCardDetailJsonLd(card: Card) {
     category: `포켓몬 카드 · ${card.set}`,
     sku: card.number || card.id,
     brand: { '@type': 'Brand', name: 'Pokémon' },
-    ...(offers.length ? { offers: offers.length === 1 ? offers[0] : offers } : {}),
+    offers: offers.length === 1 ? offers[0] : offers,
   };
 }
 

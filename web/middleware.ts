@@ -100,6 +100,13 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
+  if (pathname === '/google3ca8d6b5eecf781e.html') {
+    return new NextResponse('google-site-verification: google3ca8d6b5eecf781e.html\n', {
+      status: 200,
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
+    });
+  }
+
   const hostRedirect = canonicalHostRedirect(req);
   if (hostRedirect) return hostRedirect;
   const method = req.method.toUpperCase();

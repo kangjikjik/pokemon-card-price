@@ -56,7 +56,9 @@ export default async function CardDetailPage({ params }: { params: Promise<{ id:
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      {jsonLd && (
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      )}
       <CardDetailView card={card} />
     </>
   );
